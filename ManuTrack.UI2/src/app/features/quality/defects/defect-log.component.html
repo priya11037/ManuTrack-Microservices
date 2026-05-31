@@ -1,0 +1,328 @@
+<div class="dl-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="dl-header">
+    <div>
+      <h2 class="dl-title">Defect Log</h2>
+      <p class="dl-sub">Track, categorise and resolve quality defects</p>
+    </div>
+    <button class="add-btn" (click)="openAddDrawer()">
+      <mat-icon>add</mat-icon> Log Defect
+    </button>
+  </div>
+
+  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>bug_report</mat-icon>
+      <div><span class="stat-num">{{ stats().total }}</span><span class="stat-lbl">Total Defects</span></div>
+    </div>
+    <div class="stat-chip red">
+      <mat-icon>error</mat-icon>
+      <div><span class="stat-num">{{ stats().open }}</span><span class="stat-lbl">Open</span></div>
+    </div>
+    <div class="stat-chip amber">
+      <mat-icon>priority_high</mat-icon>
+      <div><span class="stat-num">{{ stats().critical }}</span><span class="stat-lbl">Critical</span></div>
+    </div>
+    <div class="stat-chip green">
+      <mat-icon>check_circle</mat-icon>
+      <div><span class="stat-num">{{ stats().resolved }}</span><span class="stat-lbl">Resolved</span></div>
+    </div>
+    <div class="stat-chip red scrapped">
+      <mat-icon>delete_forever</mat-icon>
+      <div><span class="stat-num">{{ stats().scrapped }}</span><span class="stat-lbl">Units Scrapped</span></div>
+    </div>
+  </div>
+
+  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <mat-icon class="si">search</mat-icon>
+      <input class="search-input" type="text" placeholder="Search by defect #, product, WO…"
+             [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+      @if (searchTerm()) {
+        <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="severityFilter() === 'all'" (click)="severityFilter.set('all')">All Severity</button>
+      @for (s of severities; track s) {
+        <button class="fc" [class.fc-active]="severityFilter() === s" (click)="severityFilter.set(s)"
+                [style.--sv-c]="severityMeta(s).color">
+          <span class="sv-dot" [style.background]="severityMeta(s).color"></span>{{ s }}
+        </button>
+      }
+    </div>
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">All Status</button>
+      @for (s of statuses; track s) {
+        <button class="fc" [class.fc-active]="statusFilter() === s" (click)="statusFilter.set(s)">{{ s }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Table ────────────────────────────────────────────────────────────── -->
+  <div class="table-card">
+    <table class="dl-table">
+      <thead>
+        <tr>
+          <th>Defect #</th>
+          <th>Inspection</th>
+          <th>Product</th>
+          <th>Severity</th>
+          <th>Defect Type</th>
+          <th>Units</th>
+          <th>Root Cause</th>
+          <th>Action</th>
+          <th>Status</th>
+          <th>Reporter</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (filtered().length === 0) {
+          <tr>
+            <td colspan="12" class="empty-cell">
+              <mat-icon>search_off</mat-icon>
+              <p>No defects match your filters</p>
+              <button class="link-btn" (click)="searchTerm.set(''); severityFilter.set('all'); statusFilter.set('all')">Clear filters</button>
+            </td>
+          </tr>
+        }
+        @for (d of filtered(); track d.id) {
+          <tr [class.row-critical]="d.severity === 'Critical'" [class.row-resolved]="d.status === 'Resolved'">
+            <td><span class="def-num-badge">{{ d.defectNumber }}</span></td>
+            <td>
+              <div class="ref-cell">
+                <span class="ins-ref">{{ d.insRef }}</span>
+                <span class="wo-ref">{{ d.woRef }}</span>
+              </div>
+            </td>
+            <td class="td-product">{{ d.product }}</td>
+            <td>
+              <span class="severity-badge {{ severityMeta(d.severity).cls }}"
+                    [style.color]="severityMeta(d.severity).color"
+                    [style.background]="severityMeta(d.severity).bg">
+                {{ d.severity }}
+              </span>
+            </td>
+            <td class="td-type">{{ d.defectType }}</td>
+            <td class="td-units">
+              <span class="units-chip">{{ d.defectiveUnits }} unit{{ d.defectiveUnits > 1 ? 's' : '' }}</span>
+            </td>
+            <td class="td-cause">{{ d.rootCause }}</td>
+            <td>
+              <span class="action-badge" [style.color]="actionMeta(d.action)" [style.background]="actionMeta(d.action) + '18'">
+                {{ d.action }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge"
+                    [style.color]="statusMeta(d.status).color"
+                    [style.background]="statusMeta(d.status).bg">
+                {{ d.status }}
+              </span>
+            </td>
+            <td class="td-muted">{{ d.reportedBy }}</td>
+            <td class="td-muted">{{ d.reportedDate }}</td>
+            <td>
+              @if (deleteConfirmId() === d.id) {
+                <div class="del-confirm">
+                  <span>Remove?</span>
+                  <button class="dc-yes" (click)="deleteDefect(d.id)">Yes</button>
+                  <button class="dc-no"  (click)="cancelDelete()">No</button>
+                </div>
+              } @else {
+                <div class="action-row">
+                  <button class="act-btn edit"   matTooltip="Edit"   (click)="openEditDrawer(d, $event)"><mat-icon>edit</mat-icon></button>
+                  <button class="act-btn delete" matTooltip="Remove" (click)="confirmDelete(d.id)"><mat-icon>delete_outline</mat-icon></button>
+                </div>
+              }
+            </td>
+          </tr>
+          @if (d.notes) {
+            <tr class="notes-row">
+              <td colspan="12">
+                <div class="notes-cell">
+                  <mat-icon>notes</mat-icon>
+                  <span>{{ d.notes }}</span>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+    <div class="table-footer">
+      Showing <strong>{{ filtered().length }}</strong> of <strong>{{ defects().length }}</strong> defects
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══ Drawer ══════════════════════════════════════════════════════════════ -->
+@if (drawerOpen()) {
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+  <div class="drawer">
+
+    <div class="drawer-head">
+      <div class="dh-icon" style="background:#fef2f2">
+        <mat-icon style="color:#dc2626">{{ drawerMode() === 'add' ? 'report_problem' : 'edit_note' }}</mat-icon>
+      </div>
+      <div>
+        <h3>{{ drawerMode() === 'add' ? 'Log New Defect' : 'Edit Defect' }}</h3>
+        <p>{{ drawerMode() === 'add' ? 'Record a quality defect from an inspection' : selectedDefect()?.defectNumber }}</p>
+      </div>
+      <button class="dh-close" (click)="closeDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <form class="drawer-form" [formGroup]="defectForm" (ngSubmit)="saveDefect()" novalidate>
+
+      <!-- Inspection + WO row -->
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Inspection Ref <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="defectForm.get('insRef')?.invalid && defectForm.get('insRef')?.touched">
+            <mat-icon>fact_check</mat-icon>
+            <select formControlName="insRef">
+              <option value="" disabled>Select inspection…</option>
+              @for (i of insRefs; track i) { <option [value]="i">{{ i }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">WO Reference <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="defectForm.get('woRef')?.invalid && defectForm.get('woRef')?.touched">
+            <mat-icon>assignment</mat-icon>
+            <select formControlName="woRef">
+              <option value="" disabled>Select WO…</option>
+              @for (w of woRefs; track w) { <option [value]="w">{{ w }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product -->
+      <div class="ff">
+        <label class="ff-label">Product <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="defectForm.get('product')?.invalid && defectForm.get('product')?.touched">
+          <mat-icon>category</mat-icon>
+          <select formControlName="product">
+            <option value="" disabled>Select product…</option>
+            @for (p of products; track p) { <option [value]="p">{{ p }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+      </div>
+
+      <!-- Severity selector -->
+      <div class="ff">
+        <label class="ff-label">Severity <span class="req">*</span></label>
+        <div class="severity-selector">
+          @for (s of severities; track s) {
+            <button type="button" class="sv-btn"
+                    [class.sv-active]="defectForm.get('severity')?.value === s"
+                    [style.--svc]="severityMeta(s).color"
+                    (click)="defectForm.get('severity')?.setValue(s)">
+              <span class="sv-dot" [style.background]="severityMeta(s).color"></span>{{ s }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Defect Type -->
+      <div class="ff">
+        <label class="ff-label">Defect Type <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="defectForm.get('defectType')?.invalid && defectForm.get('defectType')?.touched">
+          <mat-icon>report_problem</mat-icon>
+          <select formControlName="defectType">
+            <option value="" disabled>Select defect type…</option>
+            @for (t of defectTypes; track t) { <option [value]="t">{{ t }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+      </div>
+
+      <!-- Defective Units + Root Cause row -->
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Defective Units <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="defectForm.get('defectiveUnits')?.invalid && defectForm.get('defectiveUnits')?.touched">
+            <mat-icon>production_quantity_limits</mat-icon>
+            <input type="number" formControlName="defectiveUnits" min="1" placeholder="e.g. 3" />
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Root Cause <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="defectForm.get('rootCause')?.invalid && defectForm.get('rootCause')?.touched">
+            <mat-icon>manage_search</mat-icon>
+            <select formControlName="rootCause">
+              <option value="" disabled>Select root cause…</option>
+              @for (r of rootCauses; track r) { <option [value]="r">{{ r }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action + Status row -->
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Action Taken <span class="req">*</span></label>
+          <div class="ff-select-wrap">
+            <mat-icon>build</mat-icon>
+            <select formControlName="action">
+              @for (a of actions; track a) { <option [value]="a">{{ a }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Status <span class="req">*</span></label>
+          <div class="ff-select-wrap">
+            <mat-icon>flag</mat-icon>
+            <select formControlName="status">
+              @for (s of statuses; track s) { <option [value]="s">{{ s }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reported By -->
+      <div class="ff">
+        <label class="ff-label">Reported By <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="defectForm.get('reportedBy')?.invalid && defectForm.get('reportedBy')?.touched">
+          <mat-icon>person_search</mat-icon>
+          <select formControlName="reportedBy">
+            <option value="" disabled>Select inspector…</option>
+            @for (i of inspectors; track i) { <option [value]="i">{{ i }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="ff">
+        <label class="ff-label">Notes</label>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="notes" rows="3" placeholder="Additional details, measurements, corrective steps…"></textarea>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-cancel" (click)="closeDrawer()">Cancel</button>
+        <button type="submit" class="btn-save">
+          <mat-icon>{{ drawerMode() === 'add' ? 'report_problem' : 'save' }}</mat-icon>
+          {{ drawerMode() === 'add' ? 'Log Defect' : 'Save Changes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}

@@ -3,9 +3,14 @@ namespace WorkOrderService.Models;
 public class WorkOrder
 {
     public int WorkOrderID { get; set; }
+    public string WoNumber { get; set; } = string.Empty;   // e.g. WO-0001
     public int ProductID { get; set; }
     public string ProductName { get; set; } = string.Empty;
+    public string Sku { get; set; } = string.Empty;        // product SKU reference
     public int Quantity { get; set; }
+    public int ProducedQty { get; set; } = 0;              // units produced so far
+    public string Priority { get; set; } = "Medium";       // Low | Medium | High | Critical
+    public string ProductionLine { get; set; } = string.Empty; // Line A | B | C | D
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public DateTime? EstimatedStartDate { get; set; }

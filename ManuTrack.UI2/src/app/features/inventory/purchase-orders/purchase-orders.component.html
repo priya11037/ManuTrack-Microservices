@@ -1,0 +1,350 @@
+<div class="po-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="po-header">
+    <div>
+      <h2 class="po-title">Purchase Orders</h2>
+      <p class="po-sub">Raise, track and prioritise purchase orders</p>
+    </div>
+    <div class="po-header-right">
+      <!-- View toggle -->
+      <div class="view-toggle">
+        <button class="vt-btn" [class.vt-active]="viewMode() === 'list'"
+                (click)="viewMode.set('list')" matTooltip="List view">
+          <mat-icon>table_rows</mat-icon>
+        </button>
+        <button class="vt-btn" [class.vt-active]="viewMode() === 'priority'"
+                (click)="viewMode.set('priority')" matTooltip="Priority queue (drag to reorder)">
+          <mat-icon>low_priority</mat-icon>
+        </button>
+      </div>
+      <button class="add-btn" (click)="openAddDrawer()">
+        <mat-icon>add</mat-icon> New PO
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>shopping_cart</mat-icon>
+      <div><span class="stat-num">{{ stats().total }}</span><span class="stat-lbl">Total POs</span></div>
+    </div>
+    <div class="stat-chip blue">
+      <mat-icon>pending</mat-icon>
+      <div><span class="stat-num">{{ stats().pending }}</span><span class="stat-lbl">In Progress</span></div>
+    </div>
+    <div class="stat-chip red">
+      <mat-icon>priority_high</mat-icon>
+      <div><span class="stat-num">{{ stats().urgent }}</span><span class="stat-lbl">Urgent</span></div>
+    </div>
+    <div class="stat-chip teal">
+      <mat-icon>payments</mat-icon>
+      <div><span class="stat-num">£{{ stats().totalSpend | number:'1.0-0' }}</span><span class="stat-lbl">Total Spend</span></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  LIST VIEW                                                             -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  @if (viewMode() === 'list') {
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="search-box">
+        <mat-icon class="si">search</mat-icon>
+        <input class="search-input" type="text" placeholder="Search PO#, item, supplier…"
+               [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+        @if (searchTerm()) {
+          <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
+        }
+      </div>
+      <div class="filter-chips">
+        <button class="fc" [class.fc-active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">All</button>
+        @for (s of statuses; track s) {
+          <button class="fc" [class.fc-active]="statusFilter() === s" (click)="statusFilter.set(s)">{{ s }}</button>
+        }
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table class="po-table">
+        <thead>
+          <tr>
+            <th>PO #</th>
+            <th>Supplier</th>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Total Cost</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Order Date</th>
+            <th>Expected</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (filtered().length === 0) {
+            <tr><td colspan="10" class="empty-cell">
+              <mat-icon>search_off</mat-icon>
+              <p>No orders match your filters</p>
+              <button class="link-btn" (click)="searchTerm.set(''); statusFilter.set('all')">Clear</button>
+            </td></tr>
+          }
+          @for (po of filtered(); track po.id) {
+            <tr [class.row-urgent]="po.priority === 'Urgent' && po.status !== 'Received' && po.status !== 'Cancelled'"
+                [class.row-overdue]="isOverdue(po)">
+              <td><span class="po-num-badge">{{ po.poNumber }}</span></td>
+              <td class="td-supplier">{{ po.supplier }}</td>
+              <td>
+                <div class="item-cell">
+                  <span class="item-name">{{ po.item }}</span>
+                  <span class="item-sku">{{ po.sku }}</span>
+                </div>
+              </td>
+              <td class="td-muted">{{ po.quantity | number }}</td>
+              <td class="td-value">£{{ po.totalCost | number:'1.0-0' }}</td>
+              <td>
+                <span class="pr-badge" [style.color]="priorityMeta(po.priority).color"
+                      [style.background]="priorityMeta(po.priority).bg">
+                  {{ po.priority }}
+                </span>
+              </td>
+              <td>
+                <span class="st-badge" [style.color]="statusMeta(po.status).color"
+                      [style.background]="statusMeta(po.status).bg">
+                  {{ po.status }}
+                </span>
+              </td>
+              <td class="td-muted">{{ po.orderDate }}</td>
+              <td class="td-muted" [class.td-overdue]="isOverdue(po)">
+                @if (isOverdue(po)) { <mat-icon class="overdue-icon">warning</mat-icon> }
+                {{ po.expectedDate }}
+              </td>
+              <td>
+                @if (deleteConfirmId() === po.id) {
+                  <div class="del-confirm">
+                    <span>Delete?</span>
+                    <button class="dc-yes" (click)="deleteOrder(po.id)">Yes</button>
+                    <button class="dc-no"  (click)="cancelDelete()">No</button>
+                  </div>
+                } @else {
+                  <div class="action-row">
+                    <button class="act-btn edit"   matTooltip="Edit"   (click)="openEditDrawer(po, $event)"><mat-icon>edit</mat-icon></button>
+                    <button class="act-btn delete" matTooltip="Delete" (click)="confirmDelete(po.id)"><mat-icon>delete_outline</mat-icon></button>
+                  </div>
+                }
+              </td>
+            </tr>
+            @if (po.notes) {
+              <tr class="notes-row">
+                <td colspan="10">
+                  <div class="notes-cell"><mat-icon>notes</mat-icon><span>{{ po.notes }}</span></div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+      <div class="table-footer">Showing <strong>{{ filtered().length }}</strong> of <strong>{{ orders().length }}</strong> orders</div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  PRIORITY QUEUE VIEW  (Drag to reorder)                               -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  @if (viewMode() === 'priority') {
+    <div class="drag-hint">
+      <mat-icon>drag_indicator</mat-icon>
+      Drag rows to reorder procurement priority · Top = highest priority for purchasing team
+    </div>
+
+    <div class="priority-queue" cdkDropList [cdkDropListData]="priorityQueue()"
+         (cdkDropListDropped)="onPriorityDrop($event)">
+
+      @for (po of priorityQueue(); track po.id; let i = $index) {
+        <div class="pq-row" cdkDrag [cdkDragData]="po"
+             [class.pq-urgent]="po.priority === 'Urgent'"
+             [class.pq-overdue]="isOverdue(po)">
+
+          <!-- Drag placeholder -->
+          <div *cdkDragPlaceholder class="pq-placeholder"></div>
+
+          <!-- Rank number -->
+          <div class="pq-rank" [class.rank-1]="i === 0" [class.rank-2]="i === 1" [class.rank-3]="i === 2">
+            {{ i + 1 }}
+          </div>
+
+          <!-- Drag handle -->
+          <mat-icon class="pq-handle" cdkDragHandle>drag_indicator</mat-icon>
+
+          <!-- PO info -->
+          <div class="pq-info">
+            <div class="pq-top">
+              <span class="po-num-badge">{{ po.poNumber }}</span>
+              <span class="pr-badge" [style.color]="priorityMeta(po.priority).color"
+                    [style.background]="priorityMeta(po.priority).bg">{{ po.priority }}</span>
+              <span class="st-badge" [style.color]="statusMeta(po.status).color"
+                    [style.background]="statusMeta(po.status).bg">{{ po.status }}</span>
+              @if (isOverdue(po)) {
+                <span class="overdue-pill"><mat-icon>warning</mat-icon>Overdue</span>
+              }
+            </div>
+            <div class="pq-item">{{ po.item }} · <span class="pq-supplier">{{ po.supplier }}</span></div>
+          </div>
+
+          <!-- PO details -->
+          <div class="pq-details">
+            <div class="pq-detail">
+              <span class="pd-lbl">Qty</span>
+              <span class="pd-val">{{ po.quantity | number }}</span>
+            </div>
+            <div class="pq-detail">
+              <span class="pd-lbl">Cost</span>
+              <span class="pd-val">£{{ po.totalCost | number:'1.0-0' }}</span>
+            </div>
+            <div class="pq-detail">
+              <span class="pd-lbl">Expected</span>
+              <span class="pd-val" [class.val-overdue]="isOverdue(po)">{{ po.expectedDate }}</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="pq-actions">
+            <button class="act-btn edit" matTooltip="Edit" (click)="openEditDrawer(po, $event)"><mat-icon>edit</mat-icon></button>
+          </div>
+
+        </div>
+      }
+
+    </div>
+  }
+
+</div>
+
+
+<!-- ══ Drawer ══════════════════════════════════════════════════════════════ -->
+@if (drawerOpen()) {
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+  <div class="drawer">
+    <div class="drawer-head">
+      <div class="dh-icon" [style.background]="drawerMode() === 'add' ? '#eff6ff' : '#f0fdf4'">
+        <mat-icon [style.color]="drawerMode() === 'add' ? '#2563eb' : '#059669'">
+          {{ drawerMode() === 'add' ? 'add_shopping_cart' : 'edit_note' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h3>{{ drawerMode() === 'add' ? 'New Purchase Order' : 'Edit Purchase Order' }}</h3>
+        <p>{{ drawerMode() === 'add' ? 'Raise a procurement request' : selectedPO()?.poNumber }}</p>
+      </div>
+      <button class="dh-close" (click)="closeDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <form class="drawer-form" [formGroup]="poForm" (ngSubmit)="savePO()" novalidate>
+
+      <div class="ff">
+        <label class="ff-label">Supplier <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="poForm.get('supplier')?.invalid && poForm.get('supplier')?.touched">
+          <mat-icon>local_shipping</mat-icon>
+          <select formControlName="supplier">
+            <option value="" disabled>Select supplier…</option>
+            @for (s of suppliers; track s) { <option [value]="s">{{ s }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (poForm.get('supplier')?.invalid && poForm.get('supplier')?.touched) {
+          <span class="ff-err">Supplier is required</span>
+        }
+      </div>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Item <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="poForm.get('item')?.invalid && poForm.get('item')?.touched">
+            <mat-icon>inventory_2</mat-icon>
+            <select formControlName="item">
+              <option value="" disabled>Select item…</option>
+              @for (i of items; track i) { <option [value]="i">{{ i }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">SKU</label>
+          <div class="ff-input-wrap"><mat-icon>qr_code</mat-icon><input type="text" formControlName="sku" placeholder="Auto or manual" /></div>
+        </div>
+      </div>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Quantity <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="poForm.get('quantity')?.invalid && poForm.get('quantity')?.touched">
+            <mat-icon>numbers</mat-icon><input type="number" formControlName="quantity" min="1" />
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Unit Cost (£) <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="poForm.get('unitCost')?.invalid && poForm.get('unitCost')?.touched">
+            <mat-icon>payments</mat-icon><input type="number" formControlName="unitCost" min="0.01" step="0.01" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority selector -->
+      <div class="ff">
+        <label class="ff-label">Priority <span class="req">*</span></label>
+        <div class="priority-selector">
+          @for (p of priorities; track p) {
+            <button type="button" class="ps-btn"
+                    [class.ps-active]="poForm.get('priority')?.value === p"
+                    [style.--pc]="priorityMeta(p).color"
+                    (click)="poForm.get('priority')?.setValue(p)">
+              <span class="ps-dot" [style.background]="priorityMeta(p).color"></span>{{ p }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="ff">
+        <label class="ff-label">Status</label>
+        <div class="ff-select-wrap">
+          <mat-icon>flag</mat-icon>
+          <select formControlName="status">
+            @for (s of statuses; track s) { <option [value]="s">{{ s }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+      </div>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Order Date <span class="req">*</span></label>
+          <div class="ff-input-wrap"><mat-icon>event</mat-icon><input type="date" formControlName="orderDate" /></div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Expected Date <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="poForm.get('expectedDate')?.invalid && poForm.get('expectedDate')?.touched">
+            <mat-icon>event_available</mat-icon><input type="date" formControlName="expectedDate" />
+          </div>
+        </div>
+      </div>
+
+      <div class="ff">
+        <label class="ff-label">Notes</label>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="notes" rows="3" placeholder="Reason for order, urgency details…"></textarea>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-cancel" (click)="closeDrawer()">Cancel</button>
+        <button type="submit" class="btn-save">
+          <mat-icon>{{ drawerMode() === 'add' ? 'add_shopping_cart' : 'save' }}</mat-icon>
+          {{ drawerMode() === 'add' ? 'Raise PO' : 'Save Changes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}

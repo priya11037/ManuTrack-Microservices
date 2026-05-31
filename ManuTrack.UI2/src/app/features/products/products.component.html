@@ -1,0 +1,522 @@
+<div class="products-page">
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       Page Header
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Products &amp; BOM</h1>
+      <p class="page-sub">Manage your product catalog and configure Bills of Materials</p>
+    </div>
+
+    <div class="header-right">
+      <!-- Tab Toggle -->
+      <div class="tab-toggle">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === 'catalog'"
+          (click)="setTab('catalog')"
+        >
+          <mat-icon>category</mat-icon>
+          Catalog
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === 'bom'"
+          (click)="setTab('bom')"
+        >
+          <mat-icon>account_tree</mat-icon>
+          BOM Builder
+        </button>
+      </div>
+
+      <!-- Add Product -->
+      @if (activeTab() === 'catalog') {
+        <button class="btn-primary" (click)="openAddDrawer()">
+          <mat-icon>add</mat-icon>
+          Add Product
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       Stats Row
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon class="chip-icon gray">inventory_2</mat-icon>
+      <span class="chip-value">{{ totalProducts() }}</span>
+      <span class="chip-label">Total Products</span>
+    </div>
+    <div class="stat-chip green">
+      <mat-icon class="chip-icon">check_circle</mat-icon>
+      <span class="chip-value">{{ activeProducts() }}</span>
+      <span class="chip-label">Active (In Stock)</span>
+    </div>
+    <div class="stat-chip blue">
+      <mat-icon class="chip-icon">account_tree</mat-icon>
+      <span class="chip-value">{{ withBom() }}</span>
+      <span class="chip-label">With BOM</span>
+    </div>
+    <div class="stat-chip amber">
+      <mat-icon class="chip-icon">warning</mat-icon>
+      <span class="chip-value">{{ missingBom() }}</span>
+      <span class="chip-label">Missing BOM</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 1 — Product Catalog
+  ════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'catalog') {
+    <div class="card table-card">
+      <table class="product-table">
+        <thead>
+          <tr>
+            <th class="col-num">#</th>
+            <th>Product Name</th>
+            <th>SKU</th>
+            <th>Category</th>
+            <th class="col-num">Stock</th>
+            <th>Unit Cost</th>
+            <th>BOM Status</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (product of products(); track product.id; let i = $index) {
+            <tr>
+              <td class="col-num text-muted">{{ i + 1 }}</td>
+              <td>
+                <div class="product-name-cell">
+                  <span class="product-name">{{ product.name }}</span>
+                  @if (product.description) {
+                    <span class="product-desc">{{ product.description }}</span>
+                  }
+                </div>
+              </td>
+              <td><code class="sku-code">{{ product.sku }}</code></td>
+              <td>
+                <span class="category-tag cat-{{ product.category | lowercase }}">
+                  {{ product.category }}
+                </span>
+              </td>
+              <td class="col-num">
+                <span [class.stock-low]="product.stock < 50">{{ product.stock }}</span>
+                <span class="text-muted"> {{ product.uom }}</span>
+              </td>
+              <td class="cost-cell">{{ formatCurrency(product.unitCost) }}</td>
+              <td>
+                @if (product.hasBom) {
+                  <span class="bom-badge defined">
+                    <mat-icon>check_circle</mat-icon> Defined
+                  </span>
+                } @else {
+                  <span class="bom-badge missing">
+                    <mat-icon>warning</mat-icon> Missing
+                  </span>
+                }
+              </td>
+              <td class="col-actions">
+                <div class="action-btns">
+                  <button
+                    class="icon-btn blue"
+                    matTooltip="View BOM"
+                    (click)="viewBom(product)"
+                  >
+                    <mat-icon>account_tree</mat-icon>
+                  </button>
+                  <button
+                    class="icon-btn"
+                    matTooltip="Edit Product"
+                    (click)="openEditDrawer(product)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    class="icon-btn red"
+                    matTooltip="Delete Product"
+                    (click)="deleteProduct(product)"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 2 — BOM Builder
+  ════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'bom') {
+    <div class="bom-layout">
+
+      <!-- Left Panel: Product list -->
+      <div class="bom-product-list card">
+        <div class="panel-header">
+          <span class="panel-title">Products</span>
+          <span class="panel-sub">Select to view BOM</span>
+        </div>
+        <div class="product-list-scroll">
+          @for (product of products(); track product.id) {
+            <div
+              class="product-list-item"
+              [class.selected]="selectedProductId() === product.id"
+              (click)="selectBomProduct(product.id)"
+            >
+              <div class="pli-info">
+                <span class="pli-name">{{ product.name }}</span>
+                <code class="pli-sku">{{ product.sku }}</code>
+              </div>
+              <div class="pli-right">
+                @if (product.hasBom) {
+                  <span class="bom-dot defined" matTooltip="BOM Defined"></span>
+                } @else {
+                  <span class="bom-dot missing" matTooltip="BOM Missing"></span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right Panel: BOM Tree -->
+      <div class="bom-tree-panel card">
+        @if (selectedProduct(); as product) {
+          <div class="panel-header">
+            <div>
+              <span class="panel-title">{{ product.name }}</span>
+              <span class="panel-sub"><code>{{ product.sku }}</code> — Bill of Materials</span>
+            </div>
+            <button class="btn-outline-sm" (click)="openAddBomItem(null)">
+              <mat-icon>add</mat-icon>
+              Add Component
+            </button>
+          </div>
+
+          <!-- BOM Tree -->
+          @if (selectedBom().length > 0) {
+            <div
+              class="bom-root-list"
+              cdkDropList
+              id="root-drop"
+              [cdkDropListData]="selectedBom()"
+              (cdkDropListDropped)="onRootDrop($event)"
+            >
+              @for (item of selectedBom(); track item.id) {
+                <div class="bom-drag-item" cdkDrag [cdkDragData]="item">
+                  <!-- Drag placeholder -->
+                  <div class="drag-placeholder" *cdkDragPlaceholder></div>
+
+                  <!-- Level-0 row -->
+                  <div class="bom-row level-0">
+                    <mat-icon cdkDragHandle class="drag-handle" matTooltip="Drag to reorder">drag_indicator</mat-icon>
+
+                    <!-- Expand toggle -->
+                    @if (item.children?.length) {
+                      <button class="expand-btn" (click)="toggleExpand(item)">
+                        <mat-icon>{{ item.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
+                      </button>
+                    } @else {
+                      <span class="expand-placeholder"></span>
+                    }
+
+                    <mat-icon class="type-icon type-{{ item.type }}" [matTooltip]="typeLabel(item.type)">
+                      {{ typeIcon(item.type) }}
+                    </mat-icon>
+
+                    <span class="bom-name">{{ item.name }}</span>
+                    <span class="bom-qty">{{ item.quantity }} × {{ item.unit }}</span>
+                    <span class="type-badge type-{{ item.type }}">{{ typeLabel(item.type) }}</span>
+
+                    <div class="bom-row-actions">
+                      <button class="icon-btn-sm blue" matTooltip="Add child component" (click)="openAddBomItem(item.id)">
+                        <mat-icon>add_circle_outline</mat-icon>
+                      </button>
+                      <button class="icon-btn-sm red" matTooltip="Remove" (click)="deleteBomItem(item.id)">
+                        <mat-icon>remove_circle_outline</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Children (level-1) -->
+                  @if (item.expanded && item.children?.length) {
+                    <div
+                      class="bom-child-list"
+                      cdkDropList
+                      [id]="childDropId(item.id)"
+                      [cdkDropListData]="item.children"
+                      (cdkDropListDropped)="onChildDrop($event, item.id)"
+                    >
+                      @for (child of item.children; track child.id) {
+                        <div class="bom-drag-item" cdkDrag [cdkDragData]="child">
+                          <div class="drag-placeholder" *cdkDragPlaceholder></div>
+
+                          <div class="bom-row level-1">
+                            <mat-icon cdkDragHandle class="drag-handle" matTooltip="Drag to reorder">drag_indicator</mat-icon>
+
+                            @if (child.children?.length) {
+                              <button class="expand-btn" (click)="toggleExpand(child)">
+                                <mat-icon>{{ child.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
+                              </button>
+                            } @else {
+                              <span class="expand-placeholder"></span>
+                            }
+
+                            <mat-icon class="type-icon type-{{ child.type }}" [matTooltip]="typeLabel(child.type)">
+                              {{ typeIcon(child.type) }}
+                            </mat-icon>
+
+                            <span class="bom-name">{{ child.name }}</span>
+                            <span class="bom-qty">{{ child.quantity }} × {{ child.unit }}</span>
+                            <span class="type-badge type-{{ child.type }}">{{ typeLabel(child.type) }}</span>
+
+                            <div class="bom-row-actions">
+                              <button class="icon-btn-sm blue" matTooltip="Add child component" (click)="openAddBomItem(child.id)">
+                                <mat-icon>add_circle_outline</mat-icon>
+                              </button>
+                              <button class="icon-btn-sm red" matTooltip="Remove" (click)="deleteBomItem(child.id)">
+                                <mat-icon>remove_circle_outline</mat-icon>
+                              </button>
+                            </div>
+                          </div>
+
+                          <!-- Grandchildren (level-2) -->
+                          @if (child.expanded && child.children?.length) {
+                            <div
+                              class="bom-child-list"
+                              cdkDropList
+                              [id]="childDropId(child.id)"
+                              [cdkDropListData]="child.children"
+                              (cdkDropListDropped)="onChildDrop($event, child.id)"
+                            >
+                              @for (grandchild of child.children; track grandchild.id) {
+                                <div class="bom-drag-item" cdkDrag [cdkDragData]="grandchild">
+                                  <div class="drag-placeholder" *cdkDragPlaceholder></div>
+
+                                  <div class="bom-row level-2">
+                                    <mat-icon cdkDragHandle class="drag-handle" matTooltip="Drag to reorder">drag_indicator</mat-icon>
+                                    <span class="expand-placeholder"></span>
+
+                                    <mat-icon class="type-icon type-{{ grandchild.type }}" [matTooltip]="typeLabel(grandchild.type)">
+                                      {{ typeIcon(grandchild.type) }}
+                                    </mat-icon>
+
+                                    <span class="bom-name">{{ grandchild.name }}</span>
+                                    <span class="bom-qty">{{ grandchild.quantity }} × {{ grandchild.unit }}</span>
+                                    <span class="type-badge type-{{ grandchild.type }}">{{ typeLabel(grandchild.type) }}</span>
+
+                                    <div class="bom-row-actions">
+                                      <button class="icon-btn-sm red" matTooltip="Remove" (click)="deleteBomItem(grandchild.id)">
+                                        <mat-icon>remove_circle_outline</mat-icon>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-bom">
+              <mat-icon>account_tree</mat-icon>
+              <p>No BOM components defined yet.</p>
+              <button class="btn-primary" (click)="openAddBomItem(null)">
+                <mat-icon>add</mat-icon> Add First Component
+              </button>
+            </div>
+          }
+
+          <!-- Inline Add BOM Item Form -->
+          @if (addBomOpen()) {
+            <div class="add-bom-form">
+              <div class="add-bom-form-header">
+                <mat-icon>add_circle</mat-icon>
+                <span>
+                  @if (addBomParentId()) {
+                    Add Child Component
+                  } @else {
+                    Add Root Component
+                  }
+                </span>
+              </div>
+              <form [formGroup]="bomItemForm" class="add-bom-fields" (ngSubmit)="saveAddBomItem()">
+                <div class="form-row">
+                  <div class="field-group">
+                    <label class="field-label">Component Name <span class="req">*</span></label>
+                    <input
+                      class="field-input"
+                      formControlName="name"
+                      placeholder="e.g. Steel Rod"
+                      [class.error]="bomItemForm.get('name')?.invalid && bomItemForm.get('name')?.touched"
+                    />
+                    @if (bomItemForm.get('name')?.invalid && bomItemForm.get('name')?.touched) {
+                      <span class="field-error">Name is required (min 2 chars)</span>
+                    }
+                  </div>
+
+                  <div class="field-group field-sm">
+                    <label class="field-label">Qty <span class="req">*</span></label>
+                    <input
+                      class="field-input"
+                      type="number"
+                      formControlName="quantity"
+                      min="0.001"
+                      step="0.001"
+                      [class.error]="bomItemForm.get('quantity')?.invalid && bomItemForm.get('quantity')?.touched"
+                    />
+                  </div>
+
+                  <div class="field-group field-sm">
+                    <label class="field-label">Unit <span class="req">*</span></label>
+                    <select class="field-select" formControlName="unit">
+                      @for (u of uoms; track u) {
+                        <option [value]="u">{{ u }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="field-group">
+                    <label class="field-label">Type <span class="req">*</span></label>
+                    <select class="field-select" formControlName="type">
+                      @for (t of bomTypes; track t) {
+                        <option [value]="t">{{ typeLabel(t) }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+
+                <div class="add-bom-actions">
+                  <button type="button" class="btn-ghost" (click)="cancelAddBomItem()">Cancel</button>
+                  <button type="submit" class="btn-primary" [disabled]="bomItemForm.invalid">
+                    <mat-icon>add</mat-icon> Add
+                  </button>
+                </div>
+              </form>
+            </div>
+          }
+
+        } @else {
+          <!-- No product selected -->
+          <div class="empty-bom">
+            <mat-icon>touch_app</mat-icon>
+            <p>Select a product from the left panel to view or edit its BOM.</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     Drawer Overlay — Add / Edit Product
+════════════════════════════════════════════════════════════════════════════ -->
+@if (drawerOpen()) {
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+  <aside class="drawer" role="dialog" aria-modal="true">
+    <div class="drawer-header">
+      <h2 class="drawer-title">
+        @if (editingProduct()) { Edit Product } @else { Add New Product }
+      </h2>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <form [formGroup]="productForm" (ngSubmit)="saveProduct()" novalidate>
+
+        <!-- Product Name -->
+        <div class="field-group">
+          <label class="field-label">Product Name <span class="req">*</span></label>
+          <input
+            class="field-input"
+            formControlName="name"
+            placeholder="e.g. Shaft Assembly"
+            [class.error]="productForm.get('name')?.invalid && productForm.get('name')?.touched"
+          />
+          @if (productForm.get('name')?.invalid && productForm.get('name')?.touched) {
+            <span class="field-error">Product name is required (min 2 characters)</span>
+          }
+        </div>
+
+        <!-- SKU -->
+        <div class="field-group">
+          <label class="field-label">SKU <span class="req">*</span></label>
+          <input
+            class="field-input"
+            formControlName="sku"
+            placeholder="e.g. SA-1042"
+            [class.error]="productForm.get('sku')?.invalid && productForm.get('sku')?.touched"
+          />
+          <span class="field-hint">Format: XX-0000 (two uppercase letters, dash, four digits)</span>
+          @if (productForm.get('sku')?.invalid && productForm.get('sku')?.touched) {
+            <span class="field-error">SKU must match pattern XX-0000</span>
+          }
+        </div>
+
+        <!-- Category + UoM -->
+        <div class="form-row">
+          <div class="field-group">
+            <label class="field-label">Category <span class="req">*</span></label>
+            <select class="field-select" formControlName="category">
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Unit of Measure <span class="req">*</span></label>
+            <select class="field-select" formControlName="uom">
+              @for (u of uoms; track u) {
+                <option [value]="u">{{ u }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Stock + Unit Cost -->
+        <div class="form-row">
+          <div class="field-group">
+            <label class="field-label">Stock Quantity</label>
+            <input class="field-input" type="number" formControlName="stock" min="0" placeholder="0" />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Unit Cost (USD)</label>
+            <input class="field-input" type="number" formControlName="unitCost" min="0" step="0.01" placeholder="0.00" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="field-group">
+          <label class="field-label">Description</label>
+          <textarea class="field-textarea" formControlName="description" rows="3" placeholder="Optional product description…"></textarea>
+        </div>
+
+        <!-- Drawer footer -->
+        <div class="drawer-footer">
+          <button type="button" class="btn-ghost" (click)="closeDrawer()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="productForm.invalid">
+            <mat-icon>save</mat-icon>
+            @if (editingProduct()) { Save Changes } @else { Add Product }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </aside>
+}

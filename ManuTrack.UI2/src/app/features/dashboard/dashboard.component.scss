@@ -1,0 +1,498 @@
+// ── Layout ────────────────────────────────────────────────────────────────────
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+// ── Shared Card ───────────────────────────────────────────────────────────────
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 14px;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  padding: 1.25rem;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 4px 16px rgba(0,0,0,0.03),
+    0 0 0 1px rgba(255,255,255,0.7) inset;
+  transition: box-shadow 0.2s, transform 0.2s;
+
+  &:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.07), 0 0 0 1px rgba(255,255,255,0.7) inset;
+    transform: translateY(-1px);
+  }
+}
+
+// ── Shared Card Header ────────────────────────────────────────────────────────
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+}
+
+.card-sub {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  display: block;
+  margin-top: 2px;
+}
+
+.card-sub-inline {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 3px;
+}
+
+// ── Page Header ───────────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  .page-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+  }
+
+  .page-sub {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    margin: 3px 0 0;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+.date-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.82rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  strong   { color: #374151; }
+  &:hover  { border-color: #2563eb; color: #2563eb; }
+}
+
+// ── KPI Cards ─────────────────────────────────────────────────────────────────
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 640px)  { grid-template-columns: 1fr; }
+}
+
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+
+  .kpi-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 22px; width: 22px; height: 22px; }
+  }
+
+  .kpi-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .kpi-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .kpi-label {
+    font-size: 0.73rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .kpi-trend {
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-align: right;
+    align-self: flex-start;
+    padding: 0.2rem 0.5rem;
+    border-radius: 99px;
+    white-space: nowrap;
+
+    &.up   { background: rgba(16,185,129,0.1); color: #059669; }
+    &.down { background: rgba(239,68,68,0.1);  color: #dc2626; }
+  }
+
+  &.blue {
+    .kpi-icon-wrap { background: #eff6ff; mat-icon { color: #2563eb; } }
+    .kpi-value { color: #2563eb; }
+  }
+  &.green {
+    .kpi-icon-wrap { background: #ecfdf5; mat-icon { color: #059669; } }
+    .kpi-value { color: #059669; }
+  }
+  &.amber {
+    .kpi-icon-wrap { background: #fffbeb; mat-icon { color: #d97706; } }
+    .kpi-value { color: #d97706; }
+  }
+  &.red {
+    .kpi-icon-wrap { background: #fef2f2; mat-icon { color: #dc2626; } }
+    .kpi-value { color: #dc2626; }
+  }
+  &.indigo {
+    .kpi-icon-wrap { background: #eef2ff; mat-icon { color: #4f46e5; } }
+    .kpi-value { color: #4f46e5; }
+  }
+}
+
+// ── Planner-specific styles ────────────────────────────────────────────────────
+.quick-link-btn {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  background: #2563eb; color: white; text-decoration: none;
+  border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+  transition: background 0.2s; box-shadow: 0 2px 6px rgba(37,99,235,0.28);
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover { background: #1d4ed8; }
+}
+
+.donut-wrap { overflow: hidden; }
+
+.wo-num-badge {
+  font-family: monospace; font-size: 0.75rem; font-weight: 700;
+  color: #1e40af; background: #eff6ff; padding: 0.15rem 0.5rem;
+  border-radius: 5px; white-space: nowrap;
+}
+
+.pr-mini {
+  font-size: 0.68rem; font-weight: 700;
+  padding: 0.15rem 0.55rem; border-radius: 99px; white-space: nowrap;
+}
+
+.status-mini {
+  font-size: 0.68rem; font-weight: 700;
+  padding: 0.15rem 0.5rem; border-radius: 5px; white-space: nowrap;
+  &.st-planned    { background: #f3f4f6; color: #6b7280; }
+  &.st-inprogress { background: #eff6ff; color: #2563eb; }
+  &.st-onhold     { background: #fffbeb; color: #d97706; }
+  &.st-completed  { background: #f0fdf4; color: #059669; }
+}
+
+.due-overdue { color: #dc2626 !important; font-weight: 600; }
+
+// Line status panel
+.line-status-list {
+  display: flex; flex-direction: column; gap: 0.6rem;
+}
+.line-status-card {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+}
+.ls-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+.ls-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ls-top  { display: flex; align-items: center; gap: 0.5rem; }
+.ls-name { font-size: 0.82rem; font-weight: 700; color: #111827; }
+.ls-status-badge {
+  font-size: 0.65rem; font-weight: 700;
+  padding: 0.1rem 0.45rem; border-radius: 99px;
+}
+.ls-wo { font-size: 0.72rem; color: #9ca3af; }
+
+// ── Shared inline table helpers ───────────────────────────────────────────────
+.progress-wrap {
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.progress-bar {
+  flex: 1; height: 5px; background: #f3f4f6; border-radius: 99px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 99px; transition: width 0.4s ease;
+}
+.progress-txt { font-size: 0.68rem; color: #6b7280; white-space: nowrap; }
+
+// ── Main Row ──────────────────────────────────────────────────────────────────
+.main-row {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1.1rem;
+  align-items: stretch;
+
+  > .card { height: 100%; box-sizing: border-box; }
+
+  @media (max-width: 1100px) { grid-template-columns: 1fr; }
+}
+
+// ── Chart Card ────────────────────────────────────────────────────────────────
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chart-area {
+  flex: 1;
+  min-height: 220px;
+  width: 100%;
+}
+
+// Glassmorphism Metric Pill
+.metric-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(59,130,246,0.05));
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 99px;
+  padding: 0.35rem 0.9rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 2px 12px rgba(37,99,235,0.08), 0 0 0 1px rgba(255,255,255,0.5) inset;
+  flex-shrink: 0;
+
+  .metric-pill-label { font-size: 0.7rem;  color: #6b7280; }
+  .metric-pill-value { font-size: 0.95rem; font-weight: 800; color: #1e2a3b; }
+  .metric-pill-trend {
+    font-size: 0.7rem; font-weight: 600;
+    &.up   { color: #10b981; }
+    &.down { color: #ef4444; }
+  }
+}
+
+// ── Role Card ─────────────────────────────────────────────────────────────────
+.role-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.role-chart-area {
+  height: 180px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.role-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 0.75rem;
+}
+
+.role-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.role-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.role-name {
+  flex: 1;
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+.role-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+// ── Bottom Row ────────────────────────────────────────────────────────────────
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.1rem;
+
+  @media (max-width: 1100px) { grid-template-columns: 1fr; }
+}
+
+// ── Audit Table ───────────────────────────────────────────────────────────────
+.audit-card { overflow: hidden; }
+
+.view-all-link {
+  font-size: 0.78rem;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+  &:hover { text-decoration: underline; }
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead tr th {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0 0 0.6rem;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f9fafb;
+    &:last-child { border-bottom: none; }
+    &:hover      { background: #f8faff; }
+
+    td {
+      padding: 0.6rem 0;
+      font-size: 0.8rem;
+      color: #374151;
+      vertical-align: middle;
+      padding-right: 0.75rem;
+    }
+  }
+
+  .audit-user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .audit-av {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+  }
+
+  .module-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+  }
+
+  .audit-action {
+    font-size: 0.78rem;
+    color: #1f2937;
+    max-width: 260px;
+
+    &.action-error { color: #dc2626; }
+  }
+
+  .audit-time {
+    color: #9ca3af;
+    font-size: 0.73rem;
+    white-space: nowrap;
+  }
+}
+
+// ── Module Overview Panel ─────────────────────────────────────────────────────
+.module-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.module-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem;
+
+  &:hover { transform: translateY(-2px); }
+}
+
+.module-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.module-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.module-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.module-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.2;
+}
+
+.module-sub {
+  font-size: 0.65rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

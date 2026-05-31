@@ -1,0 +1,34 @@
+<div class="admin-shell">
+
+  <!-- Page Header -->
+  <div class="admin-header">
+    <div class="admin-title-block">
+      <div class="admin-icon-wrap">
+        <mat-icon>admin_panel_settings</mat-icon>
+      </div>
+      <div>
+        <h1 class="admin-title">Admin Console</h1>
+        <p class="admin-sub">Manage users, roles, and system audit logs</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sub Navigation Tabs -->
+  <div class="admin-tabs">
+    @for (tab of tabs; track tab.route) {
+      <a class="admin-tab"
+         [routerLink]="tab.route"
+         routerLinkActive="active"
+         [routerLinkActiveOptions]="{ exact: false }">
+        <mat-icon>{{ tab.icon }}</mat-icon>
+        <span>{{ tab.label }}</span>
+      </a>
+    }
+  </div>
+
+  <!-- Child Route Content -->
+  <div class="admin-content">
+    <router-outlet />
+  </div>
+
+</div>

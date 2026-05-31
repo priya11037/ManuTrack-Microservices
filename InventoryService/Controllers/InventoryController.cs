@@ -42,7 +42,7 @@ public class InventoryController(IInventoryService service) : ControllerBase
         => Ok(await service.UpdateAsync(id, request));
 
     [HttpPut("{id:int}/adjust")]
-    [Authorize(Roles = "Admin,InventoryManager,Operator")]
+    [Authorize(Roles = "Admin,InventoryManager,ShopFloorOperator")]
     public async Task<ActionResult<ApiResponse<InventoryItemViewModel>>> AdjustQuantity(int id, [FromBody] AdjustQuantityRequest request)
         => Ok(await service.AdjustQuantityAsync(id, request));
 

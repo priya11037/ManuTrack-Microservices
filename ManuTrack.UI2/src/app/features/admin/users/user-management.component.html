@@ -1,0 +1,337 @@
+<div class="um-page">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="um-header">
+    <div>
+      <h2 class="um-title">User Management</h2>
+      <p class="um-sub">Create, manage and control access for all platform users</p>
+    </div>
+    <button class="add-btn" (click)="openAddDrawer()">
+      <mat-icon>person_add</mat-icon>
+      Add User
+    </button>
+  </div>
+
+  <!-- ── Stats Chips ───────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>group</mat-icon>
+      <div>
+        <span class="stat-num">{{ stats().total }}</span>
+        <span class="stat-lbl">Total Users</span>
+      </div>
+    </div>
+    <div class="stat-chip green">
+      <mat-icon>check_circle</mat-icon>
+      <div>
+        <span class="stat-num">{{ stats().active }}</span>
+        <span class="stat-lbl">Active</span>
+      </div>
+    </div>
+    <div class="stat-chip red">
+      <mat-icon>cancel</mat-icon>
+      <div>
+        <span class="stat-num">{{ stats().inactive }}</span>
+        <span class="stat-lbl">Inactive</span>
+      </div>
+    </div>
+    <div class="stat-chip amber">
+      <mat-icon>schedule_send</mat-icon>
+      <div>
+        <span class="stat-num">{{ stats().pending }}</span>
+        <span class="stat-lbl">Invite Pending</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Filters Bar ───────────────────────────────────────────────────────── -->
+  <div class="filters-bar">
+    <!-- Search -->
+    <div class="search-box">
+      <mat-icon class="si">search</mat-icon>
+      <input class="search-input"
+             type="text"
+             placeholder="Search by name or email…"
+             [value]="searchTerm()"
+             (input)="searchTerm.set($any($event.target).value)" />
+      @if (searchTerm()) {
+        <button class="clear-x" (click)="searchTerm.set('')">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <!-- Role Filter Chips -->
+    <div class="role-chips">
+      <button class="role-chip" [class.active]="roleFilter() === 'all'" (click)="roleFilter.set('all')">
+        All Roles
+      </button>
+      @for (r of roles; track r) {
+        <button class="role-chip" [class.active]="roleFilter() === r" (click)="roleFilter.set(r)">
+          {{ getRoleMeta(r).label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Table ─────────────────────────────────────────────────────────────── -->
+  <div class="table-card">
+    <table class="um-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Last Active</th>
+          <th>Member Since</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        @if (isLoading()) {
+          <tr>
+            <td colspan="6" class="state-cell">
+              <mat-icon class="spin-icon">autorenew</mat-icon>
+              <p>Loading users…</p>
+            </td>
+          </tr>
+        } @else if (filteredUsers().length === 0) {
+          <tr>
+            <td colspan="6" class="state-cell">
+              <mat-icon>person_search</mat-icon>
+              <p>No users match your filters</p>
+              <button class="link-btn" (click)="searchTerm.set(''); roleFilter.set('all')">Clear Filters</button>
+            </td>
+          </tr>
+        } @else {
+          @for (user of filteredUsers(); track user.id) {
+            <tr [class.row-inactive]="user.status === 'Inactive'">
+
+              <!-- User Cell -->
+              <td>
+                <div class="user-cell">
+                  <div class="user-av" [style.background]="user.avatarColor">
+                    {{ getInitials(user.name) }}
+                  </div>
+                  <div class="user-info">
+                    <span class="user-name">{{ user.name }}</span>
+                    <span class="user-email">{{ user.email }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Role -->
+              <td>
+                <span class="role-badge {{ getRoleMeta(user.role).cls }}">
+                  {{ getRoleMeta(user.role).label }}
+                </span>
+              </td>
+
+              <!-- Status -->
+              <td>
+                <div class="status-pill"
+                     [class.s-active]="user.status === 'Active'"
+                     [class.s-inactive]="user.status === 'Inactive'"
+                     [class.s-pending]="user.status === 'Pending'">
+                  <span class="s-dot"></span>
+                  {{ user.status === 'Pending' ? 'Invite Sent' : user.status }}
+                </div>
+              </td>
+
+              <!-- Last Active -->
+              <td class="td-muted">{{ user.lastActive }}</td>
+
+              <!-- Created -->
+              <td class="td-muted">{{ user.createdAt }}</td>
+
+              <!-- Actions -->
+              <td>
+                @if (deleteConfirmId() === user.id) {
+                  <div class="del-confirm">
+                    <span>Delete this user?</span>
+                    <button class="dc-yes" (click)="deleteUser(user.id)">Yes, delete</button>
+                    <button class="dc-no"  (click)="cancelDelete()">Cancel</button>
+                  </div>
+                } @else {
+                  <div class="action-row">
+                    <button class="act-btn edit"
+                            matTooltip="Edit user"
+                            [matTooltipShowDelay]="400"
+                            (click)="openEditDrawer(user)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    @if (user.status === 'Pending') {
+                      <button class="act-btn resend"
+                              matTooltip="Resend invitation"
+                              [matTooltipShowDelay]="400"
+                              (click)="resendInvite(user)">
+                        <mat-icon>forward_to_inbox</mat-icon>
+                      </button>
+                    } @else {
+                      <button class="act-btn toggle"
+                              [matTooltip]="user.status === 'Active' ? 'Deactivate user' : 'Activate user'"
+                              [matTooltipShowDelay]="400"
+                              (click)="toggleStatus(user)">
+                        <mat-icon>{{ user.status === 'Active' ? 'block' : 'check_circle_outline' }}</mat-icon>
+                      </button>
+                    }
+                    <button class="act-btn delete"
+                            matTooltip="Delete user"
+                            [matTooltipShowDelay]="400"
+                            (click)="confirmDelete(user.id)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+                }
+              </td>
+
+            </tr>
+          }
+        }
+
+      </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="table-footer">
+      <span>Showing <strong>{{ filteredUsers().length }}</strong> of <strong>{{ users().length }}</strong> users</span>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  Slide-out Drawer                                                        -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+
+@if (drawerOpen()) {
+  <!-- Dark overlay -->
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+
+  <!-- Drawer panel -->
+  <div class="drawer">
+
+    <!-- Drawer Header -->
+    <div class="drawer-head">
+      <div class="drawer-head-icon">
+        <mat-icon>{{ drawerMode() === 'add' ? 'person_add' : 'manage_accounts' }}</mat-icon>
+      </div>
+      <div class="drawer-head-text">
+        <h3>{{ drawerMode() === 'add' ? 'Add New User' : 'Edit User' }}</h3>
+        <p>{{ drawerMode() === 'add' ? 'Create a new system user account' : 'Update user information and access role' }}</p>
+      </div>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Drawer Body: Form -->
+    <form class="drawer-form" [formGroup]="userForm" (ngSubmit)="saveUser()" novalidate>
+
+      <!-- Full Name -->
+      <div class="ff">
+        <label class="ff-label">Full Name <span class="req">*</span></label>
+        <div class="ff-input-wrap" [class.ff-invalid]="userForm.get('name')?.invalid && userForm.get('name')?.touched">
+          <mat-icon>person_outline</mat-icon>
+          <input type="text" formControlName="name" placeholder="e.g. John Smith" autocomplete="off" />
+        </div>
+        @if (userForm.get('name')?.errors?.['required'] && userForm.get('name')?.touched) {
+          <span class="ff-err">Full name is required</span>
+        }
+        @if (userForm.get('name')?.errors?.['minlength'] && userForm.get('name')?.touched) {
+          <span class="ff-err">Name must be at least 2 characters</span>
+        }
+      </div>
+
+      <!-- Email -->
+      <div class="ff">
+        <label class="ff-label">Email Address <span class="req">*</span></label>
+        <div class="ff-input-wrap" [class.ff-invalid]="userForm.get('email')?.invalid && userForm.get('email')?.touched">
+          <mat-icon>email</mat-icon>
+          <input type="email" formControlName="email" placeholder="e.g. user@manutrack.com" autocomplete="off" />
+        </div>
+        @if (userForm.get('email')?.invalid && userForm.get('email')?.touched) {
+          <span class="ff-err">Valid email address is required</span>
+        }
+      </div>
+
+      <!-- Role -->
+      <div class="ff">
+        <label class="ff-label">System Role <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="userForm.get('role')?.invalid && userForm.get('role')?.touched">
+          <mat-icon>badge</mat-icon>
+          <select formControlName="role">
+            <option value="" disabled>Select a role…</option>
+            @for (r of roles; track r) {
+              <option [value]="r">{{ r }}</option>
+            }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (userForm.get('role')?.invalid && userForm.get('role')?.touched) {
+          <span class="ff-err">Please select a role</span>
+        }
+      </div>
+
+      <!-- Invite Flow Info (Add mode only, before send) -->
+      @if (drawerMode() === 'add' && !inviteSentFor()) {
+        <div class="invite-info-box">
+          <mat-icon>mark_email_unread</mat-icon>
+          <div>
+            <strong>Password-free onboarding</strong>
+            <p>A secure setup link will be emailed to the user. They click it, choose their own password, and their account activates automatically.</p>
+          </div>
+        </div>
+      }
+
+      <!-- Invite Sent Confirmation (Add mode after send) -->
+      @if (inviteSentFor()) {
+        <div class="invite-sent-box">
+          <div class="invite-sent-icon"><mat-icon>mark_email_read</mat-icon></div>
+          <div>
+            <strong>Invitation sent!</strong>
+            <p>A setup link was sent to <span class="invite-email">{{ inviteSentFor() }}</span>. The account will activate once they set their password.</p>
+          </div>
+          <button type="button" class="invite-done-btn" (click)="closeDrawer()">Done</button>
+        </div>
+      }
+
+      <!-- Status Toggle (edit mode only) -->
+      @if (drawerMode() === 'edit') {
+        <div class="ff">
+          <label class="ff-label">Account Status</label>
+          <div class="status-toggle">
+            <button type="button"
+                    class="st-opt"
+                    [class.st-active]="userForm.get('status')?.value === 'Active'"
+                    (click)="userForm.get('status')?.setValue('Active')">
+              <span class="st-dot green-dot"></span>
+              Active
+            </button>
+            <button type="button"
+                    class="st-opt"
+                    [class.st-inactive]="userForm.get('status')?.value === 'Inactive'"
+                    (click)="userForm.get('status')?.setValue('Inactive')">
+              <span class="st-dot red-dot"></span>
+              Inactive
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Actions (hidden after invite is sent) -->
+      @if (!inviteSentFor()) {
+        <div class="drawer-actions">
+          <button type="button" class="btn-cancel" (click)="closeDrawer()">Cancel</button>
+          <button type="submit" class="btn-save">
+            <mat-icon>{{ drawerMode() === 'add' ? 'forward_to_inbox' : 'save' }}</mat-icon>
+            {{ drawerMode() === 'add' ? 'Send Invitation' : 'Save Changes' }}
+          </button>
+        </div>
+      }
+
+    </form>
+  </div>
+}

@@ -70,4 +70,3 @@ namespace AuthService.Migrations
         }
     }
 }
-

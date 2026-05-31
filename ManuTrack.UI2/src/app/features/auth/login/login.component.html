@@ -1,0 +1,282 @@
+<div class="login-page">
+
+  <!-- Centered Card -->
+  <div class="login-card">
+
+    <!-- ── LEFT: Form Panel ── -->
+    <div class="form-panel">
+
+      <!-- Logo -->
+      <div class="brand">
+        <div class="brand-icon">
+          <mat-icon>precision_manufacturing</mat-icon>
+        </div>
+        <span class="brand-name">ManuTrack</span>
+      </div>
+
+      <!-- Heading -->
+      <div class="form-heading">
+        <h1>Sign in</h1>
+        <p>to access ManuTrack ERP</p>
+      </div>
+
+      <!-- Error -->
+      @if (errorMessage()) {
+        <div class="error-alert" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <!-- Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate autocomplete="on">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email address</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            placeholder="you@company.com"
+            autocomplete="email"
+          />
+          @if (email?.hasError('required') && email?.touched) {
+            <mat-error>Email is required</mat-error>
+          }
+          @if (email?.hasError('email') && email?.touched) {
+            <mat-error>Enter a valid email</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
+          <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
+            <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (password?.hasError('required') && password?.touched) {
+            <mat-error>Password is required</mat-error>
+          }
+          @if (password?.hasError('minlength') && password?.touched) {
+            <mat-error>Minimum 6 characters</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-checkbox formControlName="rememberMe" color="primary">
+            Keep me signed in
+          </mat-checkbox>
+          <a class="forgot-link" href="#">Forgot password?</a>
+        </div>
+
+        <button
+          mat-flat-button
+          type="submit"
+          class="next-btn"
+          [disabled]="isLoading()"
+        >
+          @if (isLoading()) {
+            <span class="btn-inner">
+              <mat-progress-spinner diameter="18" mode="indeterminate" />
+              <span>Signing in...</span>
+            </span>
+          } @else {
+            <span class="btn-inner">Sign In</span>
+          }
+        </button>
+
+      </form>
+
+      <!-- Divider -->
+      <div class="divider">
+        <span>Secured with</span>
+      </div>
+
+      <!-- Security Badges -->
+      <div class="security-badges">
+        <div class="badge">
+          <mat-icon>lock</mat-icon>
+          <span>TLS 1.3</span>
+        </div>
+        <div class="badge">
+          <mat-icon>verified_user</mat-icon>
+          <span>RBAC</span>
+        </div>
+        <div class="badge">
+          <mat-icon>policy</mat-icon>
+          <span>GDPR</span>
+        </div>
+        <div class="badge">
+          <mat-icon>history</mat-icon>
+          <span>Audit Logs</span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p class="form-footer">
+        Need access?
+        <a href="#">Contact your administrator</a>
+      </p>
+
+      <!-- ── Demo Quick Access ────────────────────────────────────────── -->
+      <div class="demo-section">
+        <button class="demo-toggle" (click)="demoExpanded.set(!demoExpanded())">
+          <mat-icon>bolt</mat-icon>
+          <span>Quick Demo Access</span>
+          <mat-icon class="demo-chevron" [class.expanded]="demoExpanded()">expand_more</mat-icon>
+        </button>
+
+        @if (demoExpanded()) {
+          <div class="demo-panel">
+            <p class="demo-hint">Click a role to sign in instantly — no password needed</p>
+            <div class="demo-grid">
+              @for (d of demoRoles; track d.role) {
+                <button class="demo-card" (click)="quickLogin(d)" [style.--rc]="d.color">
+                  <div class="dc-icon" [style.background]="d.color + '18'" [style.color]="d.color">
+                    <mat-icon>{{ d.icon }}</mat-icon>
+                  </div>
+                  <div class="dc-info">
+                    <span class="dc-role">{{ d.role === 'ProductionPlanner' ? 'Prod. Planner'
+                                         : d.role === 'ShopFloorOperator' ? 'Shop Floor'
+                                         : d.role === 'QualityInspector'  ? 'QA Inspector'
+                                         : d.role === 'InventoryManager'  ? 'Inventory Mgr'
+                                         : d.role === 'ComplianceOfficer' ? 'Compliance'
+                                         : d.role }}</span>
+                    <span class="dc-name">{{ d.name }}</span>
+                  </div>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+
+    <!-- ── RIGHT: Animated Showcase Panel ── -->
+    <div class="showcase-panel">
+
+      <!-- Animated Background Blobs -->
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+
+      <!-- Animated Dashboard Mockup -->
+      <div class="dashboard-mockup">
+
+        <!-- Mock Top Bar -->
+        <div class="mock-topbar">
+          <div class="mock-dot red"></div>
+          <div class="mock-dot amber"></div>
+          <div class="mock-dot green"></div>
+          <div class="mock-title">Production Dashboard</div>
+          <div class="mock-live">
+            <span class="live-dot"></span>
+            LIVE
+          </div>
+        </div>
+
+        <!-- Mock KPI Row -->
+        <div class="mock-kpi-row">
+          <div class="mock-kpi blue">
+            <span class="mock-kpi-value">2,840</span>
+            <span class="mock-kpi-label">Work Orders</span>
+          </div>
+          <div class="mock-kpi green">
+            <span class="mock-kpi-value">94.6%</span>
+            <span class="mock-kpi-label">Efficiency</span>
+          </div>
+          <div class="mock-kpi amber">
+            <span class="mock-kpi-value">18.3K</span>
+            <span class="mock-kpi-label">Inventory</span>
+          </div>
+        </div>
+
+        <!-- Mock Progress Bars -->
+        <div class="mock-progress-section">
+          <div class="mock-progress-row">
+            <span class="mock-progress-label">Work Order #WO-2841</span>
+            <span class="mock-progress-pct">78%</span>
+          </div>
+          <div class="mock-bar"><div class="mock-bar-fill blue" style="width: 78%"></div></div>
+
+          <div class="mock-progress-row">
+            <span class="mock-progress-label">Work Order #WO-2842</span>
+            <span class="mock-progress-pct">45%</span>
+          </div>
+          <div class="mock-bar"><div class="mock-bar-fill green" style="width: 45%"></div></div>
+
+          <div class="mock-progress-row">
+            <span class="mock-progress-label">Work Order #WO-2843</span>
+            <span class="mock-progress-pct">92%</span>
+          </div>
+          <div class="mock-bar"><div class="mock-bar-fill amber" style="width: 92%"></div></div>
+        </div>
+
+        <!-- Mock Alerts -->
+        <div class="mock-alerts">
+          <div class="mock-alert green anim-slide-1">
+            <mat-icon>check_circle</mat-icon>
+            <span>WO-2839 completed successfully</span>
+          </div>
+          <div class="mock-alert amber anim-slide-2">
+            <mat-icon>warning</mat-icon>
+            <span>Low stock: Steel Rods (12 units)</span>
+          </div>
+          <div class="mock-alert blue anim-slide-3">
+            <mat-icon>info</mat-icon>
+            <span>Inspection scheduled: Line 4</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Slide Feature Text -->
+      <div class="slide-content">
+        @for (slide of slides; track slide.title; let i = $index) {
+          @if (i === activeSlide()) {
+            <div class="slide-item">
+              <div class="slide-icon" [style.background]="slide.color + '22'" [style.border-color]="slide.color + '44'">
+                <mat-icon [style.color]="slide.color">{{ slide.icon }}</mat-icon>
+              </div>
+              <h3>{{ slide.title }}</h3>
+              <p>{{ slide.desc }}</p>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Slide Dots -->
+      <div class="slide-dots">
+        @for (slide of slides; track slide.title; let i = $index) {
+          <button
+            class="slide-dot"
+            [class.active]="i === activeSlide()"
+            (click)="setSlide(i)"
+            [style.background]="i === activeSlide() ? slides[i].color : ''"
+          ></button>
+        }
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Page Footer -->
+  <div class="page-footer">
+    <span>© 2026 ManuTrack. All rights reserved.</span>
+    <span class="sep">·</span>
+    <span>Privacy Policy</span>
+    <span class="sep">·</span>
+    <span>Terms of Use</span>
+    <span class="sep">·</span>
+    <span>v1.0.0</span>
+  </div>
+
+</div>

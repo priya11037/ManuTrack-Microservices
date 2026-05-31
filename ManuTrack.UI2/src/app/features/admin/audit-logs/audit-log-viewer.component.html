@@ -1,0 +1,211 @@
+<div class="al-page">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="al-header">
+    <div>
+      <h2 class="al-title">Audit Log Viewer</h2>
+      <p class="al-sub">Track all system events, user actions, and security incidents</p>
+    </div>
+    <div class="al-header-actions">
+      <!-- Date Range Pills -->
+      <div class="date-pills">
+        @for (d of dateRanges; track d.value) {
+          <button class="date-pill" [class.active]="dateFilter() === d.value" (click)="dateFilter.set(d.value)">
+            {{ d.label }}
+          </button>
+        }
+      </div>
+      <!-- Export -->
+      <button class="export-btn" (click)="exportCSV()" matTooltip="Export filtered logs as CSV">
+        <mat-icon>download</mat-icon>
+        Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Stats Row ────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <mat-icon>list_alt</mat-icon>
+      <div>
+        <span class="sc-num">{{ stats().total }}</span>
+        <span class="sc-lbl">Total Events</span>
+      </div>
+    </div>
+    <div class="stat-card info">
+      <mat-icon>info</mat-icon>
+      <div>
+        <span class="sc-num">{{ stats().info }}</span>
+        <span class="sc-lbl">Info</span>
+      </div>
+    </div>
+    <div class="stat-card warn">
+      <mat-icon>warning_amber</mat-icon>
+      <div>
+        <span class="sc-num">{{ stats().warning }}</span>
+        <span class="sc-lbl">Warnings</span>
+      </div>
+    </div>
+    <div class="stat-card error">
+      <mat-icon>error</mat-icon>
+      <div>
+        <span class="sc-num">{{ stats().error }}</span>
+        <span class="sc-lbl">Errors</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <div class="filters-bar">
+    <!-- Search -->
+    <div class="search-box">
+      <mat-icon>search</mat-icon>
+      <input class="search-input"
+             type="text"
+             placeholder="Search by user, action, or details…"
+             [value]="searchTerm()"
+             (input)="searchTerm.set($any($event.target).value)" />
+      @if (searchTerm()) {
+        <button class="clear-x" (click)="searchTerm.set('')">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <!-- Module Filter -->
+    <div class="filter-group">
+      <span class="filter-label">Module:</span>
+      <div class="chip-row">
+        <button class="fchip" [class.active]="moduleFilter() === 'all'" (click)="moduleFilter.set('all')">All</button>
+        @for (m of modules; track m) {
+          <button class="fchip" [class.active]="moduleFilter() === m" (click)="moduleFilter.set(m)">{{ m }}</button>
+        }
+      </div>
+    </div>
+
+    <!-- Severity Filter -->
+    <div class="filter-group">
+      <span class="filter-label">Severity:</span>
+      <div class="chip-row">
+        <button class="fchip" [class.active]="severityFilter() === 'all'" (click)="severityFilter.set('all')">All</button>
+        @for (s of severities; track s) {
+          <button class="fchip sev-{{ s }}" [class.active]="severityFilter() === s" (click)="severityFilter.set(s)">
+            {{ s | titlecase }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Log Table ─────────────────────────────────────────────────────────── -->
+  <div class="table-card">
+    <table class="al-table">
+      <thead>
+        <tr>
+          <th style="width: 36px"></th>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Module</th>
+          <th>Action</th>
+          <th>Severity</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        @if (filteredLogs().length === 0) {
+          <tr>
+            <td colspan="7" class="empty-cell">
+              <mat-icon>search_off</mat-icon>
+              <p>No audit logs match your filters</p>
+            </td>
+          </tr>
+        } @else {
+          @for (log of filteredLogs(); track log.id) {
+
+            <!-- Main Row -->
+            <tr class="log-row sev-row-{{ log.severity }}"
+                [class.expanded]="expandedId() === log.id"
+                (click)="toggleExpand(log.id)">
+
+              <!-- Expand toggle -->
+              <td class="expand-td">
+                <mat-icon class="expand-icon" [class.rotated]="expandedId() === log.id">
+                  chevron_right
+                </mat-icon>
+              </td>
+
+              <!-- Timestamp -->
+              <td class="ts-cell">
+                <span class="ts-date">{{ formatTimestamp(log.timestamp).date }}</span>
+                <span class="ts-time">{{ formatTimestamp(log.timestamp).time }}</span>
+              </td>
+
+              <!-- User -->
+              <td>
+                <div class="user-cell">
+                  <div class="user-av" [style.background]="log.avatarColor">{{ getInitials(log.user) }}</div>
+                  <div class="user-info">
+                    <span class="user-name">{{ log.user }}</span>
+                    <span class="user-role">{{ log.userRole }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Module -->
+              <td>
+                <span class="module-badge mod-{{ log.module.toLowerCase() }}">{{ log.module }}</span>
+              </td>
+
+              <!-- Action -->
+              <td class="action-cell">{{ getActionLabel(log.action) }}</td>
+
+              <!-- Severity -->
+              <td>
+                <div class="sev-badge sev-{{ log.severity }}">
+                  <mat-icon>{{ log.severity === 'info' ? 'info' : log.severity === 'warning' ? 'warning_amber' : 'error' }}</mat-icon>
+                  {{ log.severity | titlecase }}
+                </div>
+              </td>
+
+              <!-- IP -->
+              <td class="ip-cell">{{ log.ipAddress }}</td>
+            </tr>
+
+            <!-- Expanded Details Row -->
+            @if (expandedId() === log.id) {
+              <tr class="detail-row">
+                <td colspan="7">
+                  <div class="detail-box">
+                    <div class="detail-icon sev-icon-{{ log.severity }}">
+                      <mat-icon>{{ log.severity === 'info' ? 'description' : log.severity === 'warning' ? 'warning' : 'report' }}</mat-icon>
+                    </div>
+                    <div class="detail-content">
+                      <span class="detail-head">Event Details</span>
+                      <p class="detail-text">{{ log.details }}</p>
+                      <div class="detail-meta">
+                        <span><strong>Event ID:</strong> {{ log.id }}</span>
+                        <span><strong>Timestamp:</strong> {{ log.timestamp }}</span>
+                        <span><strong>IP:</strong> {{ log.ipAddress }}</span>
+                        <span><strong>Module:</strong> {{ log.module }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
+
+          }
+        }
+
+      </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="table-footer">
+      <span>Showing <strong>{{ filteredLogs().length }}</strong> of <strong>{{ logs().length }}</strong> events</span>
+      <span class="footer-hint">Click any row to expand details</span>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,15 @@
+<div class="inv-shell">
+  <div class="inv-tabs">
+    <a class="inv-tab" routerLink="stock" routerLinkActive="inv-tab-active">
+      <mat-icon>inventory_2</mat-icon>
+      Stock Dashboard
+    </a>
+    <a class="inv-tab" routerLink="purchase-orders" routerLinkActive="inv-tab-active">
+      <mat-icon>shopping_cart</mat-icon>
+      Purchase Orders
+    </a>
+  </div>
+  <div class="inv-content">
+    <router-outlet />
+  </div>
+</div>

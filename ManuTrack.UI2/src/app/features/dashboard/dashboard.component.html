@@ -1,0 +1,897 @@
+<div class="dashboard">
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!--  ADMIN DASHBOARD                                                        -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'Admin') {
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Admin Overview</h1>
+        <p class="page-sub">System health, user activity and audit summary</p>
+      </div>
+      <div class="header-actions">
+        <button class="date-btn" [matMenuTriggerFor]="dateMenu">
+          <mat-icon>calendar_today</mat-icon>
+          <strong>{{ selectedRange() }}</strong>
+          <mat-icon>keyboard_arrow_down</mat-icon>
+        </button>
+        <mat-menu #dateMenu="matMenu">
+          @for (r of dateRanges; track r) {
+            <button mat-menu-item (click)="selectedRange.set(r)">{{ r }}</button>
+          }
+        </mat-menu>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      @for (kpi of kpiCards; track kpi.label) {
+        <div class="kpi-card card {{ kpi.color }}">
+          <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-value">{{ kpi.value }}</span>
+            <span class="kpi-label">{{ kpi.label }}</span>
+          </div>
+          <span class="kpi-trend" [class.up]="kpi.trendUp" [class.down]="!kpi.trendUp">{{ kpi.trend }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Row 2: Login Activity + Users by Role -->
+    <div class="main-row">
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Login Activity</span>
+            <span class="card-sub">Successful logins vs failed attempts — last 14 days</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-pill-label">Today</span>
+            <span class="metric-pill-value">18</span>
+            <span class="metric-pill-trend up">▲ 20%</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="line" [data]="loginChartData" [options]="loginChartOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+
+      <div class="card role-card">
+        <div class="card-header"><span class="card-title">Users by Role</span></div>
+        <div class="role-chart-area">
+          <p-chart type="bar" [data]="roleChartData" [options]="roleChartOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="role-legend">
+          @for (item of roleChartData.datasets[0].backgroundColor; track $index) {
+            <div class="role-leg-item">
+              <span class="role-dot" [style.background]="item"></span>
+              <span class="role-name">{{ roleChartData.labels[$index] }}</span>
+              <span class="role-count">{{ roleChartData.datasets[0].data[$index] }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Audit Logs + Module Overview -->
+    <div class="bottom-row">
+      <div class="card audit-card">
+        <div class="card-header">
+          <span class="card-title">Recent Audit Logs</span>
+          <a class="view-all-link" routerLink="/app/admin/audit-logs">View All →</a>
+        </div>
+        <table class="audit-table">
+          <thead>
+            <tr><th>User</th><th>Module</th><th>Action</th><th>Time</th></tr>
+          </thead>
+          <tbody>
+            @for (log of auditLogs; track log.time) {
+              <tr>
+                <td>
+                  <div class="audit-user">
+                    <div class="audit-av" [style.background]="log.color">{{ log.initial }}</div>
+                    <span>{{ log.name }}</span>
+                  </div>
+                </td>
+                <td><span class="module-tag">{{ log.module }}</span></td>
+                <td class="audit-action" [class.action-error]="log.severity === 'error'">{{ log.action }}</td>
+                <td class="audit-time">{{ log.time }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="module-panel">
+        <div class="card-header" style="padding: 0 0 0.75rem">
+          <span class="card-title">System Overview</span>
+          <span class="card-sub-inline">Module counts</span>
+        </div>
+        <div class="module-grid">
+          @for (m of moduleStats; track m.label) {
+            <div class="module-card card">
+              <div class="module-icon" [style.background]="m.color + '18'" [style.color]="m.color">
+                <mat-icon>{{ m.icon }}</mat-icon>
+              </div>
+              <div class="module-info">
+                <span class="module-value" [style.color]="m.color">{{ m.value }}</span>
+                <span class="module-label">{{ m.label }}</span>
+                <span class="module-sub">{{ m.sub }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+  }
+
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!--  PRODUCTION PLANNER DASHBOARD                                           -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'ProductionPlanner') {
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Production Overview</h1>
+        <p class="page-sub">Good morning, {{ userName() }} — here's your production snapshot</p>
+      </div>
+      <div class="header-actions">
+        <button class="date-btn" [matMenuTriggerFor]="plannerMenu">
+          <mat-icon>calendar_today</mat-icon>
+          <strong>{{ selectedRange() }}</strong>
+          <mat-icon>keyboard_arrow_down</mat-icon>
+        </button>
+        <mat-menu #plannerMenu="matMenu">
+          @for (r of dateRanges; track r) {
+            <button mat-menu-item (click)="selectedRange.set(r)">{{ r }}</button>
+          }
+        </mat-menu>
+        <a class="quick-link-btn" routerLink="/app/work-orders">
+          <mat-icon>add</mat-icon> New Work Order
+        </a>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      @for (kpi of plannerKpis; track kpi.label) {
+        <div class="kpi-card card {{ kpi.color }}">
+          <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-value">{{ kpi.value }}</span>
+            <span class="kpi-label">{{ kpi.label }}</span>
+          </div>
+          <span class="kpi-trend" [class.up]="kpi.trendUp" [class.down]="!kpi.trendUp">{{ kpi.trend }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Row 2: Production This Week + WO Status Doughnut -->
+    <div class="main-row">
+
+      <!-- Production This Week Bar Chart -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Production This Week</span>
+            <span class="card-sub">Planned vs completed work orders per day</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-pill-label">On-Time</span>
+            <span class="metric-pill-value">73%</span>
+            <span class="metric-pill-trend down">▼ 7%</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="productionChartData" [options]="productionChartOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+
+      <!-- WO Status Doughnut -->
+      <div class="card role-card">
+        <div class="card-header"><span class="card-title">WO Status Breakdown</span></div>
+        <div class="role-chart-area donut-wrap">
+          <p-chart type="doughnut" [data]="woStatusChartData" [options]="woStatusChartOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="role-legend">
+          @for (item of woStatusLegend; track item.label) {
+            <div class="role-leg-item">
+              <span class="role-dot" [style.background]="item.color"></span>
+              <span class="role-name">{{ item.label }}</span>
+              <span class="role-count">{{ item.count }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Row 3: Upcoming WOs + Line Status -->
+    <div class="bottom-row">
+
+      <!-- Upcoming Work Orders Table -->
+      <div class="card audit-card">
+        <div class="card-header">
+          <span class="card-title">Upcoming Work Orders</span>
+          <a class="view-all-link" routerLink="/app/work-orders">View All →</a>
+        </div>
+        <table class="audit-table">
+          <thead>
+            <tr><th>WO #</th><th>Product</th><th>Priority</th><th>Status</th><th>Due Date</th><th>Assigned</th></tr>
+          </thead>
+          <tbody>
+            @for (wo of upcomingWOs; track wo.woNumber) {
+              <tr>
+                <td><span class="wo-num-badge">{{ wo.woNumber }}</span></td>
+                <td class="audit-action">{{ wo.product }}</td>
+                <td>
+                  <span class="pr-mini" [style.color]="priorityColor(wo.priority)" [style.background]="priorityColor(wo.priority) + '18'">
+                    {{ wo.priority }}
+                  </span>
+                </td>
+                <td><span class="status-mini {{ statusCls(wo.status) }}">{{ wo.status }}</span></td>
+                <td class="audit-time" [class.due-overdue]="wo.overdue">
+                  <mat-icon style="font-size:12px;width:12px;height:12px;vertical-align:middle">{{ wo.overdue ? 'warning' : 'event' }}</mat-icon>
+                  {{ wo.dueDate }}
+                </td>
+                <td>
+                  <div class="audit-user">
+                    <div class="audit-av" [style.background]="wo.avatarColor">{{ getInitials(wo.assignedTo) }}</div>
+                    <span>{{ wo.assignedTo.split(' ')[0] }}</span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Production Line Status -->
+      <div class="module-panel">
+        <div class="card-header" style="padding: 0 0 0.75rem">
+          <span class="card-title">Line Status</span>
+          <span class="card-sub-inline">Live</span>
+        </div>
+        <div class="line-status-list">
+          @for (l of lineStats; track l.line) {
+            <div class="line-status-card card">
+              <div class="ls-dot" [style.background]="l.utilColor"></div>
+              <div class="ls-info">
+                <div class="ls-top">
+                  <span class="ls-name">{{ l.line }}</span>
+                  <span class="ls-status-badge" [style.color]="l.utilColor" [style.background]="l.utilColor + '18'">{{ l.status }}</span>
+                </div>
+                <span class="ls-wo">{{ l.wo !== '—' ? l.wo + ' · ' : '' }}{{ l.product }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+
+  }
+
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!--  SHOP FLOOR OPERATOR DASHBOARD                                          -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'ShopFloorOperator') {
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">My Workstation</h1>
+        <p class="page-sub">Good morning, {{ userName() }} — here's your task overview for today</p>
+      </div>
+      <div class="header-actions">
+        <button class="date-btn" [matMenuTriggerFor]="sfMenu">
+          <mat-icon>calendar_today</mat-icon>
+          <strong>{{ selectedRange() }}</strong>
+          <mat-icon>keyboard_arrow_down</mat-icon>
+        </button>
+        <mat-menu #sfMenu="matMenu">
+          @for (r of dateRanges; track r) {
+            <button mat-menu-item (click)="selectedRange.set(r)">{{ r }}</button>
+          }
+        </mat-menu>
+        <a class="quick-link-btn" routerLink="/app/tasks">
+          <mat-icon>task_alt</mat-icon> My Tasks
+        </a>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      @for (kpi of sfKpis; track kpi.label) {
+        <div class="kpi-card card {{ kpi.color }}">
+          <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-value">{{ kpi.value }}</span>
+            <span class="kpi-label">{{ kpi.label }}</span>
+          </div>
+          <span class="kpi-trend" [class.up]="kpi.trendUp" [class.down]="!kpi.trendUp">{{ kpi.trend }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Row 2: Output Chart + Task Donut -->
+    <div class="main-row">
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">My Output This Week</span>
+            <span class="card-sub">Units produced vs daily target on Line A</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-pill-label">Today</span>
+            <span class="metric-pill-value">2</span>
+            <span class="metric-pill-trend down">▼ 80%</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="sfOutputChartData" [options]="sfOutputChartOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+
+      <div class="card role-card">
+        <div class="card-header"><span class="card-title">Task Breakdown</span></div>
+        <div class="role-chart-area donut-wrap">
+          <p-chart type="doughnut" [data]="sfDonutData" [options]="sfDonutOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="role-legend">
+          @for (item of sfDonutLegend; track item.label) {
+            <div class="role-leg-item">
+              <span class="role-dot" [style.background]="item.color"></span>
+              <span class="role-name">{{ item.label }}</span>
+              <span class="role-count">{{ item.count }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Today's Tasks + Line Info -->
+    <div class="bottom-row">
+      <div class="card audit-card">
+        <div class="card-header">
+          <span class="card-title">Today's Task List</span>
+          <a class="view-all-link" routerLink="/app/tasks">Open Console →</a>
+        </div>
+        <table class="audit-table">
+          <thead>
+            <tr><th>WO #</th><th>Product</th><th>Priority</th><th>Progress</th><th>Status</th><th>Due</th></tr>
+          </thead>
+          <tbody>
+            @for (t of sfTasks; track t.woNumber) {
+              <tr>
+                <td><span class="wo-num-badge">{{ t.woNumber }}</span></td>
+                <td class="audit-action">{{ t.product }}</td>
+                <td>
+                  <span class="pr-mini" [style.color]="sfPriorityColor(t.priority)" [style.background]="sfPriorityColor(t.priority) + '18'">{{ t.priority }}</span>
+                </td>
+                <td style="min-width:100px">
+                  <div class="progress-wrap">
+                    <div class="progress-bar">
+                      <div class="progress-fill" [style.width.%]="t.progress"
+                           [style.background]="t.status === 'Done' ? '#059669' : '#2563eb'"></div>
+                    </div>
+                    <span class="progress-txt">{{ t.progress }}%</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="status-mini"
+                        [style.color]="sfStatusColor(t.status)"
+                        [style.background]="sfStatusColor(t.status) + '18'">{{ t.status }}</span>
+                </td>
+                <td class="audit-time" [class.due-overdue]="t.overdue">
+                  <mat-icon style="font-size:12px;width:12px;height:12px;vertical-align:middle">{{ t.overdue ? 'warning' : 'event' }}</mat-icon>
+                  {{ t.dueDate }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="module-panel">
+        <div class="card-header" style="padding: 0 0 0.75rem">
+          <span class="card-title">My Line Status</span>
+          <span class="card-sub-inline">Line A</span>
+        </div>
+        <div class="line-status-list">
+          <div class="line-status-card card">
+            <div class="ls-dot" style="background:#059669"></div>
+            <div class="ls-info">
+              <div class="ls-top">
+                <span class="ls-name">Line A</span>
+                <span class="ls-status-badge" style="color:#059669;background:rgba(5,150,105,0.1)">Active</span>
+              </div>
+              <span class="ls-wo">WO-0001 · Shaft Assembly</span>
+            </div>
+          </div>
+          <div class="line-status-card card">
+            <div class="ls-dot" style="background:#d97706"></div>
+            <div class="ls-info">
+              <div class="ls-top">
+                <span class="ls-name">Flagged Issue</span>
+                <span class="ls-status-badge" style="color:#d97706;background:rgba(217,119,6,0.1)">WO-0005</span>
+              </div>
+              <span class="ls-wo">Waiting for steel plate stock</span>
+            </div>
+          </div>
+          <div class="module-grid" style="margin-top:0.5rem">
+            <div class="module-card card">
+              <div class="module-icon" style="background:rgba(37,99,235,0.1);color:#2563eb"><mat-icon>speed</mat-icon></div>
+              <div class="module-info">
+                <span class="module-value" style="color:#2563eb">64%</span>
+                <span class="module-label">On-Time Rate</span>
+                <span class="module-sub">This week</span>
+              </div>
+            </div>
+            <div class="module-card card">
+              <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>inventory_2</mat-icon></div>
+              <div class="module-info">
+                <span class="module-value" style="color:#059669">42</span>
+                <span class="module-label">Units Today</span>
+                <span class="module-sub">Across all tasks</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  }
+
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!--  QUALITY INSPECTOR DASHBOARD                                            -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'QualityInspector') {
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Quality Overview</h1>
+        <p class="page-sub">Good morning, {{ userName() }} — inspection status and defect summary</p>
+      </div>
+      <div class="header-actions">
+        <button class="date-btn" [matMenuTriggerFor]="qiMenu">
+          <mat-icon>calendar_today</mat-icon>
+          <strong>{{ selectedRange() }}</strong>
+          <mat-icon>keyboard_arrow_down</mat-icon>
+        </button>
+        <mat-menu #qiMenu="matMenu">
+          @for (r of dateRanges; track r) {
+            <button mat-menu-item (click)="selectedRange.set(r)">{{ r }}</button>
+          }
+        </mat-menu>
+        <a class="quick-link-btn" routerLink="/app/quality/inspections">
+          <mat-icon>fact_check</mat-icon> Inspections
+        </a>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      @for (kpi of qiKpis; track kpi.label) {
+        <div class="kpi-card card {{ kpi.color }}">
+          <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-value">{{ kpi.value }}</span>
+            <span class="kpi-label">{{ kpi.label }}</span>
+          </div>
+          <span class="kpi-trend" [class.up]="kpi.trendUp" [class.down]="!kpi.trendUp">{{ kpi.trend }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="main-row">
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Pass / Fail Trend</span>
+            <span class="card-sub">Inspection results over the last 12 days</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-pill-label">Today</span>
+            <span class="metric-pill-value">75%</span>
+            <span class="metric-pill-trend up">▲ 5%</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="line" [data]="qiTrendData" [options]="qiTrendOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+
+      <div class="card role-card">
+        <div class="card-header"><span class="card-title">Defects by Type</span></div>
+        <div class="role-chart-area donut-wrap">
+          <p-chart type="doughnut" [data]="qiDefectData" [options]="qiDefectOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="role-legend">
+          @for (item of qiDefectLegend; track item.label) {
+            <div class="role-leg-item">
+              <span class="role-dot" [style.background]="item.color"></span>
+              <span class="role-name">{{ item.label }}</span>
+              <span class="role-count">{{ item.count }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="card audit-card">
+        <div class="card-header">
+          <span class="card-title">Inspections Needing Action</span>
+          <a class="view-all-link" routerLink="/app/quality/inspections">View All →</a>
+        </div>
+        <table class="audit-table">
+          <thead>
+            <tr><th>INS #</th><th>WO Ref</th><th>Product</th><th>Priority</th><th>Status</th><th>Inspector</th></tr>
+          </thead>
+          <tbody>
+            @for (i of qiPendingIns; track i.insNumber) {
+              <tr>
+                <td><span class="wo-num-badge" style="color:#6d28d9;background:#ede9fe">{{ i.insNumber }}</span></td>
+                <td class="audit-time">{{ i.woRef }}</td>
+                <td class="audit-action">{{ i.product }}</td>
+                <td>
+                  <span class="pr-mini" [style.color]="qiPriorityColor(i.priority)" [style.background]="qiPriorityColor(i.priority) + '18'">{{ i.priority }}</span>
+                </td>
+                <td>
+                  <span class="status-mini" [style.color]="qiStatusColor(i.status)" [style.background]="qiStatusColor(i.status) + '18'">{{ i.status }}</span>
+                </td>
+                <td>
+                  <div class="audit-user">
+                    <div class="audit-av" [style.background]="i.color">{{ getInitials(i.inspector) }}</div>
+                    <span>{{ i.inspector.split(' ')[0] }}</span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="module-panel">
+        <div class="card-header" style="padding: 0 0 0.75rem">
+          <span class="card-title">Quality Metrics</span>
+          <span class="card-sub-inline">This month</span>
+        </div>
+        <div class="module-grid">
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>verified</mat-icon></div>
+            <div class="module-info">
+              <span class="module-value" style="color:#059669">75%</span>
+              <span class="module-label">Pass Rate</span>
+              <span class="module-sub">6 of 8 inspections</span>
+            </div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(220,38,38,0.1);color:#dc2626"><mat-icon>cancel</mat-icon></div>
+            <div class="module-info">
+              <span class="module-value" style="color:#dc2626">2</span>
+              <span class="module-label">Failed</span>
+              <span class="module-sub">Pending defect log</span>
+            </div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(217,119,6,0.1);color:#d97706"><mat-icon>bug_report</mat-icon></div>
+            <div class="module-info">
+              <span class="module-value" style="color:#d97706">5</span>
+              <span class="module-label">Defects</span>
+              <span class="module-sub">11 units affected</span>
+            </div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(37,99,235,0.1);color:#2563eb"><mat-icon>delete_forever</mat-icon></div>
+            <div class="module-info">
+              <span class="module-value" style="color:#2563eb">4</span>
+              <span class="module-label">Scrapped</span>
+              <span class="module-sub">Units scrapped</span>
+            </div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6"><mat-icon>build</mat-icon></div>
+            <div class="module-info">
+              <span class="module-value" style="color:#8b5cf6">6</span>
+              <span class="module-label">Reworked</span>
+              <span class="module-sub">Sent for rework</span>
+            </div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>check_circle</mat-icon></div>
+            <div class="module-info">
+              <span class="module-value" style="color:#059669">1</span>
+              <span class="module-label">Resolved</span>
+              <span class="module-sub">Defects closed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  }
+
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!--  INVENTORY MANAGER DASHBOARD                                            -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'InventoryManager') {
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Inventory Overview</h1>
+        <p class="page-sub">Good morning, {{ userName() }} — stock levels and procurement summary</p>
+      </div>
+      <div class="header-actions">
+        <button class="date-btn" [matMenuTriggerFor]="imMenu">
+          <mat-icon>calendar_today</mat-icon>
+          <strong>{{ selectedRange() }}</strong>
+          <mat-icon>keyboard_arrow_down</mat-icon>
+        </button>
+        <mat-menu #imMenu="matMenu">
+          @for (r of dateRanges; track r) {
+            <button mat-menu-item (click)="selectedRange.set(r)">{{ r }}</button>
+          }
+        </mat-menu>
+        <a class="quick-link-btn" routerLink="/app/inventory/stock">
+          <mat-icon>inventory_2</mat-icon> Stock
+        </a>
+        <a class="quick-link-btn" routerLink="/app/inventory/purchase-orders" style="background:#059669">
+          <mat-icon>add_shopping_cart</mat-icon> New PO
+        </a>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      @for (kpi of imKpis; track kpi.label) {
+        <div class="kpi-card card {{ kpi.color }}">
+          <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-value">{{ kpi.value }}</span>
+            <span class="kpi-label">{{ kpi.label }}</span>
+          </div>
+          <span class="kpi-trend" [class.up]="kpi.trendUp" [class.down]="!kpi.trendUp">{{ kpi.trend }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="main-row">
+      <!-- Stock Level Horizontal Bar Chart -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Stock Levels</span>
+            <span class="card-sub">% of maximum capacity · Red = below minimum threshold</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="imStockChartData" [options]="imStockChartOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+
+      <!-- Low stock alert panel -->
+      <div class="card role-card">
+        <div class="card-header">
+          <span class="card-title">⚠️ Low Stock Alerts</span>
+        </div>
+        <div class="role-legend" style="margin-top:0">
+          @for (item of imLowStock; track item.sku) {
+            <div class="role-leg-item" style="flex-direction:column;align-items:flex-start;gap:4px;padding:0.5rem 0;border-bottom:1px solid #f3f4f6">
+              <div style="display:flex;align-items:center;gap:0.5rem;width:100%">
+                <span class="role-dot" [style.background]="item.color"></span>
+                <span class="role-name" style="flex:1;font-weight:600;color:#111827">{{ item.name }}</span>
+                <span class="role-count" [style.color]="item.color">{{ item.current }}/{{ item.min }} {{ item.unit }}</span>
+              </div>
+              <div style="width:100%;height:4px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin-left:1rem">
+                <div [style.width.%]="imStockPct(item.current, item.min)" [style.background]="item.color" style="height:100%;border-radius:99px;transition:width 0.4s"></div>
+              </div>
+              <span style="font-size:0.65rem;color:#9ca3af;margin-left:1rem">{{ item.supplier }}</span>
+            </div>
+          }
+        </div>
+        <a routerLink="/app/inventory/purchase-orders" class="view-all-link" style="display:block;margin-top:0.75rem;text-align:center">
+          Raise Purchase Orders →
+        </a>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="card audit-card">
+        <div class="card-header">
+          <span class="card-title">Open Purchase Orders</span>
+          <a class="view-all-link" routerLink="/app/inventory/purchase-orders">View All →</a>
+        </div>
+        <table class="audit-table">
+          <thead><tr><th>PO #</th><th>Item</th><th>Supplier</th><th>Priority</th><th>Status</th><th>Expected</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="wo-num-badge" style="color:#059669;background:#f0fdf4">PO-0001</span></td>
+              <td class="audit-action">Steel Plate 6mm</td>
+              <td class="audit-time">SteelCo Ltd</td>
+              <td><span class="pr-mini" style="color:#dc2626;background:rgba(220,38,38,0.1)">Urgent</span></td>
+              <td><span class="status-mini" style="color:#d97706;background:rgba(217,119,6,0.1)">Approved</span></td>
+              <td class="audit-time">2025-06-04</td>
+            </tr>
+            <tr>
+              <td><span class="wo-num-badge" style="color:#059669;background:#f0fdf4">PO-0002</span></td>
+              <td class="audit-action">Hydraulic Seal Kit</td>
+              <td class="audit-time">PrecisionParts Inc</td>
+              <td><span class="pr-mini" style="color:#d97706;background:rgba(217,119,6,0.1)">High</span></td>
+              <td><span class="status-mini" style="color:#2563eb;background:rgba(37,99,235,0.1)">Submitted</span></td>
+              <td class="audit-time">2025-06-07</td>
+            </tr>
+            <tr>
+              <td><span class="wo-num-badge" style="color:#059669;background:#f0fdf4">PO-0003</span></td>
+              <td class="audit-action">Control Valve Body</td>
+              <td class="audit-time">PrecisionParts Inc</td>
+              <td><span class="pr-mini" style="color:#d97706;background:rgba(217,119,6,0.1)">High</span></td>
+              <td><span class="status-mini" style="color:#7c3aed;background:rgba(124,58,237,0.1)">Ordered</span></td>
+              <td class="audit-time">2025-06-10</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="module-panel">
+        <div class="card-header" style="padding:0 0 0.75rem">
+          <span class="card-title">Warehouse Summary</span>
+        </div>
+        <div class="module-grid">
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(37,99,235,0.1);color:#2563eb"><mat-icon>warehouse</mat-icon></div>
+            <div class="module-info"><span class="module-value" style="color:#2563eb">3</span><span class="module-label">Warehouses</span><span class="module-sub">A, B, Hazmat</span></div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>local_shipping</mat-icon></div>
+            <div class="module-info"><span class="module-value" style="color:#059669">6</span><span class="module-label">Suppliers</span><span class="module-sub">Active</span></div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(220,38,38,0.1);color:#dc2626"><mat-icon>warning</mat-icon></div>
+            <div class="module-info"><span class="module-value" style="color:#dc2626">4</span><span class="module-label">Low Stock</span><span class="module-sub">Below minimum</span></div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(217,119,6,0.1);color:#d97706"><mat-icon>moving</mat-icon></div>
+            <div class="module-info"><span class="module-value" style="color:#d97706">2</span><span class="module-label">Overstock</span><span class="module-sub">Above maximum</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  }
+
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!--  COMPLIANCE OFFICER DASHBOARD                                           -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'ComplianceOfficer') {
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Compliance Overview</h1>
+        <p class="page-sub">Good morning, {{ userName() }} — report status and audit summary</p>
+      </div>
+      <div class="header-actions">
+        <button class="date-btn" [matMenuTriggerFor]="coMenu">
+          <mat-icon>calendar_today</mat-icon>
+          <strong>{{ selectedRange() }}</strong>
+          <mat-icon>keyboard_arrow_down</mat-icon>
+        </button>
+        <mat-menu #coMenu="matMenu">
+          @for (r of dateRanges; track r) {
+            <button mat-menu-item (click)="selectedRange.set(r)">{{ r }}</button>
+          }
+        </mat-menu>
+        <a class="quick-link-btn" routerLink="/app/compliance/reports">
+          <mat-icon>policy</mat-icon> Reports
+        </a>
+        <a class="quick-link-btn" routerLink="/app/compliance/audit-trail" style="background:#7c3aed">
+          <mat-icon>history</mat-icon> Audit Trail
+        </a>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      @for (kpi of coKpis; track kpi.label) {
+        <div class="kpi-card card {{ kpi.color }}">
+          <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-value">{{ kpi.value }}</span>
+            <span class="kpi-label">{{ kpi.label }}</span>
+          </div>
+          <span class="kpi-trend" [class.up]="kpi.trendUp" [class.down]="!kpi.trendUp">{{ kpi.trend }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="main-row">
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Audit Events This Week</span>
+            <span class="card-sub">Stacked by severity — Info, Warnings, Errors</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="coAuditTrendData" [options]="coAuditTrendOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+
+      <div class="card role-card">
+        <div class="card-header"><span class="card-title">Reports by Status</span></div>
+        <div class="role-chart-area donut-wrap">
+          <p-chart type="doughnut" [data]="coStatusData" [options]="coStatusOptions" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="role-legend">
+          @for (item of coStatusLegend; track item.label) {
+            <div class="role-leg-item">
+              <span class="role-dot" [style.background]="item.color"></span>
+              <span class="role-name">{{ item.label }}</span>
+              <span class="role-count">{{ item.count }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="card audit-card">
+        <div class="card-header">
+          <span class="card-title">Recent Compliance Reports</span>
+          <a class="view-all-link" routerLink="/app/compliance/reports">View All →</a>
+        </div>
+        <table class="audit-table">
+          <thead><tr><th>CR #</th><th>Title</th><th>Type</th><th>Status</th><th>Deadline</th></tr></thead>
+          <tbody>
+            @for (r of coRecentReports; track r.num) {
+              <tr>
+                <td><span class="wo-num-badge" style="color:#1e40af;background:#eff6ff">{{ r.num }}</span></td>
+                <td class="audit-action" style="max-width:260px">{{ r.title }}</td>
+                <td>
+                  <span class="pr-mini" [style.color]="r.typeColor" [style.background]="r.typeColor + '18'">{{ r.type }}</span>
+                </td>
+                <td>
+                  <span class="status-mini" [style.color]="coStatusColor(r.status)" [style.background]="coStatusColor(r.status) + '18'">{{ r.status }}</span>
+                </td>
+                <td class="audit-time">{{ r.deadline }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="module-panel">
+        <div class="card-header" style="padding:0 0 0.75rem">
+          <span class="card-title">Compliance Health</span>
+        </div>
+        <div class="module-grid">
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>verified</mat-icon></div>
+            <div class="module-info"><span class="module-value" style="color:#059669">2</span><span class="module-label">Submitted</span><span class="module-sub">Successfully filed</span></div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(37,99,235,0.1);color:#2563eb"><mat-icon>thumb_up</mat-icon></div>
+            <div class="module-info"><span class="module-value" style="color:#2563eb">2</span><span class="module-label">Approved</span><span class="module-sub">Ready to submit</span></div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(220,38,38,0.1);color:#dc2626"><mat-icon>cancel</mat-icon></div>
+            <div class="module-info"><span class="module-value" style="color:#dc2626">1</span><span class="module-label">Rejected</span><span class="module-sub">Needs resubmission</span></div>
+          </div>
+          <div class="module-card card">
+            <div class="module-icon" style="background:rgba(124,58,237,0.1);color:#7c3aed"><mat-icon>history</mat-icon></div>
+            <div class="module-info"><span class="module-value" style="color:#7c3aed">12</span><span class="module-label">Audit Events</span><span class="module-sub">Last 48 hours</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  }
+
+</div>

@@ -1,0 +1,135 @@
+<div class="at-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="at-header">
+    <div>
+      <h2 class="at-title">Audit Trail</h2>
+      <p class="at-sub">Complete system event history for compliance and investigation</p>
+    </div>
+    <button class="export-btn" (click)="exportCSV()">
+      <mat-icon>download</mat-icon> Export CSV
+    </button>
+  </div>
+
+  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>history</mat-icon>
+      <div><span class="stat-num">{{ stats().total }}</span><span class="stat-lbl">Total Events</span></div>
+    </div>
+    <div class="stat-chip green">
+      <mat-icon>check_circle</mat-icon>
+      <div><span class="stat-num">{{ stats().success }}</span><span class="stat-lbl">Successful</span></div>
+    </div>
+    <div class="stat-chip amber">
+      <mat-icon>warning</mat-icon>
+      <div><span class="stat-num">{{ stats().warnings }}</span><span class="stat-lbl">Warnings</span></div>
+    </div>
+    <div class="stat-chip red">
+      <mat-icon>error</mat-icon>
+      <div><span class="stat-num">{{ stats().errors }}</span><span class="stat-lbl">Errors</span></div>
+    </div>
+  </div>
+
+  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <mat-icon class="si">search</mat-icon>
+      <input class="search-input" type="text" placeholder="Search by action, user, module, detail…"
+             [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+      @if (searchTerm()) {
+        <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="moduleFilter() === 'all'" (click)="moduleFilter.set('all')">All Modules</button>
+      @for (m of modules; track m) {
+        <button class="fc" [class.fc-active]="moduleFilter() === m" (click)="moduleFilter.set(m)">{{ m }}</button>
+      }
+    </div>
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="severityFilter() === 'all'" (click)="severityFilter.set('all')">All</button>
+      @for (s of severities; track s) {
+        <button class="fc sev-fc" [class.fc-active]="severityFilter() === s" (click)="severityFilter.set(s)"
+                [style.--sc]="getSev(s).color">
+          <span class="sev-dot" [style.background]="getSev(s).color"></span>
+          {{ s | titlecase }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Timeline ─────────────────────────────────────────────────────────── -->
+  <div class="timeline">
+    @if (filtered().length === 0) {
+      <div class="empty-state">
+        <mat-icon>search_off</mat-icon>
+        <p>No audit events match your filters</p>
+        <button class="link-btn" (click)="searchTerm.set(''); moduleFilter.set('all'); severityFilter.set('all')">Clear filters</button>
+      </div>
+    }
+
+    @for (entry of filtered(); track entry.id) {
+      <div class="tl-entry" [class.tl-expanded]="expandedId() === entry.id"
+           [class.tl-error]="entry.severity === 'error'"
+           [class.tl-warning]="entry.severity === 'warning'">
+
+        <!-- Severity icon column -->
+        <div class="tl-icon-col">
+          <div class="tl-icon" [style.background]="severityMeta(entry.severity).bg"
+               [style.color]="severityMeta(entry.severity).color">
+            <mat-icon>{{ severityMeta(entry.severity).icon }}</mat-icon>
+          </div>
+          <div class="tl-line"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="tl-content" (click)="toggleExpand(entry.id)">
+          <div class="tl-top">
+            <!-- User avatar -->
+            <div class="tl-av" [style.background]="entry.avatarColor">{{ entry.userInitials }}</div>
+
+            <!-- Event info -->
+            <div class="tl-info">
+              <div class="tl-title-row">
+                <span class="tl-user">{{ entry.user }}</span>
+                <span class="tl-action-badge" [style.color]="severityMeta(entry.severity).color"
+                      [style.background]="severityMeta(entry.severity).bg">{{ entry.action }}</span>
+                <span class="tl-module-tag">{{ entry.module }}</span>
+              </div>
+              <p class="tl-detail">{{ entry.detail }}</p>
+            </div>
+
+            <!-- Timestamp -->
+            <div class="tl-time-col">
+              <span class="tl-time">{{ entry.timestamp.split(' ')[1] }}</span>
+              <span class="tl-date">{{ entry.timestamp.split(' ')[0] }}</span>
+              <button class="tl-expand-btn" [matTooltip]="expandedId() === entry.id ? 'Collapse' : 'More details'">
+                <mat-icon>{{ expandedId() === entry.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Expanded detail -->
+          @if (expandedId() === entry.id) {
+            <div class="tl-detail-panel" (click)="$event.stopPropagation()">
+              <div class="tdp-grid">
+                <div class="tdp-item"><span class="tdp-lbl">Full Timestamp</span><span class="tdp-val">{{ entry.timestamp }}</span></div>
+                <div class="tdp-item"><span class="tdp-lbl">IP Address</span><span class="tdp-val font-mono">{{ entry.ipAddress }}</span></div>
+                <div class="tdp-item"><span class="tdp-lbl">Module</span><span class="tdp-val">{{ entry.module }}</span></div>
+                <div class="tdp-item"><span class="tdp-lbl">Action</span><span class="tdp-val">{{ entry.action }}</span></div>
+                <div class="tdp-item tdp-full"><span class="tdp-lbl">Full Detail</span><span class="tdp-val">{{ entry.detail }}</span></div>
+              </div>
+            </div>
+          }
+        </div>
+
+      </div>
+    }
+  </div>
+
+  <div class="at-footer">
+    Showing <strong>{{ filtered().length }}</strong> of <strong>{{ entries().length }}</strong> events
+  </div>
+
+</div>

@@ -1,0 +1,823 @@
+// ── Variables ─────────────────────────────────────────────────────────────────
+$card-bg:        rgba(255, 255, 255, 0.97);
+$card-border:    rgba(229, 231, 235, 0.8);
+$card-shadow:    0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03), 0 0 0 1px rgba(255,255,255,0.7) inset;
+$card-shadow-hv: 0 6px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.7) inset;
+$radius-lg:      14px;
+$radius-md:      10px;
+$radius-sm:      7px;
+$blue:           #2563eb;
+$blue-light:     #eff6ff;
+$gray-50:        #f9fafb;
+$gray-100:       #f3f4f6;
+$gray-200:       #e5e7eb;
+$gray-400:       #9ca3af;
+$gray-600:       #4b5563;
+$gray-700:       #374151;
+$gray-900:       #111827;
+
+// ── Page Layout ───────────────────────────────────────────────────────────────
+.schedule-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  height: 100%;
+  min-height: 0;
+}
+
+// ── Page Header ───────────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-left {
+  .page-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: $gray-900;
+    margin: 0;
+  }
+
+  .page-sub {
+    font-size: 0.78rem;
+    color: $gray-400;
+    margin: 3px 0 0;
+  }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+// ── Week Navigator ────────────────────────────────────────────────────────────
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: $card-bg;
+  border: 1px solid $card-border;
+  border-radius: $radius-md;
+  padding: 0.25rem;
+  box-shadow: $card-shadow;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  color: $gray-600;
+  transition: background 0.15s, color 0.15s;
+
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+  &:hover {
+    background: $blue-light;
+    color: $blue;
+  }
+}
+
+.week-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $gray-700;
+  padding: 0 0.6rem;
+  white-space: nowrap;
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1.1rem;
+  background: $blue;
+  color: #fff;
+  border: none;
+  border-radius: $radius-sm;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover:not(:disabled) {
+    background: #1d4ed8;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: $gray-600;
+  border: 1px solid $gray-200;
+  border-radius: $radius-sm;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+
+  &:hover {
+    border-color: $gray-400;
+    color: $gray-900;
+    background: $gray-50;
+  }
+}
+
+// ── Stats Row ─────────────────────────────────────────────────────────────────
+.stats-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 1rem;
+  background: $card-bg;
+  border: 1px solid $card-border;
+  border-radius: $radius-md;
+  box-shadow: $card-shadow;
+  min-width: 130px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .stat-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: $gray-400;
+    white-space: nowrap;
+  }
+
+  // Colour variants
+  &.total {
+    mat-icon  { color: $gray-700; }
+    .stat-value { color: $gray-900; }
+  }
+
+  &.planned {
+    mat-icon    { color: #6b7280; }
+    .stat-value { color: #6b7280; }
+    border-color: rgba(107,114,128,0.2);
+  }
+
+  &.in-progress {
+    mat-icon    { color: $blue; }
+    .stat-value { color: $blue; }
+    border-color: rgba(37,99,235,0.2);
+    background: linear-gradient(135deg, $card-bg, rgba(37,99,235,0.03));
+  }
+
+  &.on-hold {
+    mat-icon    { color: #d97706; }
+    .stat-value { color: #d97706; }
+    border-color: rgba(217,119,6,0.2);
+  }
+
+  &.completed {
+    mat-icon    { color: #059669; }
+    .stat-value { color: #059669; }
+    border-color: rgba(5,150,105,0.2);
+  }
+}
+
+// ── Schedule Grid ─────────────────────────────────────────────────────────────
+.schedule-grid-wrap {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.25rem;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar { height: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $gray-200; border-radius: 3px; }
+  &::-webkit-scrollbar-thumb:hover { background: $gray-400; }
+}
+
+.schedule-grid {
+  display: flex;
+  gap: 0.75rem;
+  height: 100%;
+  min-height: 520px;
+  align-items: stretch;
+}
+
+// ── Day Column ────────────────────────────────────────────────────────────────
+.day-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  flex-shrink: 0;
+  background: $card-bg;
+  border: 1px solid $card-border;
+  border-radius: $radius-lg;
+  box-shadow: $card-shadow;
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &.today {
+    border-color: rgba(37,99,235,0.35);
+    box-shadow: $card-shadow, 0 0 0 2px rgba(37,99,235,0.08);
+  }
+}
+
+// ── Day Column Header ─────────────────────────────────────────────────────────
+.day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.8rem 0.65rem 0.65rem;
+  border-bottom: 1px solid $gray-100;
+  background: $gray-50;
+  gap: 0.2rem;
+  flex-shrink: 0;
+
+  .today & {
+    background: linear-gradient(135deg, $blue-light, rgba(37,99,235,0.03));
+    border-bottom-color: rgba(37,99,235,0.15);
+  }
+}
+
+.day-header-top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.day-abbr {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: $gray-400;
+
+  .today .day-header & { color: $blue; }
+}
+
+.today-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: $blue;
+  padding: 0.1rem 0.4rem;
+  border-radius: 99px;
+}
+
+.day-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: $gray-900;
+  line-height: 1;
+
+  .today .day-header & { color: $blue; }
+}
+
+.day-count-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.45rem;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: $gray-100;
+  color: $gray-400;
+  transition: background 0.2s, color 0.2s;
+
+  &.has-items {
+    background: rgba(37,99,235,0.12);
+    color: $blue;
+  }
+}
+
+// ── Drop Zone ─────────────────────────────────────────────────────────────────
+.drop-zone {
+  flex: 1;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  min-height: 80px;
+  transition: background 0.2s;
+
+  // Custom scrollbar inside column
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $gray-200; border-radius: 2px; }
+
+  // Highlight when a card is being dragged over this list
+  &.cdk-drop-list-dragging {
+    background: rgba(37,99,235,0.04);
+  }
+
+  // Highlight when receiving card from another list
+  &.cdk-drop-list-receiving {
+    background: rgba(37,99,235,0.06);
+    outline: 2px dashed rgba(37,99,235,0.35);
+    outline-offset: -4px;
+    border-radius: $radius-sm;
+  }
+}
+
+// ── Empty Drop Zone ───────────────────────────────────────────────────────────
+.empty-drop-zone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1.5px dashed $gray-200;
+  border-radius: $radius-sm;
+  padding: 1.5rem 0.5rem;
+  color: $gray-400;
+  font-size: 0.72rem;
+  font-weight: 500;
+  transition: border-color 0.2s, color 0.2s;
+  pointer-events: none;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    opacity: 0.5;
+  }
+
+  // Show bolder styling when a list is being dragged over
+  .cdk-drop-list-dragging & {
+    border-color: rgba(37,99,235,0.4);
+    color: $blue;
+  }
+}
+
+// ── Work Order Card ───────────────────────────────────────────────────────────
+.wo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.65rem 0.7rem;
+  background: #fff;
+  border: 1px solid $card-border;
+  border-radius: $radius-sm;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  cursor: grab;
+  transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s;
+  user-select: none;
+  position: relative;
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+    border-color: rgba(37,99,235,0.3);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.wo-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+
+.wo-number {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: $gray-400;
+  letter-spacing: 0.3px;
+}
+
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.wo-product {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $gray-900;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wo-status-row {
+  display: flex;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.wo-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+}
+
+.line-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  background: $gray-100;
+  border: 1px solid $gray-200;
+  border-radius: 5px;
+  color: $gray-700;
+  white-space: nowrap;
+}
+
+.qty-label {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.62rem;
+  color: $gray-400;
+  flex: 1;
+
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+}
+
+.assignee-av {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+
+// ── CDK Drag States ───────────────────────────────────────────────────────────
+
+// While a card is being dragged – the ghost left behind
+.cdk-drag-placeholder {
+  border: 1.5px dashed rgba(37,99,235,0.35) !important;
+  background: rgba(37,99,235,0.04) !important;
+  border-radius: $radius-sm;
+  min-height: 80px;
+  box-shadow: none !important;
+}
+
+// The card following the cursor
+.cdk-drag-preview,
+.wo-card.drag-preview {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18), 0 2px 8px rgba(37,99,235,0.12) !important;
+  transform: scale(1.02) !important;
+  opacity: 0.92;
+  border-radius: $radius-sm;
+  background: #fff;
+  border: 1px solid rgba(37,99,235,0.3);
+  cursor: grabbing;
+  z-index: 9999;
+  width: 180px;
+  padding: 0.65rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+// Smooth animation when cards reorder
+.cdk-drag-animating {
+  transition: transform 220ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+// Animate list items shuffling while another card is dragged over
+.drop-zone.cdk-drop-list-dragging .wo-card:not(.cdk-drag-placeholder) {
+  transition: transform 220ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+// ── Drawer Backdrop ───────────────────────────────────────────────────────────
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(3px);
+  z-index: 800;
+  animation: fadeIn 0.2s ease;
+}
+
+// ── Drawer Panel ──────────────────────────────────────────────────────────────
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 95vw;
+  background: #fff;
+  z-index: 801;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.12), -2px 0 8px rgba(0,0,0,0.06);
+  animation: slideIn 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow: hidden;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 1.1rem;
+  border-bottom: 1px solid $gray-100;
+  flex-shrink: 0;
+  gap: 0.75rem;
+  background: $gray-50;
+
+  .drawer-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: $gray-900;
+    margin: 0;
+  }
+
+  .drawer-sub {
+    font-size: 0.75rem;
+    color: $gray-400;
+    margin: 4px 0 0;
+  }
+}
+
+.drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid $gray-200;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  color: $gray-600;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239,68,68,0.05);
+  }
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $gray-200; border-radius: 3px; }
+}
+
+// ── Form Styles ───────────────────────────────────────────────────────────────
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
+}
+
+.form-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $gray-700;
+
+  .req { color: #ef4444; margin-left: 2px; }
+}
+
+.form-select,
+.form-input {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid $gray-200;
+  border-radius: $radius-sm;
+  background: #fff;
+  font-size: 0.83rem;
+  color: $gray-900;
+  appearance: none;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: $blue;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  }
+
+  &::placeholder { color: $gray-400; }
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.2rem;
+  cursor: pointer;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid $gray-200;
+  border-radius: $radius-sm;
+  background: #fff;
+  font-size: 0.83rem;
+  color: $gray-900;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  box-sizing: border-box;
+  font-family: inherit;
+
+  &:focus {
+    border-color: $blue;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  }
+
+  &::placeholder { color: $gray-400; }
+}
+
+.form-error {
+  font-size: 0.72rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+// ── Priority Selector ─────────────────────────────────────────────────────────
+.priority-selector {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.priority-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border: 1.5px solid $gray-200;
+  border-radius: $radius-sm;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $gray-600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--p-color);
+    color: var(--p-color);
+    background: color-mix(in srgb, var(--p-color) 8%, transparent);
+  }
+
+  &.active {
+    border-color: var(--p-color);
+    color: var(--p-color);
+    background: color-mix(in srgb, var(--p-color) 10%, transparent);
+    font-weight: 700;
+  }
+}
+
+// ── Production Line Selector ──────────────────────────────────────────────────
+.line-selector {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.line-btn {
+  padding: 0.35rem 0.85rem;
+  border: 1.5px solid $gray-200;
+  border-radius: $radius-sm;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $gray-600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: $blue;
+    color: $blue;
+    background: $blue-light;
+  }
+
+  &.active {
+    border-color: $blue;
+    color: $blue;
+    background: $blue-light;
+    font-weight: 700;
+  }
+}
+
+// ── Drawer Actions ────────────────────────────────────────────────────────────
+.drawer-actions {
+  display: flex;
+  gap: 0.6rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid $gray-100;
+  margin-top: 0.5rem;
+
+  .btn-ghost { flex: 1; justify-content: center; }
+  .btn-primary { flex: 2; justify-content: center; }
+}
+
+// ── Animations ────────────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+// ── Snackbar overrides (via global class) ─────────────────────────────────────
+// Applied via panelClass in component
+
+// ── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .stats-row { gap: 0.5rem; }
+  .stat-chip { min-width: 100px; padding: 0.45rem 0.75rem; }
+  .day-column { min-width: 155px; }
+  .drawer { width: 100vw; }
+  .page-header { gap: 0.75rem; }
+}
+
+@media (max-width: 480px) {
+  .header-right { width: 100%; justify-content: space-between; }
+  .week-nav .week-label { font-size: 0.75rem; }
+}

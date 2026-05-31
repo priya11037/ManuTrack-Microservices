@@ -117,25 +117,25 @@ app.MapControllers();
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Service v1"));
 
-// ── DB Init + Seed on Startup ─────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
 
-    // Seed default admin if no users exist
     if (!db.Users.Any())
     {
-        var cfg = app.Services.GetRequiredService<IConfiguration>();
-        db.Users.Add(new AuthService.Models.AuthUser
+        db.Users.AddRange(new[]
         {
-            Name     = cfg["Seed:AdminName"]     ?? "System Admin",
-            Email    = cfg["Seed:AdminEmail"]    ?? "admin@manutrack.com",
-            Phone    = cfg["Seed:AdminPhone"]    ?? "0000000000",
-            Role     = "Admin",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(
-                cfg["Seed:AdminPassword"] ?? "Admin@123", workFactor: 4),
-            IsActive = true
+            new AuthService.Models.AuthUser { Name="John Smith",   Email="john.smith@manutrack.com",  Role="Admin",             Phone="1234567891", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=true  },
+            new AuthService.Models.AuthUser { Name="Sarah Lee",    Email="sarah.lee@manutrack.com",   Role="ProductionPlanner", Phone="1234567892", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=true  },
+            new AuthService.Models.AuthUser { Name="Mike Johnson", Email="mike.j@manutrack.com",      Role="ShopFloorOperator", Phone="1234567893", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=true  },
+            new AuthService.Models.AuthUser { Name="Emily Clark",  Email="emily.c@manutrack.com",     Role="QualityInspector",  Phone="1234567894", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=true  },
+            new AuthService.Models.AuthUser { Name="Robert Chen",  Email="robert.c@manutrack.com",    Role="InventoryManager",  Phone="1234567895", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=true  },
+            new AuthService.Models.AuthUser { Name="Linda Brown",  Email="linda.b@manutrack.com",     Role="ComplianceOfficer", Phone="1234567896", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=true  },
+            new AuthService.Models.AuthUser { Name="Tom Wilson",   Email="tom.w@manutrack.com",       Role="ShopFloorOperator", Phone="1234567897", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=false },
+            new AuthService.Models.AuthUser { Name="Amy Zhang",    Email="amy.z@manutrack.com",       Role="QualityInspector",  Phone="1234567898", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=true  },
+            new AuthService.Models.AuthUser { Name="Carlos Ramos", Email="carlos.r@manutrack.com",    Role="ProductionPlanner", Phone="1234567899", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=true  },
+            new AuthService.Models.AuthUser { Name="Nina Patel",   Email="nina.p@manutrack.com",      Role="InventoryManager",  Phone="1234567800", PasswordHash=BCrypt.Net.BCrypt.HashPassword("Admin@1234!", workFactor:4), IsActive=false },
         });
         db.SaveChanges();
     }

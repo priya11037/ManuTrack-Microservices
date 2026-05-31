@@ -1,0 +1,944 @@
+// ── Design tokens ─────────────────────────────────────────────────────────────
+$blue:        #2563eb;
+$blue-light:  #eff6ff;
+$blue-mid:    #bfdbfe;
+$green:       #059669;
+$green-light: #ecfdf5;
+$amber:       #d97706;
+$amber-light: #fffbeb;
+$red:         #dc2626;
+$red-light:   #fef2f2;
+$gray-50:     #f9fafb;
+$gray-100:    #f3f4f6;
+$gray-200:    #e5e7eb;
+$gray-400:    #9ca3af;
+$gray-600:    #6b7280;
+$gray-700:    #374151;
+$gray-900:    #111827;
+$card-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+
+// ── Page layout ────────────────────────────────────────────────────────────────
+.products-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-height: 0;
+}
+
+// ── Shared card ────────────────────────────────────────────────────────────────
+.card {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 14px;
+  border: 1px solid $gray-200;
+  padding: 1.25rem;
+  box-shadow: $card-shadow;
+}
+
+// ── Page Header ────────────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  .page-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: $gray-900;
+    margin: 0;
+  }
+
+  .page-sub {
+    font-size: 0.78rem;
+    color: $gray-400;
+    margin: 3px 0 0;
+  }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+// ── Tab Toggle ─────────────────────────────────────────────────────────────────
+.tab-toggle {
+  display: flex;
+  background: $gray-100;
+  border: 1px solid $gray-200;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: $gray-600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover:not(.active) {
+    background: rgba(255,255,255,0.7);
+    color: $gray-900;
+  }
+
+  &.active {
+    background: $blue;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+  }
+}
+
+// ── Buttons ────────────────────────────────────────────────────────────────────
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 1rem;
+  background: $blue;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+
+  &:hover:not(:disabled) {
+    background: #1d4ed8;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+  }
+
+  &:disabled {
+    background: $gray-400;
+    cursor: not-allowed;
+  }
+}
+
+.btn-outline-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.75rem;
+  background: transparent;
+  color: $blue;
+  border: 1.5px solid $blue-mid;
+  border-radius: 7px;
+  font-size: 0.79rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+  &:hover {
+    background: $blue-light;
+    border-color: $blue;
+  }
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 1rem;
+  background: transparent;
+  color: $gray-700;
+  border: 1px solid $gray-200;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s;
+
+  &:hover {
+    background: $gray-100;
+    border-color: $gray-400;
+  }
+}
+
+// ── Stats row ──────────────────────────────────────────────────────────────────
+.stats-row {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: 10px;
+  flex: 1;
+  min-width: 150px;
+  transition: box-shadow 0.18s;
+
+  &:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+
+  .chip-icon {
+    font-size: 18px; width: 18px; height: 18px;
+    color: $gray-400;
+
+    &.gray { color: $gray-400; }
+  }
+
+  .chip-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: $gray-900;
+    line-height: 1;
+  }
+
+  .chip-label {
+    font-size: 0.73rem;
+    color: $gray-600;
+    font-weight: 500;
+  }
+
+  &.green {
+    border-color: rgba($green, 0.3);
+    background: $green-light;
+    .chip-icon { color: $green; }
+    .chip-value { color: $green; }
+  }
+
+  &.blue {
+    border-color: $blue-mid;
+    background: $blue-light;
+    .chip-icon { color: $blue; }
+    .chip-value { color: $blue; }
+  }
+
+  &.amber {
+    border-color: rgba($amber, 0.35);
+    background: $amber-light;
+    .chip-icon { color: $amber; }
+    .chip-value { color: $amber; }
+  }
+}
+
+// ── Product Table ──────────────────────────────────────────────────────────────
+.table-card { overflow: hidden; padding: 0; }
+
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead tr th {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: $gray-400;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    background: $gray-50;
+    border-bottom: 1px solid $gray-200;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid $gray-100;
+    transition: background 0.12s;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: #f0f7ff; }
+
+    td {
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      color: $gray-700;
+      vertical-align: middle;
+    }
+  }
+
+  .col-num    { width: 56px; text-align: center; }
+  .col-actions { width: 120px; }
+}
+
+.product-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .product-name {
+    font-weight: 600;
+    color: $gray-900;
+  }
+
+  .product-desc {
+    font-size: 0.72rem;
+    color: $gray-400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+  }
+}
+
+.sku-code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.8rem;
+  background: $gray-100;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  color: $gray-700;
+  border: 1px solid $gray-200;
+}
+
+.text-muted { color: $gray-400; }
+
+.stock-low { color: $red; font-weight: 700; }
+
+.cost-cell {
+  font-weight: 600;
+  color: $gray-900;
+  font-variant-numeric: tabular-nums;
+}
+
+// Category tags
+.category-tag {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  &.cat-mechanical  { background: #eff6ff; color: $blue;   border: 1px solid $blue-mid;               }
+  &.cat-hydraulic   { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;                  }
+  &.cat-electronic  { background: #fdf4ff; color: #9333ea; border: 1px solid #e9d5ff;                  }
+  &.cat-structural  { background: #fffbeb; color: $amber;  border: 1px solid rgba($amber, 0.3);        }
+  &.cat-consumable  { background: $gray-100; color: $gray-700; border: 1px solid $gray-200;            }
+}
+
+// BOM Status badges
+.bom-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  mat-icon { font-size: 13px; width: 13px; height: 13px; }
+
+  &.defined {
+    background: $green-light;
+    color: $green;
+    border: 1px solid rgba($green, 0.3);
+  }
+
+  &.missing {
+    background: $amber-light;
+    color: $amber;
+    border: 1px solid rgba($amber, 0.3);
+  }
+}
+
+// Action buttons
+.action-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid $gray-200;
+  border-radius: 7px;
+  background: white;
+  color: $gray-600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover {
+    border-color: $gray-400;
+    color: $gray-900;
+    background: $gray-50;
+  }
+
+  &.blue:hover { border-color: $blue; color: $blue; background: $blue-light; }
+  &.red:hover  { border-color: $red; color: $red; background: $red-light; }
+}
+
+// ── BOM Layout ─────────────────────────────────────────────────────────────────
+.bom-layout {
+  display: flex;
+  gap: 1.1rem;
+  align-items: flex-start;
+  min-height: 500px;
+}
+
+// Left product list
+.bom-product-list {
+  width: 40%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 700px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $gray-100;
+  flex-wrap: wrap;
+
+  .panel-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: $gray-900;
+    display: block;
+  }
+
+  .panel-sub {
+    font-size: 0.72rem;
+    color: $gray-400;
+    display: block;
+    margin-top: 2px;
+  }
+}
+
+.product-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $gray-200; border-radius: 4px; }
+}
+
+.product-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.13s;
+  border-left: 3px solid transparent;
+
+  &:hover { background: $gray-50; }
+
+  &.selected {
+    background: $blue-light;
+    border-left-color: $blue;
+  }
+
+  .pli-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .pli-name {
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: $gray-900;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pli-sku {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.7rem;
+    color: $gray-400;
+  }
+
+  .pli-right { flex-shrink: 0; margin-left: 0.5rem; }
+}
+
+// BOM indicator dots
+.bom-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+
+  &.defined { background: $green; }
+  &.missing  { background: $amber; }
+}
+
+// Right BOM tree panel
+.bom-tree-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  max-height: 700px;
+  overflow: hidden;
+
+  .panel-header {
+    flex-shrink: 0;
+  }
+}
+
+// BOM Root list (CDK Drop)
+.bom-root-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $gray-200; border-radius: 4px; }
+}
+
+// BOM Drag item wrapper
+.bom-drag-item {
+  &.cdk-drag-animating { transition: transform 250ms cubic-bezier(0,0,0.2,1); }
+
+  &.cdk-drag-preview {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    opacity: 0.95;
+  }
+}
+
+// Drag placeholder
+.drag-placeholder {
+  border: 2px dashed $blue-mid;
+  border-radius: 8px;
+  background: $blue-light;
+  height: 40px;
+  margin: 2px 0.75rem;
+  transition: all 0.18s;
+}
+
+// BOM Row
+.bom-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  margin: 2px 0.5rem;
+  transition: background 0.12s;
+
+  &:hover { background: $gray-50; }
+
+  &.level-0 { padding-left: 0.75rem; }
+  &.level-1 { padding-left: calc(0.75rem + 1.5rem); }
+  &.level-2 { padding-left: calc(0.75rem + 3rem); }
+}
+
+// Drag handle
+.drag-handle {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: $gray-400;
+  cursor: grab;
+  flex-shrink: 0;
+  transition: color 0.15s;
+
+  &:hover { color: $gray-700; }
+  &:active { cursor: grabbing; }
+}
+
+// Expand button
+.expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 4px;
+  flex-shrink: 0;
+  color: $gray-400;
+  transition: color 0.15s, background 0.15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover { color: $gray-700; background: $gray-100; }
+}
+
+.expand-placeholder {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+// Type icon
+.type-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+
+  &.type-raw-material   { color: $green;  }
+  &.type-sub-assembly   { color: $blue;   }
+  &.type-purchased-part { color: $amber;  }
+}
+
+// BOM row content
+.bom-name {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: $gray-900;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bom-qty {
+  font-size: 0.75rem;
+  color: $gray-600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+// Type badges (pills)
+.type-badge {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: 99px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &.type-raw-material {
+    background: $green-light;
+    color: $green;
+    border: 1px solid rgba($green, 0.3);
+  }
+
+  &.type-sub-assembly {
+    background: $blue-light;
+    color: $blue;
+    border: 1px solid $blue-mid;
+  }
+
+  &.type-purchased-part {
+    background: $amber-light;
+    color: $amber;
+    border: 1px solid rgba($amber, 0.3);
+  }
+}
+
+.bom-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  .bom-row:hover & { opacity: 1; }
+}
+
+.icon-btn-sm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  color: $gray-400;
+  transition: all 0.15s;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover { background: $gray-100; color: $gray-700; }
+  &.blue:hover { background: $blue-light; color: $blue; }
+  &.red:hover  { background: $red-light;  color: $red; }
+}
+
+// Child drop list
+.bom-child-list {
+  // Indentation is handled on the .bom-row .level-* classes
+}
+
+// Empty BOM state
+.empty-bom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1.5rem;
+  color: $gray-400;
+  text-align: center;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    opacity: 0.4;
+  }
+
+  p {
+    font-size: 0.85rem;
+    color: $gray-600;
+    max-width: 300px;
+    margin: 0;
+  }
+}
+
+// ── Inline Add BOM form ────────────────────────────────────────────────────────
+.add-bom-form {
+  border-top: 1px solid $gray-200;
+  padding: 1rem 1.25rem;
+  background: $gray-50;
+  flex-shrink: 0;
+}
+
+.add-bom-form-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: $gray-900;
+  margin-bottom: 0.75rem;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: $blue; }
+}
+
+.add-bom-fields { }
+
+.add-bom-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+// ── Shared Form ────────────────────────────────────────────────────────────────
+.form-row {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+
+  .field-group    { flex: 1; min-width: 140px; }
+  .field-group.field-sm { flex: 0 0 90px; min-width: 80px; }
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+}
+
+.field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $gray-700;
+
+  .req { color: $red; margin-left: 2px; }
+}
+
+.field-input,
+.field-select,
+.field-textarea {
+  padding: 0.48rem 0.75rem;
+  border: 1.5px solid $gray-200;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: $gray-900;
+  background: white;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: $blue;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+
+  &.error { border-color: $red; }
+}
+
+.field-select { cursor: pointer; }
+
+.field-textarea { resize: vertical; }
+
+.field-hint {
+  font-size: 0.7rem;
+  color: $gray-400;
+}
+
+.field-error {
+  font-size: 0.7rem;
+  color: $red;
+  font-weight: 500;
+}
+
+// ── Drawer ─────────────────────────────────────────────────────────────────────
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 900;
+  animation: fadeIn 0.2s ease;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 95vw;
+  background: white;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+  z-index: 901;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid $gray-200;
+  flex-shrink: 0;
+  background: $gray-50;
+
+  .drawer-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: $gray-900;
+    margin: 0;
+  }
+
+  .drawer-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: $gray-600;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+    &:hover { background: $gray-200; color: $gray-900; }
+  }
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.4rem;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $gray-200; border-radius: 4px; }
+}
+
+.drawer-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid $gray-100;
+  margin-top: 0.5rem;
+}
+
+// ── CDK Drag global overrides ─────────────────────────────────────────────────
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  background: white;
+  opacity: 0.95;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0,0,0.2,1);
+}
+
+.cdk-drop-list-dragging .bom-drag-item:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0,0,0.2,1);
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .bom-layout {
+    flex-direction: column;
+  }
+
+  .bom-product-list {
+    width: 100%;
+    max-height: 240px;
+  }
+
+  .stats-row {
+    .stat-chip { min-width: calc(50% - 0.45rem); }
+  }
+}
+
+@media (max-width: 600px) {
+  .page-header { flex-direction: column; }
+  .header-right { width: 100%; flex-direction: column; align-items: flex-start; }
+  .tab-toggle { width: 100%; }
+  .tab-btn { flex: 1; justify-content: center; }
+  .stats-row { .stat-chip { min-width: 100%; } }
+  .drawer { width: 100vw; }
+}

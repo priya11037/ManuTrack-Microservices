@@ -1,0 +1,472 @@
+// ── Page Layout ───────────────────────────────────────────────────────────────
+.al-page {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.al-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.al-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.al-sub {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 2px 0 0;
+}
+
+.al-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.date-pills {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.date-pill {
+  padding: 0.3rem 0.7rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 0.75rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover  { color: #374151; }
+  &.active { background: white; color: #111827; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &:hover  { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+}
+
+// ── Stats Cards ───────────────────────────────────────────────────────────────
+.stats-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: white;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    color: #6b7280;
+    flex-shrink: 0;
+  }
+
+  div { display: flex; flex-direction: column; }
+
+  .sc-num {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1;
+  }
+
+  .sc-lbl {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+
+  &.info  { background: #eff6ff; border-color: #bfdbfe; mat-icon { color: #2563eb; } .sc-num { color: #2563eb; } }
+  &.warn  { background: #fffbeb; border-color: #fde68a; mat-icon { color: #d97706; } .sc-num { color: #d97706; } }
+  &.error { background: #fef2f2; border-color: #fecaca; mat-icon { color: #dc2626; } .sc-num { color: #dc2626; } }
+}
+
+// ── Filters Bar ───────────────────────────────────────────────────────────────
+.filters-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  background: white;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+  }
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; color: #9ca3af; }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.83rem;
+    color: #374151;
+
+    &::placeholder { color: #9ca3af; }
+  }
+
+  .clear-x {
+    background: none; border: none; cursor: pointer; padding: 0;
+    display: flex; color: #9ca3af;
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
+    &:hover { color: #374151; }
+  }
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.fchip {
+  padding: 0.2rem 0.65rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 99px;
+  background: white;
+  font-size: 0.72rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.18s;
+
+  &:hover { border-color: #6b7280; color: #374151; }
+  &.active { background: #1e2a3b; border-color: #1e2a3b; color: white; font-weight: 600; }
+
+  &.sev-info.active    { background: #2563eb; border-color: #2563eb; }
+  &.sev-warning.active { background: #d97706; border-color: #d97706; }
+  &.sev-error.active   { background: #dc2626; border-color: #dc2626; }
+}
+
+// ── Table Card ────────────────────────────────────────────────────────────────
+.table-card {
+  background: white;
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.al-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead tr {
+    background: #f8fafc;
+
+    th {
+      padding: 0.7rem 0.9rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+      border-bottom: 1px solid #f0f2f5;
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    .log-row {
+      border-bottom: 1px solid #f9fafb;
+      cursor: pointer;
+      transition: background 0.15s;
+
+      &:hover      { background: #f8faff; }
+      &.expanded   { background: #f0f7ff; }
+
+      &.sev-row-warning { border-left: 3px solid #f59e0b; }
+      &.sev-row-error   { border-left: 3px solid #ef4444; }
+      &.sev-row-info    { border-left: 3px solid transparent; }
+
+      td {
+        padding: 0.65rem 0.9rem;
+        font-size: 0.8rem;
+        color: #374151;
+        vertical-align: middle;
+      }
+    }
+
+    .detail-row td {
+      padding: 0 !important;
+      background: #f8faff;
+      border-bottom: 1px solid #e8eaed;
+    }
+  }
+}
+
+// ── Expand Icon ───────────────────────────────────────────────────────────────
+.expand-td {
+  padding-left: 0.5rem !important;
+}
+
+.expand-icon {
+  font-size: 16px; width: 16px; height: 16px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+
+  &.rotated { transform: rotate(90deg); color: #2563eb; }
+}
+
+// ── Timestamp ─────────────────────────────────────────────────────────────────
+.ts-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  white-space: nowrap;
+}
+
+.ts-date {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ts-time {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+// ── User Cell ─────────────────────────────────────────────────────────────────
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-av {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-info { display: flex; flex-direction: column; }
+
+.user-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.1;
+}
+
+.user-role {
+  font-size: 0.68rem;
+  color: #9ca3af;
+}
+
+// ── Module Badge ──────────────────────────────────────────────────────────────
+.module-badge {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+// ── Action Cell ───────────────────────────────────────────────────────────────
+.action-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem !important;
+  color: #1f2937 !important;
+  letter-spacing: 0.3px;
+}
+
+// ── Severity Badge ────────────────────────────────────────────────────────────
+.sev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+
+  &.sev-info    { background: #eff6ff; color: #1d4ed8; }
+  &.sev-warning { background: #fffbeb; color: #92400e; }
+  &.sev-error   { background: #fef2f2; color: #991b1b; }
+}
+
+// ── IP Address ────────────────────────────────────────────────────────────────
+.ip-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem !important;
+  color: #6b7280 !important;
+}
+
+// ── Expanded Detail Box ───────────────────────────────────────────────────────
+.detail-box {
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px dashed #e8eaed;
+  animation: expand-in 0.2s ease;
+}
+
+@keyframes expand-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.detail-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &.sev-icon-info    { background: #eff6ff; mat-icon { color: #2563eb; } }
+  &.sev-icon-warning { background: #fffbeb; mat-icon { color: #d97706; } }
+  &.sev-icon-error   { background: #fef2f2; mat-icon { color: #dc2626; } }
+}
+
+.detail-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.detail-head {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+}
+
+.detail-text {
+  font-size: 0.83rem;
+  color: #1f2937;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+
+  span {
+    font-size: 0.72rem;
+    color: #6b7280;
+
+    strong { color: #374151; font-weight: 600; }
+  }
+}
+
+// ── Empty State ───────────────────────────────────────────────────────────────
+.empty-cell {
+  text-align: center !important;
+  padding: 3rem 1rem !important;
+  color: #9ca3af;
+
+  mat-icon { font-size: 40px; width: 40px; height: 40px; display: block; margin: 0 auto 0.5rem; }
+  p        { margin: 0; font-size: 0.85rem; }
+}
+
+// ── Table Footer ─────────────────────────────────────────────────────────────
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  border-top: 1px solid #f3f4f6;
+  font-size: 0.75rem;
+  color: #9ca3af;
+
+  strong { color: #374151; }
+
+  .footer-hint {
+    font-style: italic;
+    font-size: 0.7rem;
+  }
+}

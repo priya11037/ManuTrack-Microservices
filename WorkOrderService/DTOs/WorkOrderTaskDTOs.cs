@@ -39,8 +39,8 @@ public class UpdateWorkOrderTaskRequest
 public class UpdateTaskStatusRequest
 {
     [Required(ErrorMessage = "Status is required.")]
-    [RegularExpression("^(Pending|InProgress|Completed|Cancelled)$",
-        ErrorMessage = "Status must be one of: Pending, InProgress, Completed, Cancelled.")]
+    [RegularExpression("^(To Do|In Progress|Done|Cancelled)$",
+        ErrorMessage = "Status must be one of: To Do, InProgress, Done, Cancelled.")]
     public string Status { get; set; } = string.Empty;
 }
 

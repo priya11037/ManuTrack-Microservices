@@ -1,0 +1,312 @@
+<div class="tc-page">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────────── -->
+  <div class="tc-header">
+    <div>
+      <h2 class="tc-title">My Task Queue</h2>
+      <p class="tc-sub">{{ operatorName() }} · {{ today }}</p>
+    </div>
+    <div class="tc-header-right">
+      @if (stats().flagged > 0) {
+        <div class="flag-alert">
+          <mat-icon>flag</mat-icon>
+          {{ stats().flagged }} issue{{ stats().flagged > 1 ? 's' : '' }} flagged
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── KPI Chips ────────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>assignment</mat-icon>
+      <div><span class="stat-num">{{ stats().total }}</span><span class="stat-lbl">Assigned</span></div>
+    </div>
+    <div class="stat-chip indigo">
+      <mat-icon>autorenew</mat-icon>
+      <div><span class="stat-num">{{ stats().inProgress }}</span><span class="stat-lbl">In Progress</span></div>
+    </div>
+    <div class="stat-chip green">
+      <mat-icon>check_circle</mat-icon>
+      <div><span class="stat-num">{{ stats().done }}</span><span class="stat-lbl">Done</span></div>
+    </div>
+    @if (stats().overdue > 0) {
+      <div class="stat-chip red">
+        <mat-icon>warning</mat-icon>
+        <div><span class="stat-num">{{ stats().overdue }}</span><span class="stat-lbl">Overdue</span></div>
+      </div>
+    }
+    @if (stats().flagged > 0) {
+      <div class="stat-chip amber">
+        <mat-icon>flag</mat-icon>
+        <div><span class="stat-num">{{ stats().flagged }}</span><span class="stat-lbl">Flagged</span></div>
+      </div>
+    }
+  </div>
+
+  <!-- ── Drag hint ─────────────────────────────────────────────────────────── -->
+  <div class="drag-hint">
+    <mat-icon>drag_indicator</mat-icon>
+    Drag cards between columns to update status · Click a card to expand steps
+  </div>
+
+  <!-- ── Kanban Board ──────────────────────────────────────────────────────── -->
+  <div class="kanban-board" cdkDropListGroup>
+    @for (col of columns; track col.id) {
+      <div class="kanban-col">
+
+        <!-- Column Header -->
+        <div class="col-header" [style.border-top-color]="col.color">
+          <div class="col-title-row">
+            <mat-icon [style.color]="col.color">{{ col.icon }}</mat-icon>
+            <span class="col-title" [style.color]="col.color">{{ col.label }}</span>
+            <span class="col-count" [style.background]="col.color + '18'" [style.color]="col.color">
+              {{ col.items.length }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="col-body"
+             cdkDropList
+             [id]="col.id"
+             [cdkDropListData]="col.items"
+             [cdkDropListConnectedTo]="connectedIds"
+             [style.background]="col.bg"
+             (cdkDropListDropped)="onDrop($event)">
+
+          @if (col.items.length === 0) {
+            <div class="empty-col">
+              <mat-icon>inbox</mat-icon>
+              <span>No tasks here</span>
+            </div>
+          }
+
+          @for (task of col.items; track task.id) {
+            <div class="task-card"
+                 cdkDrag
+                 [cdkDragData]="task"
+                 [class.card-overdue]="isOverdue(task)"
+                 [class.card-flagged]="task.flagged"
+                 [class.card-done]="task.status === 'Done'"
+                 [class.card-expanded]="expandedId() === task.id"
+                 [style.--pr-color]="priorityMeta(task.priority).color">
+
+              <!-- CDK Drag Preview -->
+              <div *cdkDragPreview class="task-card drag-preview" [style.--pr-color]="priorityMeta(task.priority).color">
+                <div class="tc-top">
+                  <span class="tc-wo">{{ task.woNumber }}</span>
+                  <span class="tc-priority" [style.color]="priorityMeta(task.priority).color"
+                        [style.background]="priorityMeta(task.priority).bg">{{ task.priority }}</span>
+                </div>
+                <div class="tc-product">{{ task.product }}</div>
+              </div>
+
+              <!-- CDK Placeholder -->
+              <div *cdkDragPlaceholder class="drag-placeholder"></div>
+
+              <!-- ── Card Content ──────────────────────────────────────────── -->
+
+              <!-- Flagged banner -->
+              @if (task.flagged) {
+                <div class="flag-banner">
+                  <mat-icon>flag</mat-icon>
+                  <span>Issue flagged: {{ task.flagReason }}</span>
+                  <button class="flag-clear-btn" (click)="clearFlag(task, $event)" matTooltip="Clear flag">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              }
+
+              <!-- Top row -->
+              <div class="tc-top" (click)="toggleExpand(task.id, $event)">
+                <span class="tc-wo">{{ task.woNumber }}</span>
+                <span class="tc-priority" [style.color]="priorityMeta(task.priority).color"
+                      [style.background]="priorityMeta(task.priority).bg">
+                  {{ task.priority }}
+                </span>
+                @if (isOverdue(task)) {
+                  <span class="overdue-badge">Overdue</span>
+                }
+              </div>
+
+              <!-- Product + SKU -->
+              <div class="tc-product" (click)="toggleExpand(task.id, $event)">{{ task.product }}</div>
+              <div class="tc-sku">{{ task.sku }} · {{ task.line }}</div>
+
+              <!-- Progress bar -->
+              <div class="tc-progress" (click)="toggleExpand(task.id, $event)">
+                <div class="tc-prog-bar">
+                  <div class="tc-prog-fill"
+                       [style.width.%]="getProgress(task)"
+                       [style.background]="task.status === 'Done' ? '#059669' : priorityMeta(task.priority).color">
+                  </div>
+                </div>
+                <span class="tc-prog-txt">{{ task.produced }}/{{ task.quantity }} units · {{ getProgress(task) }}%</span>
+              </div>
+
+              <!-- Steps mini progress -->
+              <div class="steps-mini" (click)="toggleExpand(task.id, $event)">
+                <span class="steps-label">Steps</span>
+                <div class="steps-dots">
+                  @for (step of task.steps; track step.id) {
+                    <span class="step-dot" [class.step-done]="step.done"
+                          [style.background]="step.done ? priorityMeta(task.priority).color : '#e5e7eb'"></span>
+                  }
+                </div>
+                <span class="steps-count">{{ task.steps.filter(s => s.done).length }}/{{ task.steps.length }}</span>
+              </div>
+
+              <!-- Footer actions -->
+              <div class="tc-footer">
+                <span class="tc-due" [class.due-overdue]="isOverdue(task)">
+                  <mat-icon>event</mat-icon>{{ task.dueDate }}
+                </span>
+                <div class="tc-actions">
+                  @if (task.status !== 'Done') {
+                    <button class="tc-act-btn progress-btn"
+                            matTooltip="Update progress"
+                            (click)="openProgressEdit(task, $event)">
+                      <mat-icon>add_circle_outline</mat-icon>
+                    </button>
+                    @if (!task.flagged) {
+                      <button class="tc-act-btn flag-btn"
+                              matTooltip="Flag an issue"
+                              (click)="openFlagDrawer(task.id, $event)">
+                        <mat-icon>flag</mat-icon>
+                      </button>
+                    }
+                  }
+                  <button class="tc-act-btn expand-btn"
+                          [matTooltip]="expandedId() === task.id ? 'Collapse' : 'View steps'"
+                          (click)="toggleExpand(task.id, $event)">
+                    <mat-icon>{{ expandedId() === task.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- ── Inline Progress Editor ──────────────────────────────── -->
+              @if (progressEditId() === task.id) {
+                <div class="progress-editor" (click)="$event.stopPropagation()">
+                  <span class="pe-label">Units produced:</span>
+                  <div class="pe-controls">
+                    <button class="pe-btn" (click)="decrementProgress()">
+                      <mat-icon>remove</mat-icon>
+                    </button>
+                    <input class="pe-input" type="number" [value]="progressInput()"
+                           (input)="progressInput.set(+$any($event.target).value)"
+                           [min]="0" [max]="task.quantity" />
+                    <button class="pe-btn" (click)="incrementProgress(task.quantity)">
+                      <mat-icon>add</mat-icon>
+                    </button>
+                  </div>
+                  <span class="pe-total">of {{ task.quantity }}</span>
+                  <button class="pe-save" (click)="saveProgress(task)">
+                    <mat-icon>check</mat-icon> Save
+                  </button>
+                </div>
+              }
+
+              <!-- ── Expanded Steps Panel ────────────────────────────────── -->
+              @if (expandedId() === task.id) {
+                <div class="steps-panel" (click)="$event.stopPropagation()">
+                  <div class="sp-divider"></div>
+
+                  @if (task.notes) {
+                    <div class="sp-notes">
+                      <mat-icon>notes</mat-icon>
+                      <span>{{ task.notes }}</span>
+                    </div>
+                  }
+
+                  <div class="sp-steps-header">
+                    <span>Production Checklist</span>
+                    <span class="sp-steps-pct">{{ stepsProgress(task) }}%</span>
+                  </div>
+
+                  <div class="sp-steps-list">
+                    @for (step of task.steps; track step.id) {
+                      <div class="sp-step" [class.sp-step-done]="step.done"
+                           (click)="task.status !== 'Done' && toggleStep(task.id, step.id)">
+                        <div class="sp-checkbox" [class.sp-checked]="step.done"
+                             [style.border-color]="step.done ? priorityMeta(task.priority).color : '#d1d5db'"
+                             [style.background]="step.done ? priorityMeta(task.priority).color : 'transparent'">
+                          @if (step.done) { <mat-icon>check</mat-icon> }
+                        </div>
+                        <span class="sp-step-label">{{ step.label }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Overall progress bar in panel -->
+                  <div class="sp-progress-bar">
+                    <div class="sp-prog-fill"
+                         [style.width.%]="stepsProgress(task)"
+                         [style.background]="priorityMeta(task.priority).color">
+                    </div>
+                  </div>
+                </div>
+              }
+
+            </div>
+          }
+        </div>
+
+      </div>
+    }
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  Flag Issue Drawer                                                        -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+@if (flagDrawerId()) {
+  @for (task of tasks(); track task.id) {
+    @if (task.id === flagDrawerId()) {
+      <div class="drawer-overlay" (click)="closeFlagDrawer()"></div>
+      <div class="flag-drawer">
+
+        <div class="fd-head">
+          <div class="fd-head-icon">
+            <mat-icon>flag</mat-icon>
+          </div>
+          <div>
+            <h3>Flag Issue</h3>
+            <p>{{ task.woNumber }} · {{ task.product }}</p>
+          </div>
+          <button class="fd-close" (click)="closeFlagDrawer()"><mat-icon>close</mat-icon></button>
+        </div>
+
+        <form class="fd-form" [formGroup]="flagForm" (ngSubmit)="submitFlag(task)" novalidate>
+
+          <div class="ff">
+            <label class="ff-label">Describe the issue <span class="req">*</span></label>
+            <div class="ff-textarea-wrap" [class.ff-invalid]="flagForm.get('reason')?.invalid && flagForm.get('reason')?.touched">
+              <textarea formControlName="reason" rows="4"
+                        placeholder="e.g. Missing material, machine breakdown, safety concern…"></textarea>
+            </div>
+            @if (flagForm.get('reason')?.invalid && flagForm.get('reason')?.touched) {
+              <span class="ff-err">Please describe the issue (min 5 characters)</span>
+            }
+          </div>
+
+          <div class="fd-info-box">
+            <mat-icon>info</mat-icon>
+            <span>This WO will be flagged and your Production Planner will be notified.</span>
+          </div>
+
+          <div class="fd-actions">
+            <button type="button" class="btn-cancel" (click)="closeFlagDrawer()">Cancel</button>
+            <button type="submit" class="btn-flag">
+              <mat-icon>flag</mat-icon>
+              Submit Flag
+            </button>
+          </div>
+
+        </form>
+      </div>
+    }
+  }
+}

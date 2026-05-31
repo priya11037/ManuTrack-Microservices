@@ -1,26 +1,69 @@
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-  <div class="card p-4" style="width: 400px;">
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);">
+  <div class="card p-5 hover-lift" style="width: 440px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.7); background: rgba(255,255,255,0.9); box-shadow: 0 10px 40px -10px rgba(15,23,42,0.15);">
     <div class="text-center mb-4">
-      <i class="bi bi-gear-wide-connected text-primary" style="font-size: 2.5rem;"></i>
-      <h4 class="mt-2 fw-bold">ManuTrack</h4>
-      <p class="text-muted small">Manufacturing Operations Platform</p>
+      <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-3 p-3 mb-3 shadow" style="width: 60px; height: 60px;">
+        <i class="bi bi-gear-wide-connected" style="font-size: 1.8rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));"></i>
+      </div>
+      <h3 class="fw-bold tracking-tight text-dark mb-1">ManuTrack</h3>
+      <p class="text-muted small">Manufacturing Operations & Production Management</p>
     </div>
 
-    <div *ngIf="errorMessage" class="alert alert-danger py-2 small">{{ errorMessage }}</div>
-
-    <div class="mb-3">
-      <label class="form-label fw-semibold">Email</label>
-      <input type="email" class="form-control" [(ngModel)]="email" placeholder="Enter your email" />
+    <!-- ── Error Messages ──────────────────────────────────────────────── -->
+    <div *ngIf="errorMessage" class="alert alert-danger py-2 px-3 small border-0 rounded-3 mb-3" style="background-color: #fef2f2; color: #b91c1c;">
+      <div class="d-flex align-items-start gap-1">
+        <i class="bi bi-exclamation-circle-fill mt-0.5"></i>
+        <div>
+          <span class="fw-semibold">{{ errorMessage }}</span>
+          <ul *ngIf="errorList.length > 0" class="mb-0 mt-1 ps-3 text-start">
+            <li *ngFor="let err of errorList">{{ err }}</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
-    <div class="mb-4">
-      <label class="form-label fw-semibold">Password</label>
-      <input type="password" class="form-control" [(ngModel)]="password" placeholder="Enter your password" (keyup.enter)="login()" />
-    </div>
+    <!-- ── Login Form ──────────────────────────────────────────────────── -->
+    <form [formGroup]="loginForm" (ngSubmit)="login()">
+      <div class="mb-3">
+        <label class="form-label fw-bold">Email Address</label>
+        <div class="input-group has-validation">
+          <span class="input-group-text bg-white border-end-0 text-muted" 
+                [class.border-danger]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+            <i class="bi bi-envelope"></i>
+          </span>
+          <input type="email" class="form-control border-start-0 ps-0" 
+                 formControlName="email" placeholder="name@factory.com"
+                 [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" />
+          <div class="invalid-feedback text-start" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
+            <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required.</span>
+            <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email address.</span>
+          </div>
+        </div>
+      </div>
 
-    <button class="btn btn-primary w-100" (click)="login()" [disabled]="loading">
-      <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-      {{ loading ? 'Signing in...' : 'Sign In' }}
-    </button>
+      <div class="mb-4">
+        <label class="form-label fw-bold">Password</label>
+        <div class="input-group has-validation">
+          <span class="input-group-text bg-white border-end-0 text-muted"
+                [class.border-danger]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            <i class="bi bi-lock"></i>
+          </span>
+          <input type="password" class="form-control border-start-0 ps-0" 
+                 formControlName="password" placeholder="••••••••"
+                 [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" />
+          <div class="invalid-feedback text-start" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+            <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required.</span>
+            <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters.</span>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 py-2.5 shadow-sm text-uppercase fw-bold tracking-wider" 
+              [disabled]="loading" style="font-size: 13px;">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+        {{ loading ? 'Signing in...' : 'Sign In' }}
+      </button>
+    </form>
   </div>
 </div>
+
+

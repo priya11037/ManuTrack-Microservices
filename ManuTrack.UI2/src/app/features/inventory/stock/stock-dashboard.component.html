@@ -1,0 +1,270 @@
+<div class="sd-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="sd-header">
+    <div>
+      <h2 class="sd-title">Stock Dashboard</h2>
+      <p class="sd-sub">Monitor stock levels, low-stock alerts and inventory valuation</p>
+    </div>
+    <button class="add-btn" (click)="openAddDrawer()">
+      <mat-icon>add</mat-icon> Add Item
+    </button>
+  </div>
+
+  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>inventory_2</mat-icon>
+      <div><span class="stat-num">{{ stats().total }}</span><span class="stat-lbl">Total Items</span></div>
+    </div>
+    <div class="stat-chip red" (click)="stockFilter.set(stockFilter() === 'low' ? 'all' : 'low')" style="cursor:pointer">
+      <mat-icon>warning</mat-icon>
+      <div><span class="stat-num">{{ stats().low }}</span><span class="stat-lbl">Low Stock ⚠️</span></div>
+    </div>
+    <div class="stat-chip green" (click)="stockFilter.set(stockFilter() === 'ok' ? 'all' : 'ok')" style="cursor:pointer">
+      <mat-icon>check_circle</mat-icon>
+      <div><span class="stat-num">{{ stats().ok }}</span><span class="stat-lbl">OK</span></div>
+    </div>
+    <div class="stat-chip amber" (click)="stockFilter.set(stockFilter() === 'overstock' ? 'all' : 'overstock')" style="cursor:pointer">
+      <mat-icon>moving</mat-icon>
+      <div><span class="stat-num">{{ stats().overstock }}</span><span class="stat-lbl">Overstock</span></div>
+    </div>
+    <div class="stat-chip teal">
+      <mat-icon>payments</mat-icon>
+      <div>
+        <span class="stat-num">£{{ stats().totalValue | number:'1.0-0' }}</span>
+        <span class="stat-lbl">Total Value</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <mat-icon class="si">search</mat-icon>
+      <input class="search-input" type="text" placeholder="Search by name, SKU, supplier…"
+             [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+      @if (searchTerm()) {
+        <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="categoryFilter() === 'all'" (click)="categoryFilter.set('all')">All</button>
+      @for (c of categories; track c) {
+        <button class="fc" [class.fc-active]="categoryFilter() === c" (click)="categoryFilter.set(c)">{{ c }}</button>
+      }
+    </div>
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="stockFilter() === 'all'"      (click)="stockFilter.set('all')">All Levels</button>
+      <button class="fc fc-low"       [class.fc-active]="stockFilter() === 'low'"       (click)="stockFilter.set('low')">⚠️ Low</button>
+      <button class="fc fc-ok"        [class.fc-active]="stockFilter() === 'ok'"        (click)="stockFilter.set('ok')">✓ OK</button>
+      <button class="fc fc-overstock" [class.fc-active]="stockFilter() === 'overstock'" (click)="stockFilter.set('overstock')">↑ Overstock</button>
+    </div>
+  </div>
+
+  <!-- ── Stock Table ──────────────────────────────────────────────────────── -->
+  <div class="table-card">
+    <table class="sd-table">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Item Name</th>
+          <th>Category</th>
+          <th>Stock Level</th>
+          <th>Min / Max</th>
+          <th>Unit Cost</th>
+          <th>Value</th>
+          <th>Supplier</th>
+          <th>Location</th>
+          <th>Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (filtered().length === 0) {
+          <tr>
+            <td colspan="11" class="empty-cell">
+              <mat-icon>search_off</mat-icon>
+              <p>No items match your filters</p>
+              <button class="link-btn" (click)="searchTerm.set(''); categoryFilter.set('all'); stockFilter.set('all')">Clear filters</button>
+            </td>
+          </tr>
+        }
+        @for (item of filtered(); track item.id) {
+          <tr [class.row-low]="stockStatus(item) === 'low'" [class.row-over]="stockStatus(item) === 'overstock'">
+            <td><span class="sku-badge">{{ item.sku }}</span></td>
+            <td>
+              <div class="name-cell">
+                <span class="item-name">{{ item.name }}</span>
+                @if (stockStatus(item) === 'low') {
+                  <span class="low-alert">Low Stock</span>
+                }
+              </div>
+            </td>
+            <td><span class="cat-tag">{{ item.category }}</span></td>
+            <td class="td-stock">
+              <div class="stock-level">
+                <div class="sl-bar">
+                  <div class="sl-fill"
+                       [style.width.%]="stockPct(item)"
+                       [style.background]="stockBarColor(item)"></div>
+                </div>
+                <span class="sl-val" [style.color]="stockBarColor(item)">
+                  {{ item.currentStock }} {{ item.unit }}
+                </span>
+              </div>
+            </td>
+            <td class="td-muted">{{ item.minStock }} / {{ item.maxStock }}</td>
+            <td class="td-muted">£{{ item.unitCost | number:'1.2-2' }}</td>
+            <td class="td-value">£{{ (item.currentStock * item.unitCost) | number:'1.0-0' }}</td>
+            <td class="td-muted">{{ item.supplier }}</td>
+            <td><span class="loc-tag">{{ item.location }}</span></td>
+            <td class="td-muted">{{ item.lastUpdated }}</td>
+            <td>
+              @if (deleteConfirmId() === item.id) {
+                <div class="del-confirm">
+                  <span>Delete?</span>
+                  <button class="dc-yes" (click)="deleteItem(item.id)">Yes</button>
+                  <button class="dc-no"  (click)="cancelDelete()">No</button>
+                </div>
+              } @else {
+                <div class="action-row">
+                  <button class="act-btn edit"   matTooltip="Edit"   (click)="openEditDrawer(item, $event)"><mat-icon>edit</mat-icon></button>
+                  <button class="act-btn delete" matTooltip="Delete" (click)="confirmDelete(item.id)"><mat-icon>delete_outline</mat-icon></button>
+                </div>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <div class="table-footer">
+      Showing <strong>{{ filtered().length }}</strong> of <strong>{{ items().length }}</strong> items
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══ Drawer ══════════════════════════════════════════════════════════════ -->
+@if (drawerOpen()) {
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+  <div class="drawer">
+    <div class="drawer-head">
+      <div class="dh-icon" [style.background]="drawerMode() === 'add' ? '#eff6ff' : '#f0fdf4'">
+        <mat-icon [style.color]="drawerMode() === 'add' ? '#2563eb' : '#059669'">
+          {{ drawerMode() === 'add' ? 'add_circle' : 'edit_note' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h3>{{ drawerMode() === 'add' ? 'Add Stock Item' : 'Edit Stock Item' }}</h3>
+        <p>{{ drawerMode() === 'add' ? 'Register a new inventory item' : selectedItem()?.name }}</p>
+      </div>
+      <button class="dh-close" (click)="closeDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <form class="drawer-form" [formGroup]="itemForm" (ngSubmit)="saveItem()" novalidate>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">SKU <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="itemForm.get('sku')?.invalid && itemForm.get('sku')?.touched">
+            <mat-icon>qr_code</mat-icon>
+            <input type="text" formControlName="sku" placeholder="e.g. RM-001" />
+          </div>
+          @if (itemForm.get('sku')?.invalid && itemForm.get('sku')?.touched) {
+            <span class="ff-err">SKU is required</span>
+          }
+        </div>
+        <div class="ff">
+          <label class="ff-label">Unit <span class="req">*</span></label>
+          <div class="ff-select-wrap">
+            <mat-icon>straighten</mat-icon>
+            <select formControlName="unit">
+              @for (u of units; track u) { <option [value]="u">{{ u }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="ff">
+        <label class="ff-label">Item Name <span class="req">*</span></label>
+        <div class="ff-input-wrap" [class.ff-invalid]="itemForm.get('name')?.invalid && itemForm.get('name')?.touched">
+          <mat-icon>inventory_2</mat-icon>
+          <input type="text" formControlName="name" placeholder="e.g. Steel Rod 12mm" />
+        </div>
+        @if (itemForm.get('name')?.invalid && itemForm.get('name')?.touched) {
+          <span class="ff-err">Name is required</span>
+        }
+      </div>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Category <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="itemForm.get('category')?.invalid && itemForm.get('category')?.touched">
+            <mat-icon>category</mat-icon>
+            <select formControlName="category">
+              <option value="" disabled>Select…</option>
+              @for (c of categories; track c) { <option [value]="c">{{ c }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Location <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="itemForm.get('location')?.invalid && itemForm.get('location')?.touched">
+            <mat-icon>warehouse</mat-icon>
+            <select formControlName="location">
+              <option value="" disabled>Select…</option>
+              @for (l of locations; track l) { <option [value]="l">{{ l }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="ff-row-3">
+        <div class="ff">
+          <label class="ff-label">Current Stock</label>
+          <div class="ff-input-wrap"><mat-icon>numbers</mat-icon><input type="number" formControlName="currentStock" min="0" /></div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Min Stock</label>
+          <div class="ff-input-wrap"><mat-icon>arrow_downward</mat-icon><input type="number" formControlName="minStock" min="0" /></div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Max Stock</label>
+          <div class="ff-input-wrap"><mat-icon>arrow_upward</mat-icon><input type="number" formControlName="maxStock" min="1" /></div>
+        </div>
+      </div>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Unit Cost (£) <span class="req">*</span></label>
+          <div class="ff-input-wrap"><mat-icon>payments</mat-icon><input type="number" formControlName="unitCost" min="0" step="0.01" /></div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Supplier <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="itemForm.get('supplier')?.invalid && itemForm.get('supplier')?.touched">
+            <mat-icon>local_shipping</mat-icon>
+            <select formControlName="supplier">
+              <option value="" disabled>Select…</option>
+              @for (s of suppliers; track s) { <option [value]="s">{{ s }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-cancel" (click)="closeDrawer()">Cancel</button>
+        <button type="submit" class="btn-save">
+          <mat-icon>{{ drawerMode() === 'add' ? 'add_circle' : 'save' }}</mat-icon>
+          {{ drawerMode() === 'add' ? 'Add to Inventory' : 'Save Changes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}

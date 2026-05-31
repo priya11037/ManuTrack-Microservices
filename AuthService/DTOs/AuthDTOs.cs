@@ -25,8 +25,8 @@ public class RegisterRequest
     public string ConfirmPassword { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Role is required.")]
-    [RegularExpression("^(Admin|Planner|Operator|Inspector|InventoryManager|ComplianceOfficer)$",
-        ErrorMessage = "Invalid role. Allowed values: Admin, Planner, Operator, Inspector, InventoryManager, ComplianceOfficer.")]
+    [RegularExpression("^(Admin|ProductionPlanner|ShopFloorOperator|QualityInspector|InventoryManager|ComplianceOfficer)$",
+        ErrorMessage = "Invalid role. Allowed values: Admin, Production Planner, Shop Floor Operator, Quality Inspector, Inventory Manager, Compliance Officer.")]
     public string Role { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Phone number is required.")]
@@ -62,13 +62,15 @@ public class ChangePasswordRequest
     public string ConfirmNewPassword { get; set; } = string.Empty;
 }
 
+public record LoginUserInfo(
+    int UserId,
+    string Name,
+    string Email,
+    string Role);
+
 public record LoginResponse(
     string Token,
-    string Role,
-    string Name,
-    int UserId,
-    string Email);
-
+    LoginUserInfo User);
 public record AuthUserViewModel(
     int UserID,
     string Name,

@@ -1,0 +1,353 @@
+<div class="an-page">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="an-header">
+    <div>
+      <h2 class="an-title">{{ pageTitle() }}</h2>
+      <p class="an-sub">{{ pageSubtitle() }}</p>
+    </div>
+    <div class="an-actions">
+      <button class="range-btn" [matMenuTriggerFor]="rangeMenu">
+        <mat-icon>date_range</mat-icon>
+        <strong>{{ selectedRange() }}</strong>
+        <mat-icon>keyboard_arrow_down</mat-icon>
+      </button>
+      <mat-menu #rangeMenu="matMenu">
+        @for (r of dateRanges; track r) {
+          <button mat-menu-item (click)="selectedRange.set(r)">{{ r }}</button>
+        }
+      </mat-menu>
+      <button class="export-btn" (click)="exportCSV()" matTooltip="Export KPI table as CSV">
+        <mat-icon>download</mat-icon> Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  PRODUCTION PLANNER ANALYTICS                                         -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'ProductionPlanner') {
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      @for (k of ppKpis; track k.label) {
+        <ng-container *ngTemplateOutlet="kpiCard; context: { $implicit: k }"></ng-container>
+      }
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="chart-row">
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Production Output Trend</span>
+            <span class="card-sub">Planned vs actual units — last 30 days</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="line" [data]="ppOutputData" [options]="ppOutputOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+      <div class="card side-card">
+        <div class="card-header"><span class="card-title">WO Status Breakdown</span></div>
+        <div class="donut-area">
+          <p-chart type="doughnut" [data]="ppWoStatusData" [options]="ppWoStatusOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="legend-list">
+          @for (l of ppWoStatusLegend; track l.label) {
+            <div class="leg-item">
+              <span class="leg-dot" [style.background]="l.color"></span>
+              <span class="leg-label">{{ l.label }}</span>
+              <span class="leg-val">{{ l.count }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="chart-row">
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">On-Time Delivery by Week</span>
+            <span class="card-sub">Actual vs 90% target</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="ppOnTimeData" [options]="ppOnTimeOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Line Utilisation</span>
+            <span class="card-sub">Capacity used per production line</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="ppLineData" [options]="ppLineOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Table -->
+    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: ppTableHeaders, rows: ppTableRows, keys: ['wo','product','line','planned','actual','onTime','cycle','status'] }"></ng-container>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  QUALITY INSPECTOR ANALYTICS                                          -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'QualityInspector') {
+
+    <div class="kpi-row">
+      @for (k of qiKpis; track k.label) {
+        <ng-container *ngTemplateOutlet="kpiCard; context: { $implicit: k }"></ng-container>
+      }
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Inspection Pass / Fail Trend</span>
+            <span class="card-sub">Daily results — last 30 days</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="line" [data]="qiTrendData" [options]="qiTrendOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+      <div class="card side-card">
+        <div class="card-header"><span class="card-title">Defect by Type</span></div>
+        <div class="donut-area">
+          <p-chart type="doughnut" [data]="qiDefectTypeData" [options]="qiDefectTypeOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="legend-list">
+          @for (l of qiDefectTypeLegend; track l.label) {
+            <div class="leg-item">
+              <span class="leg-dot" [style.background]="l.color"></span>
+              <span class="leg-label">{{ l.label }}</span>
+              <span class="leg-val">{{ l.count }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Inspection Results by Product</span>
+            <span class="card-sub">Passed / Failed / In Review / Pending</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="qiByProductData" [options]="qiByProductOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Root Cause Analysis</span>
+            <span class="card-sub">Defects by root cause category</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="qiRootCauseData" [options]="qiRootCauseOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: qiTableHeaders, rows: qiTableRows, keys: ['ins','product','wo','inspected','defective','rate','result','inspector'] }"></ng-container>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  INVENTORY MANAGER ANALYTICS                                          -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'InventoryManager') {
+
+    <div class="kpi-row">
+      @for (k of imKpis; track k.label) {
+        <ng-container *ngTemplateOutlet="kpiCard; context: { $implicit: k }"></ng-container>
+      }
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Stock Movement Trend</span>
+            <span class="card-sub">Stock in vs stock out — last 30 days</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="line" [data]="imStockTrendData" [options]="imStockTrendOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+      <div class="card side-card">
+        <div class="card-header"><span class="card-title">Inventory by Category</span></div>
+        <div class="donut-area">
+          <p-chart type="doughnut" [data]="imCategoryData" [options]="imCategoryOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="legend-list">
+          @for (l of imCategoryLegend; track l.label) {
+            <div class="leg-item">
+              <span class="leg-dot" [style.background]="l.color"></span>
+              <span class="leg-label">{{ l.label }}</span>
+              <span class="leg-val">{{ l.pct }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Purchase Order Status</span>
+            <span class="card-sub">Current PO pipeline breakdown</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="imPoStatusData" [options]="imPoStatusOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Supplier Performance</span>
+            <span class="card-sub">On-time delivery % vs quality % by supplier</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="imSupplierData" [options]="imSupplierOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: imTableHeaders, rows: imTableRows, keys: ['sku','item','cat','current','min','pct','turnover','status'] }"></ng-container>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  COMPLIANCE OFFICER ANALYTICS                                         -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  @if (role() === 'ComplianceOfficer') {
+
+    <div class="kpi-row">
+      @for (k of coKpis; track k.label) {
+        <ng-container *ngTemplateOutlet="kpiCard; context: { $implicit: k }"></ng-container>
+      }
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Audit Events by Week</span>
+            <span class="card-sub">Stacked by severity — Info, Warning, Error</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="coEventTrendData" [options]="coEventTrendOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+      <div class="card side-card">
+        <div class="card-header"><span class="card-title">Reports by Status</span></div>
+        <div class="donut-area">
+          <p-chart type="doughnut" [data]="coReportStatusData" [options]="coReportStatusOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+        <div class="legend-list">
+          @for (l of coReportStatusLegend; track l.label) {
+            <div class="leg-item">
+              <span class="leg-dot" [style.background]="l.color"></span>
+              <span class="leg-label">{{ l.label }}</span>
+              <span class="leg-val">{{ l.count }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Findings by Module</span>
+            <span class="card-sub">Open vs resolved findings per compliance area</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="coFindingsData" [options]="coFindingsOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+      <div class="chart-card card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">Monthly Submission Rate</span>
+            <span class="card-sub">Actual vs 90% target</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <p-chart type="bar" [data]="coSubmissionData" [options]="coSubmissionOpts" [style]="{'width':'100%','height':'100%'}" />
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: coTableHeaders, rows: coTableRows, keys: ['num','title','type','period','findings','actions','deadline','status'] }"></ng-container>
+  }
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  SHARED TEMPLATES                                                         -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- KPI Card Template -->
+<ng-template #kpiCard let-k>
+  <div class="kpi-card card {{ k.color }}">
+    <div class="kpi-icon-wrap"><mat-icon>{{ k.icon }}</mat-icon></div>
+    <div class="kpi-body">
+      <span class="kpi-value">{{ k.value }}</span>
+      <span class="kpi-label">{{ k.label }}</span>
+      <span class="kpi-trend-label">{{ k.trend }}</span>
+    </div>
+    <div class="kpi-delta" [class.delta-up]="k.trendUp" [class.delta-down]="!k.trendUp">
+      <mat-icon>{{ k.trendUp ? 'trending_up' : 'trending_down' }}</mat-icon>
+      <span>{{ k.trendValue }}</span>
+    </div>
+  </div>
+</ng-template>
+
+<!-- KPI Table Template -->
+<ng-template #kpiTable let-headers="headers" let-rows="rows" let-keys="keys">
+  <div class="kpi-table-card card">
+    <div class="kt-header">
+      <span class="card-title">KPI Breakdown Table</span>
+      <span class="kt-count">{{ rows.length }} records · {{ selectedRange() }}</span>
+    </div>
+    <div class="kt-scroll">
+      <table class="kt-table">
+        <thead>
+          <tr>
+            @for (h of headers; track h) {
+              <th>{{ h }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows; track $index) {
+            <tr>
+              @for (key of keys; track key) {
+                <td>{{ row[key] }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-template>

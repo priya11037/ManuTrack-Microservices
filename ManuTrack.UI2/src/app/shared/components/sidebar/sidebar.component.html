@@ -1,0 +1,28 @@
+<aside class="sidebar">
+
+  <!-- Nav Items -->
+  <nav class="sidebar-nav">
+    @for (item of navItems(); track item.route) {
+      <a
+        class="nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [matTooltip]="item.label"
+        matTooltipPosition="right"
+      >
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+
+  <!-- Bottom -->
+  <div class="sidebar-bottom">
+    <div class="sidebar-divider"></div>
+    <a class="nav-item" matTooltip="Settings" matTooltipPosition="right" href="#">
+      <mat-icon>settings</mat-icon>
+      <span class="nav-label">Settings</span>
+    </a>
+  </div>
+
+</aside>

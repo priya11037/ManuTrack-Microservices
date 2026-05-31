@@ -22,11 +22,9 @@ builder.Services.AddControllers(options =>
 });
 builder.Services.Configure<ApiBehaviorOptions>(o => o.SuppressModelStateInvalidFilter = true);
 
-// ComplianceReport → Quality & Compliance DB
 builder.Services.AddDbContext<ComplianceReportDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("QualityDb")));
 
-// AuditLog → Identity & Platform DB
 builder.Services.AddDbContext<AuditDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("GovernanceDb")));
 
@@ -36,7 +34,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true, ValidateAudience = true, ValidateLifetime = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
@@ -92,11 +92,7 @@ builder.Services.AddSwaggerGen(options =>
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
             Array.Empty<string>()
         }
@@ -115,13 +111,11 @@ app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Compliance 
 
 using (var scope = app.Services.CreateScope())
 {
-    // ComplianceReports → ManuTrackQualityDB
     var reportDb = scope.ServiceProvider.GetRequiredService<ComplianceReportDbContext>();
-    reportDb.Database.Migrate();
+    reportDb.Database.EnsureCreated();
 
-    // AuditEntries → ManuTrackGovernanceDB
     var auditDb = scope.ServiceProvider.GetRequiredService<AuditDbContext>();
-    auditDb.Database.Migrate();
+    auditDb.Database.EnsureCreated();
 }
 
 app.Run();

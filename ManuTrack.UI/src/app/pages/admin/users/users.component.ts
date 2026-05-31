@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
-import { AuthUserViewModel, RegisterRequest } from '../../../core/models/auth.model';
+import { AuthUserViewModel } from '../../../core/models/auth.model';
 
 @Component({
   selector: 'app-users',
@@ -14,20 +15,64 @@ export class UsersComponent implements OnInit {
   selectedRole = '';
   loading = false;
   errorMessage = '';
+  errorList: string[] = [];
   successMessage = '';
   showCreateForm = false;
   createLoading = false;
 
   roles = ['Admin', 'Planner', 'Operator', 'Inspector', 'InventoryManager', 'ComplianceOfficer'];
 
-  form: RegisterRequest = {
-    name: '', email: '', password: '', confirmPassword: '', role: '', phone: ''
-  };
+  userForm!: FormGroup;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
+    this.initForm();
     this.loadUsers();
+  }
+
+  initForm(): void {
+    this.userForm = this.fb.group({
+      name: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100),
+        Validators.pattern(/^[a-zA-Z\s]+$/)
+      ]],
+      email: ['', [
+        Validators.required,
+        Validators.email,
+        Validators.maxLength(100)
+      ]],
+      phone: ['', [
+        Validators.required,
+        Validators.pattern(/^\+?[0-9]{10,15}$/)
+      ]],
+      role: ['', [
+        Validators.required
+      ]],
+      password: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+      ]],
+      confirmPassword: ['', [Validators.required]]
+    }, {
+      validators: this.passwordMatchValidator
+    });
+  }
+
+  passwordMatchValidator(g: FormGroup) {
+    const password = g.get('password')?.value;
+    const confirmPassword = g.get('confirmPassword')?.value;
+    if (password !== confirmPassword) {
+      g.get('confirmPassword')?.setErrors({ mismatch: true });
+      return { mismatch: true };
+    }
+    return null;
   }
 
   loadUsers(): void {
@@ -60,38 +105,52 @@ export class UsersComponent implements OnInit {
   }
 
   openCreate(): void {
-    this.form = { name: '', email: '', password: '', confirmPassword: '', role: '', phone: '' };
+    this.userForm.reset({
+      name: '',
+      email: '',
+      phone: '',
+      role: '',
+      password: '',
+      confirmPassword: ''
+    });
     this.showCreateForm = true;
     this.errorMessage = '';
+    this.errorList = [];
   }
 
   createUser(): void {
-    if (!this.form.name || !this.form.email || !this.form.password || !this.form.role || !this.form.phone) {
-      this.errorMessage = 'All fields are required.';
+    if (this.userForm.invalid) {
+      this.userForm.markAllAsTouched();
       return;
     }
-    if (this.form.password !== this.form.confirmPassword) {
-      this.errorMessage = 'Passwords do not match.';
-      return;
-    }
+
     this.createLoading = true;
     this.errorMessage = '';
-    this.authService.register(this.form).subscribe({
+    this.errorList = [];
+
+    this.authService.register(this.userForm.value).subscribe({
       next: res => {
         this.createLoading = false;
         if (res.success) {
-          this.successMessage = `User "${this.form.name}" created successfully.`;
+          this.successMessage = `User "${this.userForm.get('name')?.value}" created successfully.`;
           this.showCreateForm = false;
           this.loadUsers();
           setTimeout(() => this.successMessage = '', 4000);
         } else {
           this.errorMessage = res.message || 'Registration failed.';
+          if (res.errors && res.errors.length > 0) {
+            this.errorList = res.errors;
+          }
         }
       },
       error: (err) => {
         this.createLoading = false;
-        const msg = err?.error?.message || err?.error?.errors?.join(', ');
-        this.errorMessage = msg || 'Failed to create user.';
+        if (err?.error?.errors && err.error.errors.length > 0) {
+          this.errorList = err.error.errors;
+          this.errorMessage = err.error.message || 'One or more validation errors occurred.';
+        } else {
+          this.errorMessage = err?.error?.message || 'Failed to create user.';
+        }
       }
     });
   }
@@ -124,3 +183,4 @@ export class UsersComponent implements OnInit {
     return map[role] || 'bg-dark';
   }
 }
+

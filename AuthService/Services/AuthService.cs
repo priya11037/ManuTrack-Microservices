@@ -42,7 +42,9 @@ public class AuthServiceImpl : IAuthService
             audience: _config["Jwt:Audience"]!,
             expiryMinutes: 60);
 
-        return new LoginResponse(token, user.Role, user.Name, user.UserID, user.Email);
+        return new LoginResponse(token, 
+            new LoginUserInfo(user.UserID,user.Name,user.Email,user.Role)
+            );
     }
 
     public async Task<AuthUserViewModel> RegisterAsync(RegisterRequest request)

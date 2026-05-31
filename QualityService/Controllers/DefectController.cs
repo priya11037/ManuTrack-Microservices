@@ -25,7 +25,7 @@ public class DefectController(IDefectService service) : ControllerBase
         => Ok(await service.GetByInspectionIdAsync(inspectionId));
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Inspector")]
+    [Authorize(Roles = "Admin,QualityInspector")]
     public async Task<ActionResult<ApiResponse<DefectViewModel>>> Create([FromBody] CreateDefectRequest request)
     {
         var result = await service.CreateAsync(request);
@@ -33,12 +33,12 @@ public class DefectController(IDefectService service) : ControllerBase
     }
 
     [HttpPut("{id:int}/resolve")]
-    [Authorize(Roles = "Admin,Inspector,Operator")]
+    [Authorize(Roles = "Admin,QualityInspector,ShopFloorOperator")]
     public async Task<ActionResult<ApiResponse<DefectViewModel>>> Resolve(int id, [FromBody] ResolveDefectRequest request)
         => Ok(await service.ResolveAsync(id, request));
 
     [HttpPut("{id:int}/status")]
-    [Authorize(Roles = "Admin,Inspector")]
+    [Authorize(Roles = "Admin,QualityInspector")]
     public async Task<ActionResult<ApiResponse<DefectViewModel>>> UpdateStatus(int id, [FromBody] UpdateDefectStatusRequest request)
         => Ok(await service.UpdateStatusAsync(id, request));
 }

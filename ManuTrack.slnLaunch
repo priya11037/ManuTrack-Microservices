@@ -3,49 +3,40 @@
     "Name": "New Profile",
     "Projects": [
       {
-        "Path": "AuthService\\AuthService.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
-      },
-      {
-        "Path": "ApiGateway\\ApiGateway.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
-      },
-      {
-        "Path": "AnalyticsService\\AnalyticsService.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
-      },
-      {
-        "Path": "ComplianceService\\ComplianceService.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
-      },
-      {
-        "Path": "InventoryService\\InventoryService.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
-      },
-      {
         "Path": "NotificationService\\NotificationService.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
-      },
-      {
-        "Path": "ProductService\\ProductService.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
+        "Action": "Start"
       },
       {
         "Path": "QualityService\\QualityService.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
+        "Action": "Start"
+      },
+      {
+        "Path": "ApiGateway\\ApiGateway.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "AnalyticsService\\AnalyticsService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "AuthService\\AuthService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "ComplianceService\\ComplianceService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "InventoryService\\InventoryService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "ProductService\\ProductService.csproj",
+        "Action": "Start"
       },
       {
         "Path": "WorkOrderService\\WorkOrderService.csproj",
-        "Action": "Start",
-        "DebugTarget": "http"
+        "Action": "Start"
       }
     ]
   }

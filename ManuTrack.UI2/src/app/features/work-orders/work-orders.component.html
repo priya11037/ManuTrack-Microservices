@@ -1,0 +1,482 @@
+<div class="wo-page">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="wo-header">
+    <div>
+      <h2 class="wo-title">Work Orders</h2>
+      <p class="wo-sub">Plan, track and manage production work orders</p>
+    </div>
+    <div class="header-actions">
+      <!-- View Toggle -->
+      <div class="view-toggle">
+        <button class="vt-btn" [class.vt-active]="viewMode() === 'table'" (click)="viewMode.set('table')" matTooltip="Table view">
+          <mat-icon>table_rows</mat-icon>
+        </button>
+        <button class="vt-btn" [class.vt-active]="viewMode() === 'kanban'" (click)="viewMode.set('kanban')" matTooltip="Kanban board">
+          <mat-icon>view_kanban</mat-icon>
+        </button>
+      </div>
+      <button class="add-btn" (click)="openAddDrawer()">
+        <mat-icon>add</mat-icon>
+        Create Work Order
+      </button>
+    </div>
+  </div>
+
+  <!-- ── KPI Stats ─────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>assignment</mat-icon>
+      <div><span class="stat-num">{{ stats().total }}</span><span class="stat-lbl">Total WOs</span></div>
+    </div>
+    <div class="stat-chip blue">
+      <mat-icon>schedule</mat-icon>
+      <div><span class="stat-num">{{ stats().planned }}</span><span class="stat-lbl">Planned</span></div>
+    </div>
+    <div class="stat-chip indigo">
+      <mat-icon>autorenew</mat-icon>
+      <div><span class="stat-num">{{ stats().inProgress }}</span><span class="stat-lbl">In Progress</span></div>
+    </div>
+    <div class="stat-chip amber">
+      <mat-icon>pause_circle</mat-icon>
+      <div><span class="stat-num">{{ stats().onHold }}</span><span class="stat-lbl">On Hold</span></div>
+    </div>
+    <div class="stat-chip green">
+      <mat-icon>check_circle</mat-icon>
+      <div><span class="stat-num">{{ stats().completed }}</span><span class="stat-lbl">Completed</span></div>
+    </div>
+    @if (stats().overdue > 0) {
+      <div class="stat-chip red">
+        <mat-icon>warning</mat-icon>
+        <div><span class="stat-num">{{ stats().overdue }}</span><span class="stat-lbl">Overdue</span></div>
+      </div>
+    }
+  </div>
+
+  <!-- ── Filters ───────────────────────────────────────────────────────────── -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <mat-icon class="si">search</mat-icon>
+      <input class="search-input" type="text" placeholder="Search by WO#, product, assignee…"
+             [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+      @if (searchTerm()) {
+        <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">All Status</button>
+      @for (s of statuses; track s) {
+        <button class="fc" [class.fc-active]="statusFilter() === s" (click)="statusFilter.set(s)">{{ s }}</button>
+      }
+    </div>
+
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="priorityFilter() === 'all'" (click)="priorityFilter.set('all')">All Priority</button>
+      @for (p of priorities; track p) {
+        <button class="fc pr-chip" [class.fc-active]="priorityFilter() === p" (click)="priorityFilter.set(p)"
+                [style.--pr-color]="priorityMeta(p).color">
+          <span class="pr-dot" [style.background]="priorityMeta(p).color"></span>{{ p }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  TABLE VIEW                                                           -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  @if (viewMode() === 'table') {
+    <div class="table-card">
+      <table class="wo-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>WO #</th>
+            <th>Product</th>
+            <th>Progress</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Line</th>
+            <th>Due Date</th>
+            <th>Assigned To</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (filteredWOs().length === 0) {
+            <tr>
+              <td colspan="10" class="empty-cell">
+                <mat-icon>search_off</mat-icon>
+                <p>No work orders match your filters</p>
+                <button class="link-btn" (click)="searchTerm.set(''); statusFilter.set('all'); priorityFilter.set('all')">Clear filters</button>
+              </td>
+            </tr>
+          }
+          @for (wo of filteredWOs(); track wo.id) {
+            <!-- Main row -->
+            <tr class="wo-row" [class.row-overdue]="isOverdue(wo)" [class.row-completed]="wo.status === 'Completed'">
+              <!-- Expand toggle -->
+              <td class="td-expand">
+                <button class="expand-btn" (click)="toggleExpand(wo.id, $event)"
+                        [matTooltip]="expandedWOId() === wo.id ? 'Collapse' : 'Details'">
+                  <mat-icon>{{ expandedWOId() === wo.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
+              </td>
+              <!-- WO Number -->
+              <td>
+                <span class="wo-number">{{ wo.woNumber }}</span>
+                @if (isOverdue(wo)) {
+                  <span class="overdue-badge">Overdue</span>
+                }
+              </td>
+              <!-- Product -->
+              <td>
+                <div class="product-cell">
+                  <span class="product-name">{{ wo.product }}</span>
+                  <span class="product-sku">{{ wo.sku }}</span>
+                </div>
+              </td>
+              <!-- Progress -->
+              <td class="td-progress">
+                <div class="progress-wrap">
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="getProgress(wo)"
+                         [style.background]="wo.status === 'Completed' ? '#059669' : '#2563eb'"></div>
+                  </div>
+                  <span class="progress-txt">{{ wo.produced }}/{{ wo.quantity }}</span>
+                </div>
+              </td>
+              <!-- Priority -->
+              <td>
+                <span class="priority-badge {{ priorityMeta(wo.priority).cls }}">
+                  <span class="pr-dot-sm"></span>{{ wo.priority }}
+                </span>
+              </td>
+              <!-- Status -->
+              <td>
+                <span class="status-badge {{ statusMeta(wo.status).cls }}">{{ wo.status }}</span>
+              </td>
+              <!-- Line -->
+              <td><span class="line-tag">{{ wo.line }}</span></td>
+              <!-- Due Date -->
+              <td class="td-date" [class.date-overdue]="isOverdue(wo)">{{ wo.dueDate }}</td>
+              <!-- Assigned To -->
+              <td>
+                <div class="assignee-cell">
+                  <div class="av-circle" [style.background]="wo.avatarColor">{{ getInitials(wo.assignedTo) }}</div>
+                  <span class="av-name">{{ wo.assignedTo.split(' ')[0] }}</span>
+                </div>
+              </td>
+              <!-- Actions -->
+              <td>
+                @if (deleteConfirmId() === wo.id) {
+                  <div class="del-confirm">
+                    <span>Delete?</span>
+                    <button class="dc-yes" (click)="deleteWO(wo.id)">Yes</button>
+                    <button class="dc-no" (click)="cancelDelete()">No</button>
+                  </div>
+                } @else {
+                  <div class="action-row">
+                    <button class="act-btn edit" matTooltip="Edit" (click)="openEditDrawer(wo, $event)"><mat-icon>edit</mat-icon></button>
+                    <button class="act-btn del"  matTooltip="Delete" (click)="confirmDelete(wo.id, $event)"><mat-icon>delete_outline</mat-icon></button>
+                  </div>
+                }
+              </td>
+            </tr>
+
+            <!-- Expanded detail row -->
+            @if (expandedWOId() === wo.id) {
+              <tr class="detail-row">
+                <td colspan="10">
+                  <div class="detail-panel">
+                    <div class="dp-item">
+                      <span class="dp-lbl">Start Date</span>
+                      <span class="dp-val">{{ wo.startDate }}</span>
+                    </div>
+                    <div class="dp-item">
+                      <span class="dp-lbl">Due Date</span>
+                      <span class="dp-val" [class.dp-overdue]="isOverdue(wo)">{{ wo.dueDate }}</span>
+                    </div>
+                    <div class="dp-item">
+                      <span class="dp-lbl">Production Line</span>
+                      <span class="dp-val">{{ wo.line }}</span>
+                    </div>
+                    <div class="dp-item">
+                      <span class="dp-lbl">Quantity</span>
+                      <span class="dp-val">{{ wo.produced }} / {{ wo.quantity }} {{ wo.sku }}</span>
+                    </div>
+                    <div class="dp-item dp-full">
+                      <span class="dp-lbl">Notes</span>
+                      <span class="dp-val">{{ wo.notes || '—' }}</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+
+      <div class="table-footer">
+        <span>Showing <strong>{{ filteredWOs().length }}</strong> of <strong>{{ workOrders().length }}</strong> work orders</span>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  KANBAN VIEW  (CDK Drag & Drop)                                       -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  @if (viewMode() === 'kanban') {
+    <div class="kanban-hint">
+      <mat-icon>drag_indicator</mat-icon>
+      Drag cards between columns to update status
+    </div>
+
+    <div class="kanban-board" cdkDropListGroup>
+      @for (col of kanbanColumns; track col.id) {
+        <div class="kanban-col">
+
+          <!-- Column Header -->
+          <div class="col-header" [style.border-top-color]="col.color">
+            <div class="col-title-row">
+              <mat-icon [style.color]="col.color">{{ col.icon }}</mat-icon>
+              <span class="col-title" [style.color]="col.color">{{ col.label }}</span>
+              <span class="col-count" [style.background]="col.color + '18'" [style.color]="col.color">
+                {{ col.items.length }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Drop Zone -->
+          <div class="col-body"
+               cdkDropList
+               [id]="col.id"
+               [cdkDropListData]="col.items"
+               [cdkDropListConnectedTo]="kanbanConnectedIds"
+               [style.background]="col.bg"
+               (cdkDropListDropped)="onKanbanDrop($event)">
+
+            @if (col.items.length === 0) {
+              <div class="empty-col">
+                <mat-icon>inbox</mat-icon>
+                <span>Drop cards here</span>
+              </div>
+            }
+
+            @for (wo of col.items; track wo.id) {
+              <div class="kanban-card" cdkDrag [cdkDragData]="wo">
+
+                <!-- Drag preview -->
+                <div *cdkDragPreview class="kanban-card drag-preview">
+                  <div class="kc-top">
+                    <span class="kc-wo">{{ wo.woNumber }}</span>
+                    <span class="priority-badge {{ priorityMeta(wo.priority).cls }}">{{ wo.priority }}</span>
+                  </div>
+                  <div class="kc-product">{{ wo.product }}</div>
+                </div>
+
+                <!-- Drag placeholder -->
+                <div *cdkDragPlaceholder class="drag-placeholder"></div>
+
+                <!-- Card content -->
+                <div class="kc-top">
+                  <span class="kc-wo">{{ wo.woNumber }}</span>
+                  <span class="priority-badge {{ priorityMeta(wo.priority).cls }}">{{ wo.priority }}</span>
+                </div>
+                <div class="kc-product">{{ wo.product }}</div>
+                <div class="kc-sku">{{ wo.sku }}</div>
+
+                @if (wo.status !== 'Planned' && wo.status !== 'Completed') {
+                  <div class="kc-progress">
+                    <div class="kc-prog-bar">
+                      <div class="kc-prog-fill" [style.width.%]="getProgress(wo)" [style.background]="statusMeta(wo.status).color"></div>
+                    </div>
+                    <span class="kc-prog-txt">{{ getProgress(wo) }}%</span>
+                  </div>
+                }
+
+                <div class="kc-footer">
+                  <div class="av-circle sm" [style.background]="wo.avatarColor">{{ getInitials(wo.assignedTo) }}</div>
+                  <span class="kc-line">{{ wo.line }}</span>
+                  <span class="kc-due" [class.kc-overdue]="isOverdue(wo)">
+                    <mat-icon>event</mat-icon>{{ wo.dueDate }}
+                  </span>
+                </div>
+
+                <div class="kc-actions">
+                  <button class="kc-act-btn" matTooltip="Edit" (click)="openEditDrawer(wo, $event)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button class="kc-act-btn del" matTooltip="Delete" (click)="confirmDelete(wo.id, $event)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+
+              </div>
+            }
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  Slide-out Drawer                                                        -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+@if (drawerOpen()) {
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+
+  <div class="drawer">
+    <!-- Header -->
+    <div class="drawer-head">
+      <div class="drawer-head-icon" [style.background]="drawerMode() === 'add' ? '#eff6ff' : '#f0fdf4'">
+        <mat-icon [style.color]="drawerMode() === 'add' ? '#2563eb' : '#059669'">
+          {{ drawerMode() === 'add' ? 'add_circle' : 'edit_note' }}
+        </mat-icon>
+      </div>
+      <div class="drawer-head-text">
+        <h3>{{ drawerMode() === 'add' ? 'Create Work Order' : 'Edit Work Order' }}</h3>
+        <p>{{ drawerMode() === 'add' ? 'Schedule a new production run' : selectedWO()?.woNumber }}</p>
+      </div>
+      <button class="drawer-close" (click)="closeDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <!-- Form -->
+    <form class="drawer-form" [formGroup]="woForm" (ngSubmit)="saveWO()" novalidate>
+
+      <!-- Product -->
+      <div class="ff">
+        <label class="ff-label">Product <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="woForm.get('product')?.invalid && woForm.get('product')?.touched">
+          <mat-icon>category</mat-icon>
+          <select formControlName="product" (change)="onProductChange($any($event.target).value)">
+            <option value="" disabled>Select product…</option>
+            @for (p of products; track p) { <option [value]="p">{{ p }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (woForm.get('product')?.invalid && woForm.get('product')?.touched) {
+          <span class="ff-err">Product is required</span>
+        }
+      </div>
+
+      <!-- SKU (auto-filled) -->
+      <div class="ff">
+        <label class="ff-label">SKU <span class="ff-hint">(auto-filled)</span></label>
+        <div class="ff-input-wrap">
+          <mat-icon>qr_code</mat-icon>
+          <input type="text" formControlName="sku" placeholder="Auto-filled from product" />
+        </div>
+      </div>
+
+      <!-- Quantity -->
+      <div class="ff">
+        <label class="ff-label">Target Quantity <span class="req">*</span></label>
+        <div class="ff-input-wrap" [class.ff-invalid]="woForm.get('quantity')?.invalid && woForm.get('quantity')?.touched">
+          <mat-icon>production_quantity_limits</mat-icon>
+          <input type="number" formControlName="quantity" placeholder="e.g. 100" min="1" />
+        </div>
+        @if (woForm.get('quantity')?.invalid && woForm.get('quantity')?.touched) {
+          <span class="ff-err">Quantity must be at least 1</span>
+        }
+      </div>
+
+      <!-- Priority -->
+      <div class="ff">
+        <label class="ff-label">Priority <span class="req">*</span></label>
+        <div class="priority-select">
+          @for (p of priorities; track p) {
+            <button type="button" class="ps-opt"
+                    [class.ps-active]="woForm.get('priority')?.value === p"
+                    [style.--pr-c]="priorityMeta(p).color"
+                    (click)="woForm.get('priority')?.setValue(p)">
+              <span class="pr-dot-sm" [style.background]="priorityMeta(p).color"></span>
+              {{ p }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="ff">
+        <label class="ff-label">Status <span class="req">*</span></label>
+        <div class="ff-select-wrap">
+          <mat-icon>flag</mat-icon>
+          <select formControlName="status">
+            @for (s of statuses; track s) { <option [value]="s">{{ s }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+      </div>
+
+      <!-- Dates row -->
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Start Date <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="woForm.get('startDate')?.invalid && woForm.get('startDate')?.touched">
+            <mat-icon>event</mat-icon>
+            <input type="date" formControlName="startDate" />
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Due Date <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="woForm.get('dueDate')?.invalid && woForm.get('dueDate')?.touched">
+            <mat-icon>event</mat-icon>
+            <input type="date" formControlName="dueDate" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Assigned To -->
+      <div class="ff">
+        <label class="ff-label">Assigned Operator <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="woForm.get('assignedTo')?.invalid && woForm.get('assignedTo')?.touched">
+          <mat-icon>engineering</mat-icon>
+          <select formControlName="assignedTo">
+            <option value="" disabled>Select operator…</option>
+            @for (op of operators; track op) { <option [value]="op">{{ op }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (woForm.get('assignedTo')?.invalid && woForm.get('assignedTo')?.touched) {
+          <span class="ff-err">Operator is required</span>
+        }
+      </div>
+
+      <!-- Production Line -->
+      <div class="ff">
+        <label class="ff-label">Production Line <span class="req">*</span></label>
+        <div class="line-select">
+          @for (l of lines; track l) {
+            <button type="button" class="ls-opt" [class.ls-active]="woForm.get('line')?.value === l"
+                    (click)="woForm.get('line')?.setValue(l)">
+              {{ l }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="ff">
+        <label class="ff-label">Notes / Instructions</label>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="notes" rows="3" placeholder="Special instructions, materials needed…"></textarea>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="drawer-actions">
+        <button type="button" class="btn-cancel" (click)="closeDrawer()">Cancel</button>
+        <button type="submit" class="btn-save">
+          <mat-icon>{{ drawerMode() === 'add' ? 'add_circle' : 'save' }}</mat-icon>
+          {{ drawerMode() === 'add' ? 'Create Work Order' : 'Save Changes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}

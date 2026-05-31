@@ -1,0 +1,329 @@
+<div class="cr-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="cr-header">
+    <div>
+      <h2 class="cr-title">Compliance Reports</h2>
+      <p class="cr-sub">Track, review and submit regulatory compliance reports</p>
+    </div>
+    <button class="add-btn" (click)="openAddDrawer()">
+      <mat-icon>add</mat-icon> New Report
+    </button>
+  </div>
+
+  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>policy</mat-icon>
+      <div><span class="stat-num">{{ stats().total }}</span><span class="stat-lbl">Total Reports</span></div>
+    </div>
+    <div class="stat-chip amber">
+      <mat-icon>pending</mat-icon>
+      <div><span class="stat-num">{{ stats().pending }}</span><span class="stat-lbl">Pending</span></div>
+    </div>
+    <div class="stat-chip blue">
+      <mat-icon>thumb_up</mat-icon>
+      <div><span class="stat-num">{{ stats().approved }}</span><span class="stat-lbl">Approved</span></div>
+    </div>
+    @if (stats().overdue > 0) {
+      <div class="stat-chip red">
+        <mat-icon>alarm</mat-icon>
+        <div><span class="stat-num">{{ stats().overdue }}</span><span class="stat-lbl">Overdue</span></div>
+      </div>
+    }
+    @if (stats().rejected > 0) {
+      <div class="stat-chip red">
+        <mat-icon>cancel</mat-icon>
+        <div><span class="stat-num">{{ stats().rejected }}</span><span class="stat-lbl">Rejected</span></div>
+      </div>
+    }
+  </div>
+
+  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <mat-icon class="si">search</mat-icon>
+      <input class="search-input" type="text" placeholder="Search by title, CR#, preparer…"
+             [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+      @if (searchTerm()) {
+        <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="typeFilter() === 'all'" (click)="typeFilter.set('all')">All Types</button>
+      @for (t of types; track t) {
+        <button class="fc" [class.fc-active]="typeFilter() === t" (click)="typeFilter.set(t)"
+                [style.--tc]="typeMeta(t).color">
+          <mat-icon class="fc-icon" [style.color]="typeMeta(t).color">{{ typeMeta(t).icon }}</mat-icon>{{ t }}
+        </button>
+      }
+    </div>
+    <div class="filter-chips">
+      <button class="fc" [class.fc-active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">All Status</button>
+      @for (s of statuses; track s) {
+        <button class="fc" [class.fc-active]="statusFilter() === s" (click)="statusFilter.set(s)">{{ s }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Report Cards ─────────────────────────────────────────────────────── -->
+  <div class="report-list">
+    @if (filtered().length === 0) {
+      <div class="empty-state">
+        <mat-icon>search_off</mat-icon>
+        <p>No reports match your filters</p>
+        <button class="link-btn" (click)="searchTerm.set(''); typeFilter.set('all'); statusFilter.set('all')">Clear filters</button>
+      </div>
+    }
+
+    @for (r of filtered(); track r.id) {
+      <div class="report-card"
+           [class.rc-rejected]="r.status === 'Rejected'"
+           [class.rc-overdue]="isOverdue(r)"
+           [class.rc-expanded]="expandedId() === r.id">
+
+        <!-- Left accent bar by type -->
+        <div class="rc-accent" [style.background]="typeMeta(r.type).color"></div>
+
+        <!-- Card body -->
+        <div class="rc-body" (click)="toggleExpand(r.id, $event)">
+
+          <!-- Top row -->
+          <div class="rc-top">
+            <div class="rc-type-icon" [style.background]="typeMeta(r.type).bg" [style.color]="typeMeta(r.type).color">
+              <mat-icon>{{ typeMeta(r.type).icon }}</mat-icon>
+            </div>
+            <div class="rc-info">
+              <div class="rc-title-row">
+                <span class="rc-num">{{ r.reportNumber }}</span>
+                <span class="rc-title-text">{{ r.title }}</span>
+                @if (isOverdue(r)) {
+                  <span class="overdue-pill"><mat-icon>alarm</mat-icon>Overdue</span>
+                }
+              </div>
+              <div class="rc-meta-row">
+                <span class="rc-period"><mat-icon>date_range</mat-icon>{{ r.period }}</span>
+                <span class="rc-preparer"><mat-icon>person</mat-icon>{{ r.preparedBy }}</span>
+                <span class="rc-deadline" [class.deadline-near]="isOverdue(r)">
+                  <mat-icon>schedule</mat-icon>Due {{ r.submissionDeadline }}
+                </span>
+              </div>
+            </div>
+            <div class="rc-badges">
+              <span class="type-badge" [style.color]="typeMeta(r.type).color" [style.background]="typeMeta(r.type).bg">{{ r.type }}</span>
+              <span class="pr-badge" [style.color]="priorityMeta(r.priority)" [style.background]="priorityMeta(r.priority) + '18'">{{ r.priority }}</span>
+              <span class="st-badge" [style.color]="statusMeta(r.status)!.color" [style.background]="statusMeta(r.status)!.bg">{{ r.status }}</span>
+            </div>
+          </div>
+
+          <!-- Stats row -->
+          <div class="rc-stats">
+            <div class="rc-stat">
+              <mat-icon>find_in_page</mat-icon>
+              <span>{{ r.findings }} finding{{ r.findings !== 1 ? 's' : '' }}</span>
+            </div>
+            <div class="rc-stat">
+              <mat-icon>task_alt</mat-icon>
+              <span>{{ r.actions }} action{{ r.actions !== 1 ? 's' : '' }}</span>
+            </div>
+            @if (r.reviewedBy) {
+              <div class="rc-stat">
+                <mat-icon>rate_review</mat-icon>
+                <span>Reviewed by {{ r.reviewedBy }}</span>
+              </div>
+            }
+            @if (r.submittedDate) {
+              <div class="rc-stat green-stat">
+                <mat-icon>check_circle</mat-icon>
+                <span>Submitted {{ r.submittedDate }}</span>
+              </div>
+            }
+          </div>
+
+        </div>
+
+        <!-- Actions column — fixed width, consistent layout across all cards -->
+        <div class="rc-actions">
+          <!-- Advance button: full width, shown only when applicable -->
+          @if (nextStatusLabel(r.status)) {
+            <button class="action-pill advance full-width"
+                    [matTooltip]="nextStatusLabel(r.status)"
+                    (click)="advanceStatus(r, $event)">
+              <mat-icon>arrow_forward</mat-icon>
+              {{ nextStatusLabel(r.status) }}
+            </button>
+          } @else {
+            <!-- Spacer so icon row stays at the bottom consistently -->
+            <div class="action-spacer"></div>
+          }
+          <!-- Icon buttons: always in a single row -->
+          <div class="action-icon-row">
+            <button class="action-icon-btn"
+                    matTooltip="Download PDF"
+                    (click)="downloadReport(r, $event)">
+              <mat-icon>download</mat-icon>
+            </button>
+            <button class="action-icon-btn"
+                    matTooltip="Edit report"
+                    (click)="openEditDrawer(r, $event)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="action-icon-btn"
+                    [matTooltip]="expandedId() === r.id ? 'Collapse' : 'Details'"
+                    (click)="toggleExpand(r.id, $event)">
+              <mat-icon>{{ expandedId() === r.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Expanded detail -->
+        @if (expandedId() === r.id) {
+          <div class="rc-detail" (click)="$event.stopPropagation()">
+            <div class="rcd-divider"></div>
+            @if (r.notes) {
+              <div class="rcd-notes">
+                <mat-icon>notes</mat-icon>
+                <span>{{ r.notes }}</span>
+              </div>
+            }
+            @if (r.status === 'Rejected') {
+              <div class="rcd-rejected-alert">
+                <mat-icon>error</mat-icon>
+                <span>This report was rejected. Review the notes above and resubmit with corrections.</span>
+              </div>
+            }
+            <div class="rcd-grid">
+              <div class="rcd-item"><span class="rcd-lbl">Report #</span><span class="rcd-val">{{ r.reportNumber }}</span></div>
+              <div class="rcd-item"><span class="rcd-lbl">Period</span><span class="rcd-val">{{ r.period }}</span></div>
+              <div class="rcd-item"><span class="rcd-lbl">Prepared By</span><span class="rcd-val">{{ r.preparedBy }}</span></div>
+              <div class="rcd-item"><span class="rcd-lbl">Reviewed By</span><span class="rcd-val">{{ r.reviewedBy || '—' }}</span></div>
+              <div class="rcd-item"><span class="rcd-lbl">Deadline</span><span class="rcd-val" [class.rcd-overdue]="isOverdue(r)">{{ r.submissionDeadline }}</span></div>
+              <div class="rcd-item"><span class="rcd-lbl">Submitted</span><span class="rcd-val">{{ r.submittedDate || '—' }}</span></div>
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+  </div>
+
+</div>
+
+
+<!-- ══ Drawer ══════════════════════════════════════════════════════════════ -->
+@if (drawerOpen()) {
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+  <div class="drawer">
+    <div class="drawer-head">
+      <div class="dh-icon" [style.background]="drawerMode() === 'add' ? '#eff6ff' : '#f0fdf4'">
+        <mat-icon [style.color]="drawerMode() === 'add' ? '#2563eb' : '#059669'">
+          {{ drawerMode() === 'add' ? 'add_circle' : 'edit_note' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h3>{{ drawerMode() === 'add' ? 'New Compliance Report' : 'Edit Report' }}</h3>
+        <p>{{ drawerMode() === 'add' ? 'Create a new compliance report record' : selectedReport()?.reportNumber }}</p>
+      </div>
+      <button class="dh-close" (click)="closeDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <form class="drawer-form" [formGroup]="reportForm" (ngSubmit)="saveReport()" novalidate>
+
+      <div class="ff">
+        <label class="ff-label">Report Title <span class="req">*</span></label>
+        <div class="ff-input-wrap" [class.ff-invalid]="reportForm.get('title')?.invalid && reportForm.get('title')?.touched">
+          <mat-icon>title</mat-icon>
+          <input type="text" formControlName="title" placeholder="e.g. Q2 2025 Quality Compliance Review" />
+        </div>
+        @if (reportForm.get('title')?.invalid && reportForm.get('title')?.touched) {
+          <span class="ff-err">Title is required (min 5 chars)</span>
+        }
+      </div>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Type <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="reportForm.get('type')?.invalid && reportForm.get('type')?.touched">
+            <mat-icon>category</mat-icon>
+            <select formControlName="type">
+              <option value="" disabled>Select type…</option>
+              @for (t of types; track t) { <option [value]="t">{{ t }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Priority</label>
+          <div class="priority-selector">
+            @for (p of priorities; track p) {
+              <button type="button" class="ps-btn"
+                      [class.ps-active]="reportForm.get('priority')?.value === p"
+                      [style.--pc]="priorityMeta(p)"
+                      (click)="reportForm.get('priority')?.setValue(p)">
+                <span class="ps-dot" [style.background]="priorityMeta(p)"></span>{{ p }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Period <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="reportForm.get('period')?.invalid && reportForm.get('period')?.touched">
+            <mat-icon>date_range</mat-icon>
+            <input type="text" formControlName="period" placeholder="e.g. Q2 2025 or May 2025" />
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Deadline <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="reportForm.get('submissionDeadline')?.invalid && reportForm.get('submissionDeadline')?.touched">
+            <mat-icon>event</mat-icon>
+            <input type="date" formControlName="submissionDeadline" />
+          </div>
+        </div>
+      </div>
+
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Prepared By <span class="req">*</span></label>
+          <div class="ff-select-wrap" [class.ff-invalid]="reportForm.get('preparedBy')?.invalid && reportForm.get('preparedBy')?.touched">
+            <mat-icon>person</mat-icon>
+            <select formControlName="preparedBy">
+              <option value="" disabled>Select…</option>
+              @for (p of preparers; track p) { <option [value]="p">{{ p }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Reviewed By</label>
+          <div class="ff-select-wrap">
+            <mat-icon>rate_review</mat-icon>
+            <select formControlName="reviewedBy">
+              <option value="">— Not assigned —</option>
+              @for (r of reviewers; track r) { <option [value]="r">{{ r }}</option> }
+            </select>
+            <mat-icon class="sel-arrow">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="ff">
+        <label class="ff-label">Notes</label>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="notes" rows="4" placeholder="Findings summary, key observations, action items…"></textarea>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-cancel" (click)="closeDrawer()">Cancel</button>
+        <button type="submit" class="btn-save">
+          <mat-icon>{{ drawerMode() === 'add' ? 'add_circle' : 'save' }}</mat-icon>
+          {{ drawerMode() === 'add' ? 'Create Report' : 'Save Changes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}

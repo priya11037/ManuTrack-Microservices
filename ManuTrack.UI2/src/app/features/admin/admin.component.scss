@@ -1,0 +1,99 @@
+.admin-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+}
+
+// ── Admin Header ─────────────────────────────────────────────────────────────
+.admin-header {
+  padding: 1.1rem 1.5rem 0.9rem;
+  border-bottom: 1px solid #e8eaed;
+  background: white;
+}
+
+.admin-title-block {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.admin-icon-wrap {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    color: #2563eb;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.admin-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.admin-sub {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 0;
+  margin-top: 2px;
+}
+
+// ── Sub Nav Tabs ─────────────────────────────────────────────────────────────
+.admin-tabs {
+  display: flex;
+  gap: 0;
+  background: white;
+  border-bottom: 1px solid #e8eaed;
+  padding: 0 1.5rem;
+}
+
+.admin-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+
+  mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+  }
+
+  &:hover {
+    color: #2563eb;
+    background: #f8faff;
+  }
+
+  &.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    font-weight: 600;
+  }
+}
+
+// ── Content Area ─────────────────────────────────────────────────────────────
+.admin-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #f8fafc;
+}

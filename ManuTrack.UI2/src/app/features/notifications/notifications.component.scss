@@ -1,0 +1,141 @@
+// ── Page ──────────────────────────────────────────────────────────────────────
+.notif-page { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem 1.5rem; }
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.notif-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.notif-title  { font-size: 1.05rem; font-weight: 700; color: #111827; margin: 0; }
+.notif-sub    { font-size: 0.78rem; color: #6b7280; margin: 2px 0 0; }
+.mark-all-btn {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.45rem 0.9rem; border: 1.5px solid #bfdbfe;
+  border-radius: 8px; background: #eff6ff;
+  font-size: 0.82rem; font-weight: 600; color: #2563eb; cursor: pointer;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &:hover { background: #2563eb; color: white; border-color: #2563eb; }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+.stats-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.stat-chip {
+  display: flex; align-items: center; gap: 0.6rem; background: white;
+  border: 1px solid #e8eaed; border-radius: 10px; padding: 0.65rem 1.1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.15s;
+  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  mat-icon { font-size: 20px; width: 20px; height: 20px; color: #6b7280; }
+  div { display: flex; flex-direction: column; }
+  .stat-num { font-size: 1.2rem; font-weight: 800; color: #111827; line-height: 1; }
+  .stat-lbl { font-size: 0.7rem; color: #9ca3af; margin-top: 2px; }
+  &.blue  { background:#eff6ff; border-color:#bfdbfe; mat-icon{color:#2563eb;} .stat-num{color:#2563eb;} }
+  &.red   { background:#fef2f2; border-color:#fecaca; mat-icon{color:#dc2626;} .stat-num{color:#dc2626;} }
+  &.amber { background:#fffbeb; border-color:#fde68a; mat-icon{color:#d97706;} .stat-num{color:#d97706;} }
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+.filters-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.filter-group { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.fc {
+  display: flex; align-items: center; gap: 0.25rem; padding: 0.3rem 0.65rem;
+  border: 1px solid #e5e7eb; border-radius: 6px; background: white;
+  font-size: 0.75rem; font-weight: 500; color: #6b7280; cursor: pointer;
+  transition: all 0.15s;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  &:hover { border-color: #9ca3af; color: #374151; }
+  &.fc-active { background: #1e40af; border-color: #1e40af; color: white; }
+  &.type-fc.fc-active { background: var(--tc); border-color: var(--tc); }
+}
+.fc-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #dc2626; color: white; font-size: 0.62rem; font-weight: 700;
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 4rem 2rem; text-align: center;
+}
+.empty-icon {
+  width: 72px; height: 72px; border-radius: 18px; background: #f3f4f6;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
+  mat-icon { font-size: 36px; width: 36px; height: 36px; color: #9ca3af; }
+}
+.empty-state h3 { font-size: 1rem; font-weight: 700; color: #111827; margin: 0 0 0.4rem; }
+.empty-state p  { font-size: 0.83rem; color: #6b7280; margin: 0 0 1.25rem; }
+.clear-btn {
+  padding: 0.5rem 1.25rem; border: 1.5px solid #e5e7eb; border-radius: 8px;
+  background: white; font-size: 0.83rem; font-weight: 600; color: #374151; cursor: pointer;
+  &:hover { background: #f9fafb; }
+}
+
+// ── Notification List ─────────────────────────────────────────────────────────
+.notif-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.notif-item {
+  display: flex; align-items: flex-start; gap: 0.85rem;
+  background: white; border: 1px solid #f3f4f6; border-radius: 12px;
+  padding: 0.9rem 1rem; cursor: pointer; transition: all 0.18s; position: relative;
+
+  &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: #e5e7eb; }
+
+  &.notif-unread {
+    background: rgba(37,99,235,0.02);
+    border-color: rgba(37,99,235,0.1);
+    border-left: 3px solid #2563eb;
+  }
+  &.notif-error   { border-left: 3px solid #dc2626; }
+  &.notif-warning { border-left: 3px solid #d97706; }
+}
+
+.notif-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}
+
+.notif-content { flex: 1; min-width: 0; }
+.notif-top {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 4px;
+}
+.notif-item-title {
+  font-size: 0.85rem; font-weight: 700; color: #111827; flex: 1;
+}
+.notif-module-tag {
+  font-size: 0.67rem; font-weight: 600; color: #374151;
+  background: #f3f4f6; border: 1px solid #e5e7eb;
+  padding: 0.1rem 0.45rem; border-radius: 5px; white-space: nowrap;
+}
+.unread-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.2); flex-shrink: 0;
+}
+.notif-message {
+  margin: 0 0 6px; font-size: 0.78rem; color: #4b5563; line-height: 1.5;
+}
+.notif-meta {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.7rem; color: #9ca3af;
+}
+.time-icon { font-size: 13px; width: 13px; height: 13px; }
+.notif-time { }
+.notif-link-hint {
+  display: flex; align-items: center; gap: 0.2rem;
+  margin-left: 0.6rem; color: #2563eb; font-weight: 500;
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+}
+
+.notif-actions {
+  display: flex; flex-direction: column; gap: 0.25rem;
+  align-items: center; flex-shrink: 0;
+}
+.na-btn {
+  width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e5e7eb;
+  background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: #9ca3af; transition: all 0.15s;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &:hover     { background: #eff6ff; border-color: #bfdbfe; color: #2563eb; }
+  &.dismiss:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+}
+
+.notif-footer {
+  font-size: 0.78rem; color: #9ca3af; text-align: center; padding: 0.5rem 0;
+}

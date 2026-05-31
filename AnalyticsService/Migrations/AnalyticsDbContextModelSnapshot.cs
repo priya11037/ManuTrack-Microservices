@@ -121,4 +121,3 @@ namespace AnalyticsService.Migrations
         }
     }
 }
-

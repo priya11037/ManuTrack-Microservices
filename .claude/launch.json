@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ManuTrack UI",
+      "runtimeExecutable": "ng",
+      "runtimeArgs": ["serve", "--port", "4200", "--project", "ManuTrack.UI2"],
+      "port": 4200
+    }
+  ]
+}

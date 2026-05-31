@@ -1,0 +1,307 @@
+<div class="iq-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="iq-header">
+    <div>
+      <h2 class="iq-title">Inspection Queue</h2>
+      <p class="iq-sub">Drag cards to update status · Click to expand details</p>
+    </div>
+    <button class="add-btn" (click)="openAddDrawer()">
+      <mat-icon>add</mat-icon> New Inspection
+    </button>
+  </div>
+
+  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <mat-icon>hourglass_empty</mat-icon>
+      <div><span class="stat-num">{{ stats().pending }}</span><span class="stat-lbl">Pending</span></div>
+    </div>
+    <div class="stat-chip blue">
+      <mat-icon>manage_search</mat-icon>
+      <div><span class="stat-num">{{ stats().inReview }}</span><span class="stat-lbl">In Review</span></div>
+    </div>
+    <div class="stat-chip green">
+      <mat-icon>verified</mat-icon>
+      <div><span class="stat-num">{{ stats().passed }}</span><span class="stat-lbl">Passed</span></div>
+    </div>
+    <div class="stat-chip red">
+      <mat-icon>cancel</mat-icon>
+      <div><span class="stat-num">{{ stats().failed }}</span><span class="stat-lbl">Failed</span></div>
+    </div>
+    <div class="stat-chip teal pass-rate">
+      <mat-icon>percent</mat-icon>
+      <div><span class="stat-num">{{ stats().passRate }}%</span><span class="stat-lbl">Pass Rate</span></div>
+    </div>
+  </div>
+
+  <!-- ── Drag hint ────────────────────────────────────────────────────────── -->
+  <div class="drag-hint">
+    <mat-icon>drag_indicator</mat-icon>
+    Drag cards across columns to progress an inspection · Failed cards should have defects logged
+  </div>
+
+  <!-- ── Kanban Board ─────────────────────────────────────────────────────── -->
+  <div class="kanban-board" cdkDropListGroup>
+    @for (col of columns; track col.id) {
+      <div class="kanban-col">
+
+        <div class="col-header" [style.border-top-color]="col.color">
+          <div class="col-title-row">
+            <mat-icon [style.color]="col.color">{{ col.icon }}</mat-icon>
+            <span class="col-title" [style.color]="col.color">{{ col.label }}</span>
+            <span class="col-count" [style.background]="col.color+'18'" [style.color]="col.color">
+              {{ col.items.length }}
+            </span>
+          </div>
+        </div>
+
+        <div class="col-body"
+             cdkDropList
+             [id]="col.id"
+             [cdkDropListData]="col.items"
+             [cdkDropListConnectedTo]="connectedIds"
+             [style.background]="col.bg"
+             (cdkDropListDropped)="onDrop($event)">
+
+          @if (col.items.length === 0) {
+            <div class="empty-col">
+              <mat-icon>inbox</mat-icon>
+              <span>No inspections</span>
+            </div>
+          }
+
+          @for (ins of col.items; track ins.id) {
+            <div class="ins-card"
+                 cdkDrag [cdkDragData]="ins"
+                 [class.card-failed]="ins.status === 'Failed'"
+                 [class.card-passed]="ins.status === 'Passed'"
+                 [class.card-expanded]="expandedId() === ins.id"
+                 [style.--pr-color]="priorityMeta(ins.priority).color">
+
+              <!-- Drag preview -->
+              <div *cdkDragPreview class="ins-card drag-preview" [style.--pr-color]="priorityMeta(ins.priority).color">
+                <div class="ic-top">
+                  <span class="ic-ins">{{ ins.insNumber }}</span>
+                  <span class="ic-priority" [style.color]="priorityMeta(ins.priority).color"
+                        [style.background]="priorityMeta(ins.priority).bg">{{ ins.priority }}</span>
+                </div>
+                <div class="ic-product">{{ ins.product }}</div>
+              </div>
+
+              <!-- Placeholder -->
+              <div *cdkDragPlaceholder class="drag-placeholder"></div>
+
+              <!-- Card content -->
+              <div class="ic-top" (click)="toggleExpand(ins.id, $event)">
+                <span class="ic-ins">{{ ins.insNumber }}</span>
+                <span class="ic-priority" [style.color]="priorityMeta(ins.priority).color"
+                      [style.background]="priorityMeta(ins.priority).bg">{{ ins.priority }}</span>
+                @if (ins.defectsLogged > 0) {
+                  <span class="defect-badge">{{ ins.defectsLogged }} defect{{ ins.defectsLogged > 1 ? 's' : '' }}</span>
+                }
+              </div>
+
+              <div class="ic-product" (click)="toggleExpand(ins.id, $event)">{{ ins.product }}</div>
+              <div class="ic-meta">{{ ins.woRef }} · {{ ins.sku }}</div>
+
+              <!-- Progress bar -->
+              <div class="ic-progress" (click)="toggleExpand(ins.id, $event)">
+                <div class="ic-prog-bar">
+                  <div class="ic-prog-fill"
+                       [style.width.%]="getProgress(ins)"
+                       [style.background]="ins.status === 'Passed' ? '#059669' : ins.status === 'Failed' ? '#dc2626' : '#2563eb'">
+                  </div>
+                </div>
+                <span class="ic-prog-txt">{{ ins.inspectedQty }}/{{ ins.quantity }} inspected</span>
+              </div>
+
+              <!-- Footer -->
+              <div class="ic-footer">
+                <div class="ic-inspector">
+                  <div class="ic-av" [style.background]="ins.avatarColor">{{ getInitials(ins.inspector) }}</div>
+                  <span>{{ ins.inspector.split(' ')[0] }}</span>
+                </div>
+                <span class="ic-date">
+                  <mat-icon>event</mat-icon>{{ ins.scheduledDate }}
+                </span>
+                <div class="ic-actions">
+                  <button class="ic-act-btn" matTooltip="Edit" (click)="openEditDrawer(ins, $event)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button class="ic-act-btn expand" matTooltip="Details" (click)="toggleExpand(ins.id, $event)">
+                    <mat-icon>{{ expandedId() === ins.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- ── Expanded Detail ────────────────────────────────────── -->
+              @if (expandedId() === ins.id) {
+                <div class="ic-detail" (click)="$event.stopPropagation()">
+                  <div class="id-divider"></div>
+                  <div class="id-grid">
+                    <div class="id-item">
+                      <span class="id-lbl">Scheduled</span>
+                      <span class="id-val">{{ ins.scheduledDate }}</span>
+                    </div>
+                    <div class="id-item">
+                      <span class="id-lbl">Completed</span>
+                      <span class="id-val">{{ ins.completedDate || '—' }}</span>
+                    </div>
+                    <div class="id-item">
+                      <span class="id-lbl">Inspector</span>
+                      <span class="id-val">{{ ins.inspector }}</span>
+                    </div>
+                    <div class="id-item">
+                      <span class="id-lbl">Quantity</span>
+                      <span class="id-val">{{ ins.inspectedQty }} / {{ ins.quantity }}</span>
+                    </div>
+                  </div>
+                  @if (ins.notes) {
+                    <div class="id-notes">
+                      <mat-icon>notes</mat-icon>
+                      <span>{{ ins.notes }}</span>
+                    </div>
+                  }
+                  @if (ins.status === 'Failed') {
+                    <div class="id-fail-alert">
+                      <mat-icon>warning</mat-icon>
+                      <span>Log defects in the <strong>Defect Log</strong> tab</span>
+                    </div>
+                  }
+                </div>
+              }
+
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+</div>
+
+
+<!-- ══ Add / Edit Drawer ════════════════════════════════════════════════════ -->
+@if (drawerOpen()) {
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+  <div class="drawer">
+
+    <div class="drawer-head">
+      <div class="dh-icon" [style.background]="drawerMode() === 'add' ? '#eff6ff' : '#f0fdf4'">
+        <mat-icon [style.color]="drawerMode() === 'add' ? '#2563eb' : '#059669'">
+          {{ drawerMode() === 'add' ? 'add_circle' : 'edit_note' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h3>{{ drawerMode() === 'add' ? 'New Inspection' : 'Edit Inspection' }}</h3>
+        <p>{{ drawerMode() === 'add' ? 'Schedule a quality inspection' : selectedIns()?.insNumber }}</p>
+      </div>
+      <button class="dh-close" (click)="closeDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <form class="drawer-form" [formGroup]="insForm" (ngSubmit)="saveInspection()" novalidate>
+
+      <!-- WO Reference -->
+      <div class="ff">
+        <label class="ff-label">WO Reference <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="insForm.get('woRef')?.invalid && insForm.get('woRef')?.touched">
+          <mat-icon>assignment</mat-icon>
+          <select formControlName="woRef">
+            <option value="" disabled>Select work order…</option>
+            @for (w of woRefs; track w) { <option [value]="w">{{ w }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (insForm.get('woRef')?.invalid && insForm.get('woRef')?.touched) {
+          <span class="ff-err">Work order is required</span>
+        }
+      </div>
+
+      <!-- Product -->
+      <div class="ff">
+        <label class="ff-label">Product <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="insForm.get('product')?.invalid && insForm.get('product')?.touched">
+          <mat-icon>category</mat-icon>
+          <select formControlName="product">
+            <option value="" disabled>Select product…</option>
+            @for (p of products; track p) { <option [value]="p">{{ p }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (insForm.get('product')?.invalid && insForm.get('product')?.touched) {
+          <span class="ff-err">Product is required</span>
+        }
+      </div>
+
+      <!-- Quantity + Priority row -->
+      <div class="ff-row">
+        <div class="ff">
+          <label class="ff-label">Quantity <span class="req">*</span></label>
+          <div class="ff-input-wrap" [class.ff-invalid]="insForm.get('quantity')?.invalid && insForm.get('quantity')?.touched">
+            <mat-icon>production_quantity_limits</mat-icon>
+            <input type="number" formControlName="quantity" min="1" placeholder="e.g. 50" />
+          </div>
+        </div>
+        <div class="ff">
+          <label class="ff-label">Priority <span class="req">*</span></label>
+          <div class="priority-selector">
+            @for (p of priorities; track p) {
+              <button type="button" class="ps-btn"
+                      [class.ps-active]="insForm.get('priority')?.value === p"
+                      [style.--pc]="priorityMeta(p).color"
+                      (click)="insForm.get('priority')?.setValue(p)">
+                <span class="ps-dot" [style.background]="priorityMeta(p).color"></span>{{ p }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Inspector -->
+      <div class="ff">
+        <label class="ff-label">Assigned Inspector <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="insForm.get('inspector')?.invalid && insForm.get('inspector')?.touched">
+          <mat-icon>person_search</mat-icon>
+          <select formControlName="inspector">
+            <option value="" disabled>Select inspector…</option>
+            @for (i of inspectors; track i) { <option [value]="i">{{ i }}</option> }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (insForm.get('inspector')?.invalid && insForm.get('inspector')?.touched) {
+          <span class="ff-err">Inspector is required</span>
+        }
+      </div>
+
+      <!-- Scheduled Date -->
+      <div class="ff">
+        <label class="ff-label">Scheduled Date <span class="req">*</span></label>
+        <div class="ff-input-wrap" [class.ff-invalid]="insForm.get('scheduledDate')?.invalid && insForm.get('scheduledDate')?.touched">
+          <mat-icon>event</mat-icon>
+          <input type="date" formControlName="scheduledDate" />
+        </div>
+        @if (insForm.get('scheduledDate')?.invalid && insForm.get('scheduledDate')?.touched) {
+          <span class="ff-err">Date is required</span>
+        }
+      </div>
+
+      <!-- Notes -->
+      <div class="ff">
+        <label class="ff-label">Notes</label>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="notes" rows="3" placeholder="Inspection scope, criteria, special notes…"></textarea>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-cancel" (click)="closeDrawer()">Cancel</button>
+        <button type="submit" class="btn-save">
+          <mat-icon>{{ drawerMode() === 'add' ? 'add_circle' : 'save' }}</mat-icon>
+          {{ drawerMode() === 'add' ? 'Create Inspection' : 'Save Changes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}

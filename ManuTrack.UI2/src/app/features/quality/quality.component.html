@@ -1,0 +1,20 @@
+<div class="quality-shell">
+
+  <!-- Sub-nav tabs -->
+  <div class="q-tabs">
+    <a class="q-tab" routerLink="inspections" routerLinkActive="q-tab-active">
+      <mat-icon>fact_check</mat-icon>
+      Inspection Queue
+    </a>
+    <a class="q-tab" routerLink="defects" routerLinkActive="q-tab-active">
+      <mat-icon>report_problem</mat-icon>
+      Defect Log
+    </a>
+  </div>
+
+  <!-- Child route outlet -->
+  <div class="q-content">
+    <router-outlet />
+  </div>
+
+</div>

@@ -17,9 +17,92 @@
       </button>
       <ul class="dropdown-menu dropdown-menu-end">
         <li><a class="dropdown-item" routerLink="/notifications/history"><i class="bi bi-bell me-2"></i>Notifications</a></li>
+        <li><button class="dropdown-item" (click)="openChangePassword()"><i class="bi bi-shield-lock me-2"></i>Change Password</button></li>
         <li><hr class="dropdown-divider"></li>
         <li><button class="dropdown-item text-danger" (click)="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></li>
       </ul>
     </div>
   </div>
 </nav>
+
+<!-- ── Change Password Modal ── -->
+<div *ngIf="showChangePasswordModal" class="modal-backdrop fade show" style="background-color: rgba(15,23,42,0.45); backdrop-filter: blur(4px); z-index: 1050;"></div>
+<div *ngIf="showChangePasswordModal" class="modal fade show d-block" tabindex="-1" style="z-index: 1060; margin-top: 10vh;">
+  <div class="modal-dialog" style="max-width: 460px;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background: rgba(255,255,255,0.98);">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-shield-lock me-2 text-primary"></i>Change Password</h5>
+        <button type="button" class="btn-close shadow-none" (click)="closeChangePassword()"></button>
+      </div>
+      <div class="modal-body pt-3">
+        
+        <!-- Alerts -->
+        <div *ngIf="modalErrorMessage" class="alert alert-danger py-2 mb-3 small border-0" style="background-color: #fef2f2; color: #b91c1c; border-radius: 8px;">
+          <div class="d-flex align-items-start gap-1">
+            <i class="bi bi-exclamation-circle-fill mt-0.5"></i>
+            <div>
+              <span class="fw-semibold">{{ modalErrorMessage }}</span>
+              <ul *ngIf="modalErrorList.length > 0" class="mb-0 mt-1 ps-3 text-start small">
+                <li *ngFor="let err of modalErrorList">{{ err }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="modalSuccessMessage" class="alert alert-success py-2 mb-3 small border-0" style="background-color: #f0fdf4; color: #15803d; border-radius: 8px;">
+          <i class="bi bi-check-circle-fill me-2"></i> {{ modalSuccessMessage }}
+        </div>
+
+        <form [formGroup]="changePasswordForm" (ngSubmit)="submitChangePassword()">
+          <!-- Current Password -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Current Password</label>
+            <input type="password" class="form-control" formControlName="currentPassword"
+              placeholder="••••••••"
+              [class.is-invalid]="changePasswordForm.get('currentPassword')?.invalid && changePasswordForm.get('currentPassword')?.touched" />
+            <div class="invalid-feedback" *ngIf="changePasswordForm.get('currentPassword')?.touched && changePasswordForm.get('currentPassword')?.invalid">
+              Current password is required.
+            </div>
+          </div>
+
+          <!-- New Password -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">New Password</label>
+            <input type="password" class="form-control" formControlName="newPassword"
+              placeholder="••••••••"
+              [class.is-invalid]="changePasswordForm.get('newPassword')?.invalid && changePasswordForm.get('newPassword')?.touched" />
+            <div class="invalid-feedback" *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.invalid">
+              <span *ngIf="changePasswordForm.get('newPassword')?.errors?.['required']">New password is required.</span>
+              <span *ngIf="changePasswordForm.get('newPassword')?.errors?.['minlength']">Password must be at least 8 characters.</span>
+              <span *ngIf="changePasswordForm.get('newPassword')?.errors?.['pattern']">Password must have at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special char (@$!%*?&).</span>
+            </div>
+            <div class="form-text text-muted" style="font-size: 11px;">Min 8 chars, uppercase, lowercase, digit &amp; special.</div>
+          </div>
+
+          <!-- Confirm New Password -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">Confirm New Password</label>
+            <input type="password" class="form-control" formControlName="confirmNewPassword"
+              placeholder="••••••••"
+              [class.is-invalid]="changePasswordForm.get('confirmNewPassword')?.invalid && changePasswordForm.get('confirmNewPassword')?.touched" />
+            <div class="invalid-feedback" *ngIf="changePasswordForm.get('confirmNewPassword')?.touched && changePasswordForm.get('confirmNewPassword')?.invalid">
+              <span *ngIf="changePasswordForm.get('confirmNewPassword')?.errors?.['required']">Please confirm your new password.</span>
+              <span *ngIf="changePasswordForm.get('confirmNewPassword')?.errors?.['mismatch']">Passwords do not match.</span>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary py-2" (click)="closeChangePassword()">Cancel</button>
+            <button type="submit" class="btn btn-primary py-2 px-4 shadow-sm" [disabled]="changePasswordLoading">
+              <span *ngIf="changePasswordLoading" class="spinner-border spinner-border-sm me-1"></span>
+              Update Password
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+

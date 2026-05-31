@@ -1,4 +1,5 @@
-# ManuTrackUI
+# ManuTrack.UI
+This is the frontend server Code of ManuTrack.
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.10.
 

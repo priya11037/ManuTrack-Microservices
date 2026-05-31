@@ -1,0 +1,122 @@
+<header class="navbar">
+
+  <!-- Logo Zone (72px — aligns exactly with sidebar width) -->
+  <div class="navbar-left">
+    <div class="brand-icon">
+      <mat-icon>precision_manufacturing</mat-icon>
+    </div>
+  </div>
+
+  <!-- Brand Text (right after logo zone) -->
+  <div class="navbar-brand">
+    <span class="brand-text">ManuTrack</span>
+    <span class="brand-divider">|</span>
+    <span class="brand-sub">ERP</span>
+  </div>
+
+  <!-- Center: Search -->
+  <div class="navbar-center">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        placeholder="Search work orders, products, inventory..."
+        class="search-input"
+      />
+      <span class="search-shortcut">⌘K</span>
+    </div>
+  </div>
+
+  <!-- Right: Actions -->
+  <div class="navbar-right">
+
+    <!-- Notification Bell + Dropdown -->
+    <button mat-icon-button class="action-btn notif-btn"
+            [matMenuTriggerFor]="notifMenu"
+            matTooltip="Notifications" matTooltipPosition="below"
+            [matBadge]="unreadCount() > 0 ? unreadCount().toString() : ''"
+            matBadgeColor="warn" matBadgeSize="small"
+            [matBadgeHidden]="unreadCount() === 0">
+      <mat-icon>notifications</mat-icon>
+    </button>
+
+    <mat-menu #notifMenu="matMenu" class="notif-dropdown" xPosition="before">
+      <!-- Dropdown header -->
+      <div class="nd-header" (click)="$event.stopPropagation()">
+        <span class="nd-title">Notifications</span>
+        @if (unreadCount() > 0) {
+          <button class="nd-mark-all" (click)="markAllRead()">Mark all read</button>
+        }
+      </div>
+      <div class="nd-divider"></div>
+
+      <!-- Preview items -->
+      @if (previewNotifs().length === 0) {
+        <div class="nd-empty" (click)="$event.stopPropagation()">
+          <mat-icon>notifications_none</mat-icon>
+          <span>You're all caught up!</span>
+        </div>
+      }
+      @for (n of previewNotifs(); track n.id) {
+        <button class="nd-item" [class.nd-unread]="!n.read" (click)="onNotifClick(n)">
+          <div class="nd-icon-wrap" [style.background]="notifService.typeBg(n.type)">
+            <mat-icon [style.color]="notifService.typeColor(n.type)">{{ notifService.typeIcon(n.type) }}</mat-icon>
+          </div>
+          <div class="nd-body">
+            <span class="nd-item-title">{{ n.title }}</span>
+            <span class="nd-item-msg">{{ n.message }}</span>
+            <span class="nd-time">{{ notifService.timeAgo(n.timestamp) }}</span>
+          </div>
+          @if (!n.read) { <span class="nd-dot"></span> }
+        </button>
+      }
+
+      <div class="nd-divider"></div>
+      <!-- Footer -->
+      <div class="nd-footer" (click)="$event.stopPropagation()">
+        <a class="nd-view-all" routerLink="/app/notifications">View all notifications →</a>
+      </div>
+    </mat-menu>
+
+    <!-- Settings -->
+    <button mat-icon-button class="action-btn" matTooltip="Settings" matTooltipPosition="below">
+      <mat-icon>settings</mat-icon>
+    </button>
+
+    <!-- User Menu -->
+    <button class="user-menu-btn" [matMenuTriggerFor]="userMenu">
+      <div class="user-avatar">{{ userInitials }}</div>
+      <div class="user-info">
+        <span class="user-name">{{ currentUser()?.name ?? 'User' }}</span>
+        <span class="user-role">{{ userRole() }}</span>
+      </div>
+      <mat-icon class="chevron">expand_more</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu" class="user-dropdown">
+      <div class="user-menu-header">
+        <div class="user-avatar large">{{ userInitials }}</div>
+        <div>
+          <div class="menu-user-name">{{ currentUser()?.name }}</div>
+          <div class="menu-user-email">{{ currentUser()?.email }}</div>
+          <div class="menu-role-badge">{{ userRole() }}</div>
+        </div>
+      </div>
+      <div class="menu-divider"></div>
+      <button mat-menu-item>
+        <mat-icon>person</mat-icon>
+        <span>My Profile</span>
+      </button>
+      <button mat-menu-item>
+        <mat-icon>tune</mat-icon>
+        <span>Preferences</span>
+      </button>
+      <div class="menu-divider"></div>
+      <button mat-menu-item class="logout-item" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Sign Out</span>
+      </button>
+    </mat-menu>
+
+  </div>
+</header>

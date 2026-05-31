@@ -21,7 +21,7 @@ public class InspectionController(IInspectionService service) : ControllerBase
         => Ok(await service.GetByIdAsync(id));
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Inspector")]
+    [Authorize(Roles = "Admin,QualityInspector")]
     public async Task<ActionResult<ApiResponse<InspectionViewModel>>> Create([FromBody] CreateInspectionRequest request)
     {
         var result = await service.CreateAsync(request);
@@ -29,7 +29,7 @@ public class InspectionController(IInspectionService service) : ControllerBase
     }
 
     [HttpPut("{id:int}/result")]
-    [Authorize(Roles = "Admin,Inspector")]
+    [Authorize(Roles = "Admin,QualityInspector")]
     public async Task<ActionResult<ApiResponse<InspectionViewModel>>> UpdateResult(int id, [FromBody] UpdateInspectionResultRequest request)
         => Ok(await service.UpdateResultAsync(id, request));
 }
