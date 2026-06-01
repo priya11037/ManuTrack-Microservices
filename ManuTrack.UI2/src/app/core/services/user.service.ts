@@ -83,6 +83,21 @@ export class UserService {
     ) as unknown as Observable<AppUser>;
   }
 
+  updateUser(id: number, req: { name?: string; email?: string; role?: string; phone?: string }): Observable<AppUser> {
+    return this.http.put<any>(`${this.url}/users/${id}`, req).pipe(
+      tap(dto => {
+        const updated = this.fromDto(dto);
+        this._users.update(list => list.map(u => u.userID === id ? updated : u));
+      })
+    ) as unknown as Observable<AppUser>;
+  }
+
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.url}/users/${id}`).pipe(
+      tap(() => this._users.update(list => list.filter(u => u.userID !== id)))
+    );
+  }
+
   deactivate(id: number): Observable<void> {
     return this.http.put<void>(`${this.url}/users/${id}/deactivate`, {}).pipe(
       tap(() => this._users.update(list =>
@@ -104,20 +119,34 @@ export class UserService {
     this._users.update(list => list.filter(u => u.id !== id));
   }
 
-  // ── DTO mapper ────────────────────────────────────────────────────────────
-  private fromDto(dto: UserDto): AppUser {
+  // ── DTO mapper — defensive with fallback field names ─────────────────────
+  private fromDto(dto: any): AppUser {
+    const rawId            = dto.userID ?? dto.UserID ?? dto.id ?? 0;
+    const isActive         = dto.isActive ?? dto.IsActive ?? true;
+    const mustChangePwd    = dto.mustChangePassword ?? dto.MustChangePassword ?? false;
+
+    // Status tri-state:
+    //   Pending  = account created, user has NOT yet changed temp password
+    //   Active   = fully onboarded, password set
+    //   Inactive = deactivated by Admin
+    const status: AppUser['status'] = !isActive
+      ? 'Inactive'
+      : mustChangePwd
+        ? 'Pending'
+        : 'Active';
+
     return {
-      id:          dto.userID.toString(),
-      userID:      dto.userID,
-      name:        dto.name,
-      email:       dto.email,
-      role:        dto.role,
-      phone:       dto.phone,
-      status:      dto.isActive ? 'Active' : 'Inactive',
-      isActive:    dto.isActive,
-      lastActive:  'Recently',
+      id:          rawId.toString(),
+      userID:      rawId,
+      name:        dto.name ?? dto.Name ?? '',
+      email:       dto.email ?? dto.Email ?? '',
+      role:        dto.role ?? dto.Role ?? '',
+      phone:       dto.phone ?? dto.Phone ?? '',
+      status,
+      isActive,
+      lastActive:  mustChangePwd ? 'Never logged in' : 'Recently',
       createdAt:   new Date().toISOString().split('T')[0],
-      avatarColor: this.pickColor(dto.userID),
+      avatarColor: this.pickColor(rawId),
     };
   }
 

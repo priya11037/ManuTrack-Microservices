@@ -26,7 +26,7 @@ public class WorkOrderTaskController(IWorkOrderTaskService service) : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Planner,Operator")]
+    [Authorize(Roles = "Admin,ProductionPlanner,ShopFloorOperator")]
     public async Task<ActionResult<ApiResponse<WorkOrderTaskViewModel>>> Create([FromBody] CreateWorkOrderTaskRequest request)
     {
         var result = await service.CreateAsync(request);
@@ -34,7 +34,7 @@ public class WorkOrderTaskController(IWorkOrderTaskService service) : Controller
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin,Planner,Operator")]
+    [Authorize(Roles = "Admin,ProductionPlanner,ShopFloorOperator")]
     public async Task<ActionResult<ApiResponse<WorkOrderTaskViewModel>>> Update(int id, [FromBody] UpdateWorkOrderTaskRequest request)
     {
         var result = await service.UpdateAsync(id, request);
@@ -42,7 +42,7 @@ public class WorkOrderTaskController(IWorkOrderTaskService service) : Controller
     }
 
     [HttpPut("{id:int}/status")]
-    [Authorize(Roles = "Admin,Planner,Operator")]
+    [Authorize(Roles = "Admin,ProductionPlanner,ShopFloorOperator")]
     public async Task<ActionResult<ApiResponse<WorkOrderTaskViewModel>>> UpdateStatus(int id, [FromBody] UpdateTaskStatusRequest request)
     {
         var result = await service.UpdateStatusAsync(id, request);

@@ -93,9 +93,9 @@ public class WorkOrderServiceImpl(
 
     // ── CRUD ─────────────────────────────────────────────────────────────────
 
-    public async Task<ApiResponse<IEnumerable<WorkOrderViewModel>>> GetAllAsync(string? status, int? productId)
+    public async Task<ApiResponse<IEnumerable<WorkOrderViewModel>>> GetAllAsync(string? status, int? productId, string? assignedTo = null)
     {
-        var orders = await repo.GetAllAsync(status, productId);
+        var orders = await repo.GetAllAsync(status, productId, assignedTo);
         return ApiResponse<IEnumerable<WorkOrderViewModel>>.Ok(orders.Select(Map));
     }
 
@@ -111,21 +111,29 @@ public class WorkOrderServiceImpl(
         if (request.EndDate <= request.StartDate)
             throw new ValidationException("EndDate must be after StartDate.");
 
+        // Auto-generate WoNumber
+        var nextId   = await repo.GetNextIdAsync();
+        var woNumber = $"WO-{nextId:D4}";
+
         var workOrder = new WorkOrder
         {
-            ProductID = request.ProductID,
-            ProductName = request.ProductName,
-            Quantity = request.Quantity,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
+            WoNumber           = woNumber,
+            ProductID          = request.ProductID,
+            ProductName        = request.ProductName,
+            Sku                = request.Sku ?? string.Empty,
+            Quantity           = request.Quantity,
+            Priority           = request.Priority ?? "Medium",
+            ProductionLine     = request.ProductionLine ?? string.Empty,
+            StartDate          = request.StartDate,
+            EndDate            = request.EndDate,
             EstimatedStartDate = request.EstimatedStartDate,
-            EstimatedEndDate = request.EstimatedEndDate,
-            AssignedTo = request.AssignedTo,
+            EstimatedEndDate   = request.EstimatedEndDate,
+            AssignedTo         = request.AssignedTo,
             AssignedOperatorID = request.AssignedOperatorID,
-            CreatedBy = request.CreatedBy,
-            Notes = request.Notes,
-            Status = WorkOrderStatus.Pending,
-            CreatedDate = DateTime.UtcNow
+            CreatedBy          = request.CreatedBy,
+            Notes              = request.Notes,
+            Status             = WorkOrderStatus.Pending,
+            CreatedDate        = DateTime.UtcNow
         };
 
         var created = await repo.CreateAsync(workOrder);
@@ -141,15 +149,18 @@ public class WorkOrderServiceImpl(
         var order = await repo.GetByIdAsync(id)
             ?? throw new NotFoundException($"WorkOrder {id} not found.");
 
-        if (request.Quantity.HasValue) order.Quantity = request.Quantity.Value;
-        if (request.StartDate.HasValue) order.StartDate = request.StartDate.Value;
-        if (request.EndDate.HasValue) order.EndDate = request.EndDate.Value;
-        if (request.EstimatedStartDate.HasValue) order.EstimatedStartDate = request.EstimatedStartDate.Value;
-        if (request.EstimatedEndDate.HasValue) order.EstimatedEndDate = request.EstimatedEndDate.Value;
-        if (request.AssignedTo != null) order.AssignedTo = request.AssignedTo;
-        if (request.AssignedOperatorID.HasValue) order.AssignedOperatorID = request.AssignedOperatorID.Value;
-        if (request.CreatedBy != null) order.CreatedBy = request.CreatedBy;
-        if (request.Notes != null) order.Notes = request.Notes;
+        if (request.Quantity.HasValue)           order.Quantity       = request.Quantity.Value;
+        if (!string.IsNullOrEmpty(request.Priority))       order.Priority       = request.Priority;
+        if (!string.IsNullOrEmpty(request.ProductionLine)) order.ProductionLine = request.ProductionLine;
+        if (request.ProducedQty.HasValue)         order.ProducedQty    = request.ProducedQty.Value;
+        if (request.StartDate.HasValue)           order.StartDate      = request.StartDate.Value;
+        if (request.EndDate.HasValue)             order.EndDate        = request.EndDate.Value;
+        if (request.EstimatedStartDate.HasValue)  order.EstimatedStartDate = request.EstimatedStartDate.Value;
+        if (request.EstimatedEndDate.HasValue)    order.EstimatedEndDate   = request.EstimatedEndDate.Value;
+        if (request.AssignedTo != null)           order.AssignedTo     = request.AssignedTo;
+        if (request.AssignedOperatorID.HasValue)  order.AssignedOperatorID = request.AssignedOperatorID.Value;
+        if (request.CreatedBy != null)            order.CreatedBy      = request.CreatedBy;
+        if (request.Notes != null)                order.Notes          = request.Notes;
         order.ModifiedDate = DateTime.UtcNow;
 
         var updated = await repo.UpdateAsync(order);
@@ -165,7 +176,9 @@ public class WorkOrderServiceImpl(
         var order = await repo.GetByIdAsync(id)
             ?? throw new NotFoundException($"WorkOrder {id} not found.");
 
-        // block Completed if any tasks are still Pending or InProgress
+        // Only block Completed if backend tasks exist and are incomplete.
+        // (WOs from the schedule UI have no backend tasks, so incompleteTasks will be 0.)
+        // Inspection validation is NOT required — QI does inspections independently.
         if (request.Status == WorkOrderStatus.Completed)
         {
             var tasks = await taskRepo.GetByWorkOrderIdAsync(id);
@@ -175,10 +188,7 @@ public class WorkOrderServiceImpl(
 
             if (incompleteTasks > 0)
                 throw new ValidationException(
-                    $"Cannot complete work order, {incompleteTasks} task(s) are still incomplete.");
-
-            // Change 7: block Completed if no passed inspection exists in QualityService
-            await ValidatePassedInspectionAsync(id);
+                    $"Cannot complete work order — {incompleteTasks} task(s) are still incomplete.");
         }
 
         // auto-set ActualStartDate / ActualEndDate on status transition
@@ -279,26 +289,31 @@ public class WorkOrderServiceImpl(
 
         return new WorkOrderViewModel
         {
-            WorkOrderID = w.WorkOrderID,
-            ProductID = w.ProductID,
-            ProductName = w.ProductName,
-            Quantity = w.Quantity,
-            StartDate = w.StartDate,
-            EndDate = w.EndDate,
+            WorkOrderID        = w.WorkOrderID,
+            WoNumber           = w.WoNumber,           // ← was missing
+            ProductID          = w.ProductID,
+            ProductName        = w.ProductName,
+            Sku                = w.Sku,                // ← was missing
+            Quantity           = w.Quantity,
+            ProducedQty        = w.ProducedQty,        // ← was missing
+            Priority           = w.Priority,           // ← was missing
+            ProductionLine     = w.ProductionLine,     // ← was missing
+            StartDate          = w.StartDate,
+            EndDate            = w.EndDate,
             EstimatedStartDate = w.EstimatedStartDate,
-            EstimatedEndDate = w.EstimatedEndDate,
-            ActualStartDate = w.ActualStartDate,
-            ActualEndDate = w.ActualEndDate,
-            Status = w.Status,
-            AssignedTo = w.AssignedTo,
+            EstimatedEndDate   = w.EstimatedEndDate,
+            ActualStartDate    = w.ActualStartDate,
+            ActualEndDate      = w.ActualEndDate,
+            Status             = w.Status,
+            AssignedTo         = w.AssignedTo,
             AssignedOperatorID = w.AssignedOperatorID,
-            CreatedBy = w.CreatedBy,
-            Notes = w.Notes,
-            CreatedDate = w.CreatedDate,
-            ModifiedDate = w.ModifiedDate,
-            TaskCount = totalTasks,
+            CreatedBy          = w.CreatedBy,
+            Notes              = w.Notes,
+            CreatedDate        = w.CreatedDate,
+            ModifiedDate       = w.ModifiedDate,
+            TaskCount          = totalTasks,
             ProgressPercentage = progress,
-            IsOverdue = isOverdue
+            IsOverdue          = isOverdue
         };
     }
 }

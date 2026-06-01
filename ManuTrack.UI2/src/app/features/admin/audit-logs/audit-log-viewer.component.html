@@ -4,9 +4,25 @@
   <div class="al-header">
     <div>
       <h2 class="al-title">Audit Log Viewer</h2>
-      <p class="al-sub">Track all system events, user actions, and security incidents</p>
+      <p class="al-sub">
+        Track all system events, user actions, and security incidents
+        <span class="last-refresh">· Updated {{ timeSinceRefresh() }}</span>
+      </p>
     </div>
     <div class="al-header-actions">
+
+      <!-- Live toggle -->
+      <button class="live-btn" [class.live-active]="isLive()" (click)="toggleLive()"
+              [matTooltip]="isLive() ? 'Auto-refresh ON (every 15s) — click to pause' : 'Auto-refresh paused — click to resume'">
+        <span class="live-dot" [class.live-dot-active]="isLive()"></span>
+        {{ isLive() ? 'Live' : 'Paused' }}
+      </button>
+
+      <!-- Manual refresh -->
+      <button class="refresh-btn" (click)="manualRefresh()" matTooltip="Refresh now">
+        <mat-icon>refresh</mat-icon>
+      </button>
+
       <!-- Date Range Pills -->
       <div class="date-pills">
         @for (d of dateRanges; track d.value) {
@@ -15,6 +31,7 @@
           </button>
         }
       </div>
+
       <!-- Export -->
       <button class="export-btn" (click)="exportCSV()" matTooltip="Export filtered logs as CSV">
         <mat-icon>download</mat-icon>

@@ -7,45 +7,30 @@ namespace ProductService.Repositories;
 
 public class BomRepository(ProductDbContext db) : IBomRepository
 {
-    public async Task<IEnumerable<Bom>> GetAllAsync(int? productId = null, string? status = null)
+    /// <summary>
+    /// Returns all BomItems for a product, flat list sorted by ID.
+    /// The service layer builds the tree.
+    /// </summary>
+    public async Task<IEnumerable<BomItem>> GetByProductIdAsync(int productId) =>
+        await db.BomItems
+                .Where(b => b.ProductID == productId)
+                .OrderBy(b => b.BomItemID)
+                .ToListAsync();
+
+    public async Task<BomItem?> GetByIdAsync(int id) =>
+        await db.BomItems.FindAsync(id);
+
+    public async Task<BomItem> CreateAsync(BomItem item)
     {
-        var query = db.Boms.Include(b => b.Product).Include(b => b.Component).AsQueryable();
-        if (productId.HasValue)
-            query = query.Where(b => b.ProductID == productId.Value);
-        if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(b => b.Status == status);
-        return await query.OrderBy(b => b.BOMID).ToListAsync();
-    }
-
-    public async Task<Bom?> GetByIdAsync(int id) =>
-        await db.Boms.Include(b => b.Product).Include(b => b.Component)
-                     .FirstOrDefaultAsync(b => b.BOMID == id);
-
-    public async Task<IEnumerable<Bom>> GetByProductIdAsync(int productId) =>
-        await db.Boms.Include(b => b.Component)
-                     .Where(b => b.ProductID == productId)
-                     .ToListAsync();
-
-    public async Task<Bom> CreateAsync(Bom bom)
-    {
-        db.Boms.Add(bom);
+        db.BomItems.Add(item);
         await db.SaveChangesAsync();
-        return bom;
+        return item;
     }
 
-    public async Task<Bom> UpdateAsync(Bom bom)
+    public async Task DeleteAsync(BomItem item)
     {
-        db.Boms.Update(bom);
-        await db.SaveChangesAsync();
-        return bom;
-    }
-
-    public async Task DeleteAsync(Bom bom)
-    {
-        db.Boms.Remove(bom);
+        // EF Cascade will delete children if FK is set to CASCADE
+        db.BomItems.Remove(item);
         await db.SaveChangesAsync();
     }
-
-    public async Task<bool> ExistsAsync(int id) =>
-        await db.Boms.AnyAsync(b => b.BOMID == id);
 }

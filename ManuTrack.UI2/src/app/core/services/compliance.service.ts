@@ -170,42 +170,60 @@ export class ComplianceService {
   }
 
   // ── DTO mappers ────────────────────────────────────────────────────────────
-  private fromReportDto(dto: ReportDto): ComplianceReport {
+  private fromReportDto(dto: any): ComplianceReport {
+    // Backend may serialize ReportID as reportID, ReportID etc.
+    const rawId = dto.reportID ?? dto.ReportID ?? 0;
+
+    // Parse findings/actions from Metrics JSON if not present as direct fields
+    let findings = dto.findings ?? 0;
+    let actions  = dto.actions  ?? 0;
+    if (dto.metrics && typeof dto.metrics === 'string') {
+      try {
+        const m = JSON.parse(dto.metrics);
+        findings = m.findings ?? findings;
+        actions  = m.actions  ?? actions;
+      } catch { /* ignore parse error */ }
+    }
+
     return {
-      id:                 dto.reportID.toString(),
-      reportID:           dto.reportID,
-      reportNumber:       dto.reportNumber,
-      title:              dto.title,
-      type:               dto.type,
-      status:             dto.status,
-      priority:           dto.priority,
-      period:             dto.period,
-      preparedBy:         dto.preparedBy,
-      reviewedBy:         dto.reviewedBy ?? '',
+      id:                 rawId.toString(),
+      reportID:           rawId,
+      reportNumber:       dto.reportNumber ?? `CR-${rawId}`,
+      title:              dto.title ?? '',
+      type:               (dto.reportType ?? dto.type ?? 'Quality') as ComplianceReport['type'],
+      status:             (dto.status ?? 'Draft') as ComplianceReport['status'],
+      priority:           (dto.priority ?? 'Medium') as ComplianceReport['priority'],
+      period:             dto.period ?? `${new Date().getFullYear()}`,
+      preparedBy:         dto.preparedBy ?? dto.generatedBy ?? '',
+      reviewedBy:         dto.reviewedBy ?? dto.approvedBy ?? '',
       submissionDeadline: dto.submissionDeadline?.split('T')[0] ?? '',
       submittedDate:      dto.submittedDate?.split('T')[0] ?? '',
-      findings:           dto.findings ?? 0,
-      actions:            dto.actions ?? 0,
-      notes:              dto.notes ?? '',
+      findings,
+      actions,
+      notes:              dto.notes ?? dto.scope ?? '',
     };
   }
 
-  private fromAuditDto(dto: AuditLogDto): AuditLog {
-    const initials = dto.userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  private fromAuditDto(dto: any): AuditLog {
+    // Backend may serialize AuditID as auditID, logID, AuditID etc.
+    const rawId    = dto.auditID ?? dto.logID ?? dto.AuditID ?? 0;
+    const userName = dto.userName ?? dto.UserName ?? 'System';
+    const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
     const palette  = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ef4444','#0ea5e9'];
+    const userId   = dto.userId ?? dto.UserID ?? 0;
     return {
-      id:           dto.logID.toString(),
-      logID:        dto.logID,
-      timestamp:    dto.timestamp,
-      userId:       dto.userId,
-      user:         dto.userName,
+      id:           rawId.toString(),
+      logID:        rawId,
+      timestamp:    dto.timestamp ?? dto.Timestamp ?? new Date().toISOString(),
+      userId:       userId,
+      user:         userName,
       userInitials: initials,
-      avatarColor:  palette[dto.userId % palette.length],
-      module:       dto.module,
-      action:       dto.action,
-      detail:       dto.detail,
-      severity:     dto.severity,
-      ipAddress:    dto.ipAddress,
+      avatarColor:  palette[userId % palette.length],
+      module:       dto.module ?? dto.entityType ?? dto.Module ?? '',
+      action:       dto.action ?? dto.Action ?? '',
+      detail:       dto.details ?? dto.detail ?? dto.Details ?? '',
+      severity:     dto.severity ?? 'info',
+      ipAddress:    dto.ipAddress ?? dto.IpAddress ?? '',
     };
   }
 }

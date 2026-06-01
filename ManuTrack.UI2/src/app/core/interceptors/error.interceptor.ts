@@ -10,8 +10,15 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const auth   = inject(AuthService);
   const snack  = inject(MatSnackBar);
 
+  // Endpoints that should fail silently (non-critical background calls)
+  const silentUrls = ['/notifications', '/analytics'];
+  const isSilent   = silentUrls.some(u => req.url.includes(u));
+
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
+      // Silent fail for non-critical endpoints — don't show toast
+      if (isSilent) return throwError(() => err);
+
       // Extract best error message from backend ApiResponse wrapper
       const backendMessage: string =
         err.error?.message     ||

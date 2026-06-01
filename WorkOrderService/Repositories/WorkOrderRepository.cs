@@ -7,13 +7,16 @@ namespace WorkOrderService.Repositories;
 
 public class WorkOrderRepository(WorkOrderDbContext db) : IWorkOrderRepository
 {
-    public async Task<IEnumerable<WorkOrder>> GetAllAsync(string? status = null, int? productId = null)
+    public async Task<IEnumerable<WorkOrder>> GetAllAsync(string? status = null, int? productId = null, string? assignedTo = null)
     {
         var query = db.WorkOrders.Include(w => w.Tasks).AsQueryable();
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(w => w.Status == status);
         if (productId.HasValue)
             query = query.Where(w => w.ProductID == productId.Value);
+        if (!string.IsNullOrWhiteSpace(assignedTo))
+            query = query.Where(w => w.AssignedTo != null &&
+                                     w.AssignedTo.ToLower() == assignedTo.ToLower());
         return await query.OrderByDescending(w => w.CreatedDate).ToListAsync();
     }
 
@@ -46,4 +49,7 @@ public class WorkOrderRepository(WorkOrderDbContext db) : IWorkOrderRepository
 
     public async Task<bool> ExistsAsync(int id) =>
         await db.WorkOrders.AnyAsync(w => w.WorkOrderID == id);
+
+    public async Task<int> GetNextIdAsync() =>
+        (await db.WorkOrders.MaxAsync(w => (int?)w.WorkOrderID) ?? 0) + 1;
 }

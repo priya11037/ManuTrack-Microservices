@@ -1,4 +1,7 @@
-import { Component, signal, computed, effect, inject, OnInit } from '@angular/core';
+import {
+  Component, signal, computed, effect, untracked,
+  inject, OnInit, ChangeDetectionStrategy, ChangeDetectorRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { AuthService } from '../../core/auth/auth.service';
+import { WorkOrderService, WorkOrder } from '../../core/services/work-order.service';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 export interface TaskStep {
@@ -31,10 +35,24 @@ export interface Task {
   flagReason: string;
 }
 
+// ── Status bridge helpers ──────────────────────────────────────────────────────
+function woStatusToTask(s: string): Task['status'] {
+  if (s === 'In Progress') return 'In Progress';
+  if (s === 'Completed')   return 'Done';
+  return 'To Do'; // Planned | On Hold | Pending | Cancelled → To Do
+}
+
+function taskStatusToWO(s: Task['status']): WorkOrder['status'] {
+  if (s === 'In Progress') return 'In Progress';
+  if (s === 'Done')        return 'Completed';
+  return 'Planned';
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 @Component({
   selector: 'app-task-console',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule, ReactiveFormsModule,
     MatIconModule, MatTooltipModule, MatSnackBarModule,
@@ -44,123 +62,97 @@ export interface Task {
   styleUrl: './task-console.component.scss',
 })
 export class TaskConsoleComponent implements OnInit {
-  private snack = inject(MatSnackBar);
-  private auth  = inject(AuthService);
-  private fb    = inject(FormBuilder);
+  private snack  = inject(MatSnackBar);
+  private auth   = inject(AuthService);
+  private fb     = inject(FormBuilder);
+  private woSvc  = inject(WorkOrderService);
+  private cdr    = inject(ChangeDetectorRef);
 
   operatorName = computed(() => this.auth.currentUser()?.name ?? 'Operator');
 
-  today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
 
-  // ── UI State ─────────────────────────────────────────────────────────────────
+  // ── UI State ──────────────────────────────────────────────────────────────
   expandedId      = signal<string | null>(null);
   progressEditId  = signal<string | null>(null);
   flagDrawerId    = signal<string | null>(null);
   progressInput   = signal<number>(0);
+  isSaving        = signal(false);
 
-  // ── Flag form ─────────────────────────────────────────────────────────────────
+  // ── Flag form ─────────────────────────────────────────────────────────────
   flagForm = this.fb.group({
     reason: ['', [Validators.required, Validators.minLength(5)]],
   });
 
-  // ── Task data ─────────────────────────────────────────────────────────────────
-  tasks = signal<Task[]>([
-    {
-      id: '1', woNumber: 'WO-0001', product: 'Shaft Assembly',   sku: 'SA-1042',
-      quantity: 50,  produced: 32, priority: 'High',     status: 'In Progress',
-      dueDate: '2025-05-30', line: 'Line A', flagged: false, flagReason: '',
-      notes: 'Rush order — handle with care. Client deadline strict.',
-      steps: [
-        { id: 's1', label: 'Machine setup & calibration',        done: true  },
-        { id: 's2', label: 'Load raw material (Steel Rod 12mm)', done: true  },
-        { id: 's3', label: 'First piece quality check',          done: true  },
-        { id: 's4', label: 'Continue full production run',       done: false },
-        { id: 's5', label: 'Final count & dimensional check',    done: false },
-        { id: 's6', label: 'Packaging & label application',      done: false },
-      ],
-    },
-    {
-      id: '2', woNumber: 'WO-0002', product: 'Gear Box Unit',    sku: 'GB-2088',
-      quantity: 20,  produced: 0,  priority: 'Medium',   status: 'To Do',
-      dueDate: '2025-06-07', line: 'Line A', flagged: false, flagReason: '',
-      notes: '',
-      steps: [
-        { id: 's1', label: 'Machine setup & calibration',        done: false },
-        { id: 's2', label: 'Load gearing components',            done: false },
-        { id: 's3', label: 'Assembly jig alignment check',       done: false },
-        { id: 's4', label: 'Production run',                     done: false },
-        { id: 's5', label: 'Torque test on each unit',           done: false },
-        { id: 's6', label: 'Packaging & shipping prep',          done: false },
-      ],
-    },
-    {
-      id: '3', woNumber: 'WO-0007', product: 'Shaft Assembly',   sku: 'SA-1042',
-      quantity: 75,  produced: 0,  priority: 'Medium',   status: 'To Do',
-      dueDate: '2025-06-12', line: 'Line A', flagged: false, flagReason: '',
-      notes: '',
-      steps: [
-        { id: 's1', label: 'Machine setup & calibration',        done: false },
-        { id: 's2', label: 'Load raw material (Steel Rod 12mm)', done: false },
-        { id: 's3', label: 'First piece quality check',          done: false },
-        { id: 's4', label: 'Continue full production run',       done: false },
-        { id: 's5', label: 'Final count & packaging',            done: false },
-      ],
-    },
-    {
-      id: '4', woNumber: 'WO-0003', product: 'Hydraulic Pump',   sku: 'HP-3301',
-      quantity: 10,  produced: 10, priority: 'Low',      status: 'Done',
-      dueDate: '2025-05-20', line: 'Line A', flagged: false, flagReason: '',
-      notes: 'QC passed — ready to ship.',
-      steps: [
-        { id: 's1', label: 'Machine setup & calibration',        done: true  },
-        { id: 's2', label: 'Load pump components',               done: true  },
-        { id: 's3', label: 'First piece quality check',          done: true  },
-        { id: 's4', label: 'Full production run',                done: true  },
-        { id: 's5', label: 'Pressure test all units',            done: true  },
-        { id: 's6', label: 'Packaging & dispatch',               done: true  },
-      ],
-    },
-    {
-      id: '5', woNumber: 'WO-0005', product: 'Motor Mount',      sku: 'MM-5501',
-      quantity: 30,  produced: 0,  priority: 'High',     status: 'To Do',
-      dueDate: '2025-06-05', line: 'Line A', flagged: true, flagReason: 'Waiting for steel plate stock from Inventory. Cannot start without material.',
-      notes: 'Waiting for steel plate stock.',
-      steps: [
-        { id: 's1', label: 'Machine setup & calibration',        done: false },
-        { id: 's2', label: 'Load steel plate material',          done: false },
-        { id: 's3', label: 'Punch & form mounting bracket',      done: false },
-        { id: 's4', label: 'Weld assembly',                      done: false },
-        { id: 's5', label: 'Surface treatment & coating',        done: false },
-        { id: 's6', label: 'Final inspection & packaging',       done: false },
-      ],
-    },
-  ]);
+  // ── Tasks signal (local mutable Kanban state) ─────────────────────────────
+  tasks = signal<Task[]>([]);
 
-  // ── Kanban columns (mutable, synced from signal) ───────────────────────────
+  // ── Kanban column arrays kept in sync with tasks signal ───────────────────
   colTodo:       Task[] = [];
   colInProgress: Task[] = [];
   colDone:       Task[] = [];
 
   constructor() {
+    // ── Effect 1: split tasks into column arrays whenever tasks signal changes ──
+    // Lives in constructor (injection context) ✓
     effect(() => {
       const all = this.tasks();
       this.colTodo       = all.filter(t => t.status === 'To Do');
       this.colInProgress = all.filter(t => t.status === 'In Progress');
       this.colDone       = all.filter(t => t.status === 'Done');
+      this.cdr.markForCheck();
+    });
+
+    // ── Effect 2: sync WorkOrderService → local tasks whenever WOs update ─────
+    // Must be in constructor (injection context). ngOnInit is NOT valid. ✓
+    // Uses untracked() when reading tasks() to avoid circular dependency.
+    effect(() => {
+      const wos = this.woSvc.workOrders();
+
+      // Read existing tasks WITHOUT tracking (no circular dependency)
+      const existing = untracked(() => this.tasks());
+
+      const active = wos.filter(
+        wo => wo.status !== 'Cancelled'
+      );
+
+      const merged = active.map(wo => {
+        const prev = existing.find(t => t.id === wo.id);
+        return {
+          ...this.woToTask(wo),
+          // Preserve locally-toggled steps across API refreshes
+          steps:      prev?.steps      ?? this.generateSteps(wo.product),
+          flagged:    prev?.flagged    ?? false,
+          flagReason: prev?.flagReason ?? '',
+        };
+      });
+
+      this.tasks.set(merged);
     });
   }
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  ngOnInit(): void {
+    // Fetch WOs assigned to this operator from the backend.
+    // Effect 2 (in constructor) will react when workOrders signal updates.
+    const user = this.auth.currentUser();
+    this.woSvc.loadAll(undefined, undefined, user?.name ?? undefined);
+  }
+
+  // ── Column config ─────────────────────────────────────────────────────────
   get columns() {
     return [
-      { id: 'To Do',       label: 'To Do',       icon: 'radio_button_unchecked', color: '#6b7280', bg: '#f9fafb', items: this.colTodo       },
-      { id: 'In Progress', label: 'In Progress',  icon: 'autorenew',              color: '#2563eb', bg: '#eff6ff', items: this.colInProgress },
-      { id: 'Done',        label: 'Done',         icon: 'check_circle',           color: '#059669', bg: '#f0fdf4', items: this.colDone       },
+      { id: 'To Do',       label: 'To Do',      icon: 'radio_button_unchecked', color: '#6b7280', bg: '#f9fafb', items: this.colTodo       },
+      { id: 'In Progress', label: 'In Progress', icon: 'autorenew',             color: '#2563eb', bg: '#eff6ff', items: this.colInProgress },
+      { id: 'Done',        label: 'Done',        icon: 'check_circle',          color: '#059669', bg: '#f0fdf4', items: this.colDone       },
     ];
   }
 
   connectedIds = ['To Do', 'In Progress', 'Done'];
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
+  // ── Stats ─────────────────────────────────────────────────────────────────
   stats = computed(() => {
     const all   = this.tasks();
     const today = new Date().toISOString().split('T')[0];
@@ -173,48 +165,121 @@ export class TaskConsoleComponent implements OnInit {
     };
   });
 
-  // ── Kanban DnD ─────────────────────────────────────────────────────────────
+  // ── WorkOrder → Task mapper ────────────────────────────────────────────────
+  private woToTask(wo: WorkOrder): Task {
+    return {
+      id:         wo.id,
+      woNumber:   wo.woNumber  || `WO-${wo.id}`,
+      product:    wo.product   || 'Unknown',
+      sku:        wo.sku       || '',
+      quantity:   wo.quantity  || 0,
+      produced:   wo.produced  || 0,
+      priority:   (wo.priority ?? 'Medium') as Task['priority'],
+      status:     woStatusToTask(wo.status),
+      dueDate:    wo.dueDate   || '',
+      line:       wo.line      || 'Line A',
+      notes:      wo.notes     || '',
+      flagged:    false,
+      flagReason: '',
+      steps:      this.generateSteps(wo.product),
+    };
+  }
+
+  private generateSteps(product: string): TaskStep[] {
+    return [
+      { id: 's1', label: 'Machine setup & calibration',   done: false },
+      { id: 's2', label: `Load materials for ${product}`, done: false },
+      { id: 's3', label: 'First piece quality check',     done: false },
+      { id: 's4', label: 'Full production run',           done: false },
+      { id: 's5', label: 'Final count & inspection',      done: false },
+      { id: 's6', label: 'Packaging & dispatch',          done: false },
+    ];
+  }
+
+  // ── Kanban DnD — persists status to backend ───────────────────────────────
   onDrop(event: CdkDragDrop<Task[]>): void {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
       return;
     }
 
-    transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
-    const task      = event.container.data[event.currentIndex];
-    const newStatus = event.container.id as Task['status'];
+    transferArrayItem(
+      event.previousContainer.data,
+      event.container.data,
+      event.previousIndex,
+      event.currentIndex,
+    );
 
+    const task       = event.container.data[event.currentIndex];
+    const newStatus  = event.container.id as Task['status'];
+    const prevStatus = event.previousContainer.id as Task['status'];
+    const woStatus   = taskStatusToWO(newStatus);
+
+    // Optimistic local update
     this.tasks.update(list =>
       list.map(t => t.id === task.id ? { ...t, status: newStatus } : t)
     );
-    this.toast(`${task.woNumber} → ${newStatus}`, 'info');
+
+    // Persist to backend
+    this.woSvc.updateStatus(task.id, woStatus).subscribe({
+      next:  () => this.toast(`${task.woNumber} moved to "${newStatus}"`, 'success'),
+      error: (err) => {
+        // Roll back on failure
+        this.tasks.update(list =>
+          list.map(t => t.id === task.id ? { ...t, status: prevStatus } : t)
+        );
+        this.toast(err?.error?.message ?? 'Status update failed', 'warn');
+      },
+    });
   }
 
-  // ── Expand / collapse ──────────────────────────────────────────────────────
+  // ── Expand / collapse ─────────────────────────────────────────────────────
   toggleExpand(id: string, ev: Event): void {
     ev.stopPropagation();
     this.expandedId.update(c => c === id ? null : id);
     this.progressEditId.set(null);
   }
 
-  // ── Step toggle ────────────────────────────────────────────────────────────
+  // ── Step toggle — updates the top progress bar proportionally ────────────
   toggleStep(taskId: string, stepId: string): void {
+    // Find the original task BEFORE mutation
+    const original = this.tasks().find(t => t.id === taskId);
+    if (!original) return;
+
+    const steps     = original.steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s);
+    const doneCount = steps.filter(s => s.done).length;
+    const total     = steps.length;
+
+    // ── Key fix: map step completion → produced units so the top bar updates ──
+    const produced  = total > 0 ? Math.round((doneCount / total) * original.quantity) : original.produced;
+
+    // Auto-advance kanban status
+    const newStatus: Task['status'] =
+      doneCount === total ? 'Done'        :
+      doneCount > 0       ? 'In Progress' :
+                            'To Do';
+
+    // Apply all changes at once
     this.tasks.update(list =>
-      list.map(t => {
-        if (t.id !== taskId) return t;
-        const steps   = t.steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s);
-        const allDone = steps.every(s => s.done);
-        return { ...t, steps, status: allDone && t.status !== 'Done' ? 'Done' : t.status };
-      })
+      list.map(t => t.id !== taskId ? t : { ...t, steps, produced, status: newStatus })
     );
+
+    // Persist produced qty to backend via SFO-allowed /progress endpoint
+    this.woSvc.updateProgress(taskId, produced).subscribe();
+
+    // Persist status change if it changed
+    if (newStatus !== original.status) {
+      this.woSvc.updateStatus(taskId, taskStatusToWO(newStatus)).subscribe();
+    }
   }
 
   stepsProgress(task: Task): number {
-    if (!task.steps.length) return 0;
-    return Math.round((task.steps.filter(s => s.done).length / task.steps.length) * 100);
+    return task.steps.length
+      ? Math.round(task.steps.filter(s => s.done).length / task.steps.length * 100)
+      : 0;
   }
 
-  // ── Progress update ────────────────────────────────────────────────────────
+  // ── Progress update — persists producedQty to backend ─────────────────────
   openProgressEdit(task: Task, ev: Event): void {
     ev.stopPropagation();
     this.progressEditId.set(task.id);
@@ -231,15 +296,32 @@ export class TaskConsoleComponent implements OnInit {
 
   saveProgress(task: Task): void {
     const val = Math.min(Math.max(0, this.progressInput()), task.quantity);
+    const autoStatus: Task['status'] =
+      val >= task.quantity ? 'Done'        :
+      val > 0              ? 'In Progress' :
+                             task.status;
+
+    // Optimistic local update
     this.tasks.update(list =>
-      list.map(t => {
-        if (t.id !== task.id) return t;
-        const newStatus: Task['status'] = val >= t.quantity ? 'Done' : t.status === 'To Do' && val > 0 ? 'In Progress' : t.status;
-        return { ...t, produced: val, status: newStatus };
-      })
+      list.map(t => t.id === task.id ? { ...t, produced: val, status: autoStatus } : t)
     );
     this.progressEditId.set(null);
-    this.toast(`Progress updated: ${val}/${task.quantity}`, 'success');
+    this.isSaving.set(true);
+
+    // Persist via SFO-allowed /progress endpoint (not the full PUT which requires Planner)
+    this.woSvc.updateProgress(task.id, val).subscribe({
+      next: () => {
+        this.isSaving.set(false);
+        this.toast(`Progress saved: ${val} / ${task.quantity} units`, 'success');
+        if (autoStatus !== task.status) {
+          this.woSvc.updateStatus(task.id, taskStatusToWO(autoStatus)).subscribe();
+        }
+      },
+      error: () => {
+        this.isSaving.set(false);
+        this.toast('Failed to save progress', 'warn');
+      },
+    });
   }
 
   // ── Flag issue ────────────────────────────────────────────────────────────
@@ -256,8 +338,10 @@ export class TaskConsoleComponent implements OnInit {
     this.tasks.update(list =>
       list.map(t => t.id === task.id ? { ...t, flagged: true, flagReason: reason, status: 'To Do' } : t)
     );
+    // Persist: flag → WO goes On Hold so Production Planner sees it
+    this.woSvc.updateStatus(task.id, 'On Hold').subscribe();
     this.closeFlagDrawer();
-    this.toast(`Issue flagged on ${task.woNumber}`, 'warn');
+    this.toast(`${task.woNumber} flagged — WO set to On Hold`, 'warn');
   }
 
   clearFlag(task: Task, ev: Event): void {
@@ -274,7 +358,8 @@ export class TaskConsoleComponent implements OnInit {
   }
 
   isOverdue(t: Task): boolean {
-    return t.status !== 'Done' && t.dueDate < new Date().toISOString().split('T')[0];
+    return t.status !== 'Done' && !!t.dueDate &&
+           t.dueDate < new Date().toISOString().split('T')[0];
   }
 
   priorityMeta(p: Task['priority']) {
@@ -284,12 +369,12 @@ export class TaskConsoleComponent implements OnInit {
       High:     { color: '#d97706', bg: 'rgba(217,119,6,0.10)'   },
       Critical: { color: '#dc2626', bg: 'rgba(220,38,38,0.10)'   },
     };
-    return m[p];
+    return m[p] ?? m.Medium;
   }
+
+  trackById(_: number, t: Task): string { return t.id; }
 
   private toast(msg: string, type: 'success' | 'warn' | 'info'): void {
     this.snack.open(msg, '✕', { duration: 3000, panelClass: [`snack-${type}`] });
   }
-
-  ngOnInit(): void {}
 }

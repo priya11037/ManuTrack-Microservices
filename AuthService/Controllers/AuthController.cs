@@ -57,6 +57,43 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<object>.Ok(result));
     }
 
+    // PUT api/v1/auth/profile  — any authenticated user can update their own profile
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var userId = JwtHelper.GetUserId(User);
+        var result = await _authService.UpdateProfileAsync(userId, request);
+        return Ok(ApiResponse<object>.Ok(result, "Profile updated successfully."));
+    }
+
+    // PUT api/v1/auth/users/{id}
+    [HttpPut("users/{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequest request)
+    {
+        if (id <= 0)
+            return BadRequest(ApiResponse.Fail("User ID must be a positive number."));
+
+        var result = await _authService.UpdateUserAsync(id, request);
+        return Ok(ApiResponse<object>.Ok(result, "User updated successfully."));
+    }
+
+    // DELETE api/v1/auth/users/{id}
+    [HttpDelete("users/{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        if (id <= 0)
+            return BadRequest(ApiResponse.Fail("User ID must be a positive number."));
+
+        if (id == JwtHelper.GetUserId(User))
+            return BadRequest(ApiResponse.Fail("You cannot delete your own account."));
+
+        await _authService.DeleteUserAsync(id);
+        return Ok(ApiResponse.Ok("User deleted successfully."));
+    }
+
     // PUT api/v1/auth/change-password
     [HttpPut("change-password")]
     [Authorize]

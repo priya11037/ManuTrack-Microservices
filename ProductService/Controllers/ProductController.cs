@@ -1,4 +1,4 @@
-using ManuTrack.SharedKernel.Responses;
+﻿using ManuTrack.SharedKernel.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.DTOs;
@@ -28,7 +28,7 @@ public class ProductController(IProductService service) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Planner")]
+    [Authorize(Roles = "Admin,ProductionPlanner")]
     public async Task<ActionResult<ApiResponse<ProductViewModel>>> Create([FromBody] CreateProductRequest request)
     {
         var result = await service.CreateProductAsync(request);
@@ -36,7 +36,7 @@ public class ProductController(IProductService service) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin,Planner")]
+    [Authorize(Roles = "Admin,ProductionPlanner")]
     public async Task<ActionResult<ApiResponse<ProductViewModel>>> Update(int id, [FromBody] UpdateProductRequest request)
     {
         var result = await service.UpdateProductAsync(id, request);

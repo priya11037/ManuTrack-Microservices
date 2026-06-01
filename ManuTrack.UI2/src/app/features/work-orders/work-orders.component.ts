@@ -7,6 +7,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { WorkOrderService, WorkOrder, CreateWorkOrderRequest } from '../../core/services/work-order.service';
+import { UserService } from '../../core/services/user.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 // Re-export so other components (e.g. schedule) can still import WorkOrder from here
 export type { WorkOrder } from '../../core/services/work-order.service';
@@ -28,6 +30,11 @@ export class WorkOrdersComponent implements OnInit {
   private fb       = inject(FormBuilder);
   private snack    = inject(MatSnackBar);
   readonly woSvc   = inject(WorkOrderService);
+  private usrSvc   = inject(UserService);
+  private auth     = inject(AuthService);
+
+  // ── Read-only mode for Admin ───────────────────────────────────────────────────
+  isReadOnly = computed(() => this.auth.userRole() === 'Admin');
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   viewMode        = signal<'table' | 'kanban'>('table');
@@ -48,7 +55,16 @@ export class WorkOrdersComponent implements OnInit {
     'Shaft Assembly':'SA-1042','Gear Box Unit':'GB-2088','Hydraulic Pump':'HP-3301',
     'Control Valve':'CV-4410','Motor Mount':'MM-5501','Bracket Assembly':'BA-6602','PCB Controller':'PC-8801',
   };
-  operators  = ['Mike Johnson','Tom Wilson','Carlos Ramos','Amy Zhang','Linda Brown'];
+  // Operators loaded dynamically from UserService — ShopFloorOperator role only
+  operators = computed(() => {
+    const fromService = this.usrSvc.users()
+      .filter(u => u.role === 'ShopFloorOperator' && u.status === 'Active')
+      .map(u => u.name);
+    // Fallback to defaults if backend not yet loaded
+    return fromService.length > 0
+      ? fromService
+      : ['Mike Johnson','Tom Wilson','Carlos Ramos','Amy Zhang','Linda Brown'];
+  });
   lines      = ['Line A','Line B','Line C','Line D'];
   priorities = ['Low','Medium','High','Critical'] as WorkOrder['priority'][];
   statuses   = ['Planned','In Progress','On Hold','Completed'] as WorkOrder['status'][];
@@ -117,6 +133,10 @@ export class WorkOrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.woSvc.loadAll();
+    // Only Admin can call GET /api/v1/auth/users — Production Planner uses fallback list
+    if (this.auth.userRole() === 'Admin') {
+      this.usrSvc.loadAll();
+    }
   }
 
   // ── Kanban DnD ────────────────────────────────────────────────────────────────
@@ -172,15 +192,15 @@ export class WorkOrdersComponent implements OnInit {
 
     if (this.drawerMode() === 'add') {
       const req: CreateWorkOrderRequest = {
-        productID:   1, // TODO: resolve from product catalog
-        productName: v.product!,
-        quantity:    v.quantity!,
-        priority:    v.priority as WorkOrder['priority'],
-        startDate:   v.startDate!,
-        endDate:     v.dueDate!,
-        assignedTo:  v.assignedTo!,
-        line:        v.line!,
-        notes:       v.notes || '',
+        productID:      1, // TODO: resolve from product catalog
+        productName:    v.product!,
+        quantity:       v.quantity!,
+        priority:       v.priority as WorkOrder['priority'],
+        startDate:      v.startDate!,
+        endDate:        v.dueDate!,
+        assignedTo:     v.assignedTo!,
+        productionLine: v.line!,  // maps to backend field name
+        notes:          v.notes || '',
       };
       this.woSvc.create(req).subscribe({
         next: (wo) => { this.toast(`${wo.woNumber} created`, 'success'); this.closeDrawer(); },
@@ -188,12 +208,13 @@ export class WorkOrdersComponent implements OnInit {
     } else {
       const wo = this.selectedWO()!;
       this.woSvc.update(wo.id, {
-        quantity:   v.quantity!,
-        startDate:  v.startDate!,
-        endDate:    v.dueDate!,
-        assignedTo: v.assignedTo!,
-        line:       v.line!,
-        notes:      v.notes || '',
+        quantity:       v.quantity!,
+        startDate:      v.startDate!,
+        endDate:        v.dueDate!,
+        assignedTo:     v.assignedTo!,
+        productionLine: v.line!,
+        priority:       v.priority as WorkOrder['priority'],
+        notes:          v.notes || '',
       }).subscribe({
         next: () => { this.toast('Work Order updated', 'success'); this.closeDrawer(); },
       });

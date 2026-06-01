@@ -6,6 +6,11 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ChartModule } from 'primeng/chart';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { WorkOrderService } from '../../core/services/work-order.service';
+import { UserService } from '../../core/services/user.service';
+import { InspectionService } from '../../core/services/inspection.service';
+import { InventoryService } from '../../core/services/inventory.service';
+import { ComplianceService } from '../../core/services/compliance.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,7 +20,12 @@ import { AuthService } from '../../core/auth/auth.service';
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit {
-  private auth = inject(AuthService);
+  private auth    = inject(AuthService);
+  private woSvc   = inject(WorkOrderService);
+  private usrSvc  = inject(UserService);
+  private inspSvc = inject(InspectionService);
+  private invSvc  = inject(InventoryService);
+  private compSvc = inject(ComplianceService);
 
   // Current role drives the entire view
   role     = computed(() => this.auth.userRole());
@@ -25,27 +35,44 @@ export class DashboardComponent implements OnInit {
   dateRanges = ['Today', 'This Week', 'This Month', 'This Quarter', 'This Year'];
 
   // ── KPI Cards ───────────────────────────────────────────────────────────────
-  kpiCards = [
-    { label: 'Total Users',    value: '10',  icon: 'group',          color: 'blue',   trend: '+1 this month',  trendUp: true  },
-    { label: 'Active Users',   value: '8',   icon: 'person_check',   color: 'green',  trend: '80% of total',   trendUp: true  },
-    { label: 'Inactive Users', value: '2',   icon: 'person_off',     color: 'amber',  trend: '20% of total',   trendUp: false },
-    { label: 'Login Failures', value: '5',   icon: 'gpp_bad',        color: 'red',    trend: 'Last 24 hours',  trendUp: false },
-  ];
+  // ── Admin KPIs — computed from UserService ────────────────────────────────────
+  kpiCards = computed(() => {
+    const stats   = this.usrSvc.stats();
+    const total   = stats.total;
+    const active  = stats.active;
+    const inactive= stats.inactive;
+    const pct     = total > 0 ? Math.round((active / total) * 100) : 0;
+    return [
+      { label: 'Total Users',    value: String(total),   icon: 'group',        color: 'blue',  trend: `${total} registered`,       trendUp: true  },
+      { label: 'Active Users',   value: String(active),  icon: 'person_check', color: 'green', trend: `${pct}% of total`,          trendUp: true  },
+      { label: 'Inactive Users', value: String(inactive),icon: 'person_off',   color: 'amber', trend: `${100 - pct}% of total`,    trendUp: false },
+      { label: 'Login Failures', value: '0',             icon: 'gpp_bad',      color: 'red',   trend: 'Last 24 hours',             trendUp: false },
+    ];
+  });
 
   // ── Users by Role (Horizontal Bar Chart) ────────────────────────────────────
-  roleChartData = {
-    labels: ['Admin', 'Prod. Planner', 'Shop Floor', 'QA Inspector', 'Inventory Mgr', 'Compliance'],
-    datasets: [{
-      label: 'Users',
-      data: [1, 2, 2, 2, 2, 1],
-      backgroundColor: [
-        '#3b82f6', '#10b981', '#f59e0b',
-        '#8b5cf6', '#ef4444', '#0ea5e9',
-      ],
-      borderRadius: 5,
-      barThickness: 18,
-    }],
-  };
+  // ── Role chart — computed from real UserService data ─────────────────────────
+  roleChartData = computed(() => {
+    const users = this.usrSvc.users();
+    const roleKeys = [
+      { label: 'Admin',         role: 'Admin',             color: '#3b82f6' },
+      { label: 'Prod. Planner', role: 'ProductionPlanner', color: '#10b981' },
+      { label: 'Shop Floor',    role: 'ShopFloorOperator', color: '#f59e0b' },
+      { label: 'QA Inspector',  role: 'QualityInspector',  color: '#8b5cf6' },
+      { label: 'Inventory Mgr', role: 'InventoryManager',  color: '#ef4444' },
+      { label: 'Compliance',    role: 'ComplianceOfficer', color: '#0ea5e9' },
+    ];
+    return {
+      labels: roleKeys.map(r => r.label),
+      datasets: [{
+        label: 'Users',
+        data: roleKeys.map(r => users.filter(u => u.role === r.role).length),
+        backgroundColor: roleKeys.map(r => r.color),
+        borderRadius: 5,
+        barThickness: 18,
+      }],
+    };
+  });
 
   roleChartOptions = {
     responsive: true,
@@ -161,33 +188,52 @@ export class DashboardComponent implements OnInit {
     },
   };
 
-  // ── Recent Audit Logs ────────────────────────────────────────────────────────
-  auditLogs = [
-    { initial: 'J', name: 'John Smith',  action: 'Created Work Order WO-2841',        module: 'WorkOrders', time: '08:10 AM', color: '#2563eb', severity: 'info'    },
-    { initial: 'S', name: 'Sarah Lee',   action: 'Updated Inventory: Steel Rods',     module: 'Inventory',  time: '07:55 AM', color: '#10b981', severity: 'info'    },
-    { initial: 'J', name: 'John Smith',  action: 'Added new user: Mike Johnson',      module: 'Users',      time: '07:30 AM', color: '#2563eb', severity: 'info'    },
-    { initial: 'E', name: 'Emily Clark', action: 'Approved Inspection INS-4421',      module: 'Quality',    time: '07:10 AM', color: '#8b5cf6', severity: 'info'    },
-    { initial: '!', name: 'System',      action: 'Failed login: unknown@external.com',module: 'Auth',       time: '06:48 AM', color: '#ef4444', severity: 'error'   },
-    { initial: 'R', name: 'Robert Chen', action: 'Generated Compliance Report CR-88', module: 'Compliance', time: '06:45 AM', color: '#f59e0b', severity: 'info'    },
-  ];
+  // ── Recent Audit Logs — from ComplianceService ───────────────────────────────
+  auditLogs = computed(() => {
+    const palette: Record<string, string> = {
+      'John Smith': '#2563eb', 'Sarah Lee': '#10b981', 'Emily Clark': '#8b5cf6',
+      'Robert Chen': '#f59e0b', 'Amy Zhang': '#ec4899', 'System': '#ef4444',
+    };
+    return this.compSvc.auditLogs().slice(0, 6).map(l => ({
+      initial:  l.userInitials || (l.user?.[0] ?? '?'),
+      name:     l.user || 'System',
+      action:   l.detail || l.action,
+      module:   l.module,
+      time:     new Date(l.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      color:    palette[l.user] ?? '#6b7280',
+      severity: l.severity,
+    }));
+  });
 
-  // ── System Module Overview ───────────────────────────────────────────────────
-  moduleStats = [
-    { label: 'Work Orders',         value: '340', icon: 'assignment',       color: '#3b82f6', sub: 'across all statuses'  },
-    { label: 'Products Registered', value: '524', icon: 'category',         color: '#10b981', sub: 'active in catalog'     },
-    { label: 'Inventory Items',     value: '186', icon: 'inventory_2',      color: '#f59e0b', sub: 'tracked items'         },
-    { label: 'Active Inspections',  value: '23',  icon: 'fact_check',       color: '#8b5cf6', sub: 'pending review'        },
-    { label: 'Compliance Reports',  value: '5',   icon: 'policy',           color: '#0ea5e9', sub: '2 pending submission'  },
-    { label: 'Purchase Orders',     value: '47',  icon: 'shopping_cart',    color: '#ef4444', sub: 'this quarter'          },
-  ];
+  // ── System Module Overview — computed from real service stats ─────────────────
+  moduleStats = computed(() => {
+    const wos = this.woSvc.stats();
+    const inv = this.invSvc.stockStats();
+    const ins = this.inspSvc.inspectionStats();
+    const rep = this.compSvc.reportStats();
+    const pos = this.invSvc.poStats();
+    return [
+      { label: 'Work Orders',         value: String(wos.total),          icon: 'assignment',    color: '#3b82f6', sub: `${wos.inProgress} in progress`    },
+      { label: 'Inventory Items',      value: String(inv.total),          icon: 'inventory_2',   color: '#f59e0b', sub: `${inv.low} low stock alerts`       },
+      { label: 'Active Inspections',   value: String(ins.pending + ins.inReview), icon: 'fact_check', color: '#8b5cf6', sub: `${ins.failed} failed`         },
+      { label: 'Compliance Reports',   value: String(rep.total),          icon: 'policy',        color: '#0ea5e9', sub: `${rep.pending} pending`           },
+      { label: 'Purchase Orders',      value: String(pos.total),          icon: 'shopping_cart', color: '#ef4444', sub: `${pos.pending} open`              },
+      { label: 'Users',                value: String(this.usrSvc.stats().total), icon: 'group',  color: '#10b981', sub: `${this.usrSvc.stats().active} active` },
+    ];
+  });
 
   // ── Production Planner KPIs ──────────────────────────────────────────────────
-  plannerKpis = [
-    { label: 'Open Work Orders',    value: '7',   icon: 'assignment',       color: 'blue',   trend: '3 due this week',   trendUp: false },
-    { label: 'In Progress',         value: '2',   icon: 'autorenew',        color: 'indigo', trend: 'Across 3 lines',    trendUp: true  },
-    { label: 'Overdue',             value: '2',   icon: 'warning',          color: 'red',    trend: 'Needs attention',   trendUp: false },
-    { label: 'Completed This Month',value: '12',  icon: 'task_alt',         color: 'green',  trend: '↑ 20% vs last mo', trendUp: true  },
-  ];
+  // ── Planner KPIs — computed from WorkOrderService ────────────────────────────
+  plannerKpis = computed(() => {
+    const s = this.woSvc.stats();
+    const open = s.planned + s.inProgress + s.onHold;
+    return [
+      { label: 'Open Work Orders',    value: String(open),        icon: 'assignment', color: 'blue',   trend: `${s.planned} planned`,       trendUp: false },
+      { label: 'In Progress',         value: String(s.inProgress),icon: 'autorenew',  color: 'indigo', trend: 'Currently active',           trendUp: true  },
+      { label: 'Overdue',             value: String(s.overdue),   icon: 'warning',    color: 'red',    trend: s.overdue > 0 ? 'Attention needed' : 'On track', trendUp: s.overdue === 0 },
+      { label: 'Completed',           value: String(s.completed), icon: 'task_alt',   color: 'green',  trend: `${s.total} total WOs`,       trendUp: true  },
+    ];
+  });
 
   // ── WO Status Doughnut ───────────────────────────────────────────────────────
   woStatusChartData = {
@@ -268,39 +314,80 @@ export class DashboardComponent implements OnInit {
     },
   };
 
-  // ── Upcoming Work Orders ──────────────────────────────────────────────────────
-  upcomingWOs = [
-    { woNumber: 'WO-0001', product: 'Shaft Assembly',   priority: 'High',     dueDate: '2025-05-30', assignedTo: 'Mike Johnson',  status: 'In Progress', avatarColor: '#f59e0b', overdue: true  },
-    { woNumber: 'WO-0004', product: 'Control Valve',    priority: 'Critical', dueDate: '2025-05-29', assignedTo: 'Amy Zhang',     status: 'In Progress', avatarColor: '#ec4899', overdue: true  },
-    { woNumber: 'WO-0005', product: 'Motor Mount',      priority: 'High',     dueDate: '2025-06-05', assignedTo: 'Mike Johnson',  status: 'On Hold',     avatarColor: '#f59e0b', overdue: false },
-    { woNumber: 'WO-0002', product: 'Gear Box Unit',    priority: 'Medium',   dueDate: '2025-06-07', assignedTo: 'Tom Wilson',    status: 'Planned',     avatarColor: '#6366f1', overdue: false },
-    { woNumber: 'WO-0007', product: 'Shaft Assembly',   priority: 'Medium',   dueDate: '2025-06-12', assignedTo: 'Carlos Ramos',  status: 'Planned',     avatarColor: '#14b8a6', overdue: false },
-  ];
+  // ── Upcoming Work Orders — from WorkOrderService ─────────────────────────────
+  upcomingWOs = computed(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return this.woSvc.workOrders()
+      .filter(w => w.status !== 'Completed' && w.status !== 'Cancelled')
+      .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+      .slice(0, 5)
+      .map(w => ({
+        woNumber:   w.woNumber,
+        product:    w.product,
+        priority:   w.priority,
+        dueDate:    w.dueDate,
+        assignedTo: w.assignedTo,
+        status:     w.status,
+        avatarColor: w.avatarColor,
+        overdue:    w.dueDate < today,
+      }));
+  });
 
-  // ── Line utilisation quick stats ──────────────────────────────────────────────
-  lineStats = [
-    { line: 'Line A', status: 'Active',   wo: 'WO-0001', product: 'Shaft Assembly',  utilColor: '#059669' },
-    { line: 'Line B', status: 'On Hold',  wo: 'WO-0005', product: 'Motor Mount',     utilColor: '#d97706' },
-    { line: 'Line C', status: 'Active',   wo: 'WO-0004', product: 'Control Valve',   utilColor: '#059669' },
-    { line: 'Line D', status: 'Idle',     wo: '—',       product: '—',               utilColor: '#9ca3af' },
-  ];
+  // ── Line utilisation — computed from WorkOrderService ─────────────────────────
+  lineStats = computed(() => {
+    const activeWOs = this.woSvc.workOrders().filter(w => w.status === 'In Progress' || w.status === 'On Hold');
+    return ['Line A', 'Line B', 'Line C', 'Line D'].map(line => {
+      const wo = activeWOs.find(w => w.line === line);
+      const statusStr = wo ? (wo.status === 'In Progress' ? 'Active' : 'On Hold') : 'Idle';
+      return {
+        line,
+        status:    statusStr,
+        wo:        wo?.woNumber ?? '—',
+        product:   wo?.product  ?? '—',
+        utilColor: statusStr === 'Active' ? '#059669' : statusStr === 'On Hold' ? '#d97706' : '#9ca3af',
+      };
+    });
+  });
 
-  // ── Shop Floor Operator KPIs ─────────────────────────────────────────────────
-  sfKpis = [
-    { label: 'Tasks Assigned',    value: '5',  icon: 'assignment',      color: 'blue',   trend: 'Today',          trendUp: true  },
-    { label: 'In Progress',       value: '1',  icon: 'autorenew',       color: 'indigo', trend: 'Line A active',  trendUp: true  },
-    { label: 'Completed Today',   value: '1',  icon: 'task_alt',        color: 'green',  trend: '20% of tasks',   trendUp: true  },
-    { label: 'Flagged Issues',    value: '1',  icon: 'flag',            color: 'amber',  trend: 'Needs attention',trendUp: false },
-  ];
+  // ── Shop Floor — work orders assigned to current user ────────────────────────
+  private myWOs = computed(() => {
+    const name = this.auth.currentUser()?.name?.toLowerCase() ?? '';
+    return this.woSvc.workOrders().filter(w =>
+      w.assignedTo?.toLowerCase() === name &&
+      w.status !== 'Cancelled'
+    );
+  });
 
-  // ── My Tasks Today ────────────────────────────────────────────────────────────
-  sfTasks = [
-    { woNumber: 'WO-0001', product: 'Shaft Assembly',   status: 'In Progress', priority: 'High',   progress: 64, dueDate: '2025-05-30', overdue: true  },
-    { woNumber: 'WO-0002', product: 'Gear Box Unit',    status: 'To Do',       priority: 'Medium', progress: 0,  dueDate: '2025-06-07', overdue: false },
-    { woNumber: 'WO-0005', product: 'Motor Mount',      status: 'To Do',       priority: 'High',   progress: 0,  dueDate: '2025-06-05', overdue: false },
-    { woNumber: 'WO-0007', product: 'Shaft Assembly',   status: 'To Do',       priority: 'Medium', progress: 0,  dueDate: '2025-06-12', overdue: false },
-    { woNumber: 'WO-0003', product: 'Hydraulic Pump',   status: 'Done',        priority: 'Low',    progress: 100,dueDate: '2025-05-20', overdue: false },
-  ];
+  // ── KPIs — computed from real data ────────────────────────────────────────────
+  sfKpis = computed(() => {
+    const all     = this.myWOs();
+    const today   = new Date().toISOString().split('T')[0];
+    const total   = all.length;
+    const inProg  = all.filter(w => w.status === 'In Progress').length;
+    const done    = all.filter(w => w.status === 'Completed').length;
+    const overdue = all.filter(w => w.status !== 'Completed' && w.dueDate < today).length;
+    return [
+      { label: 'Tasks Assigned',  value: String(total),  icon: 'assignment', color: 'blue',   trend: 'Total assigned',       trendUp: true          },
+      { label: 'In Progress',     value: String(inProg), icon: 'autorenew',  color: 'indigo', trend: inProg > 0 ? 'Active' : 'None active', trendUp: inProg > 0 },
+      { label: 'Completed',       value: String(done),   icon: 'task_alt',   color: 'green',  trend: total > 0 ? `${Math.round(done/total*100)}% done` : '0% done', trendUp: true },
+      { label: 'Overdue',         value: String(overdue),icon: 'warning',    color: overdue > 0 ? 'red' : 'green', trend: overdue > 0 ? 'Needs attention' : 'On track', trendUp: overdue === 0 },
+    ];
+  });
+
+  // ── Task list — computed from real data ───────────────────────────────────────
+  sfTasks = computed(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return this.myWOs().map(w => ({
+      woNumber: w.woNumber,
+      product:  w.product,
+      status:   w.status === 'Completed' ? 'Done' :
+                w.status === 'In Progress' ? 'In Progress' : 'To Do',
+      priority: w.priority,
+      progress: w.quantity > 0 ? Math.round((w.produced / w.quantity) * 100) : 0,
+      dueDate:  w.dueDate,
+      overdue:  w.status !== 'Completed' && w.dueDate < today,
+    }));
+  });
 
   sfStatusColor(s: string): string {
     return { 'To Do': '#6b7280', 'In Progress': '#2563eb', Done: '#059669' }[s] ?? '#6b7280';
@@ -309,24 +396,53 @@ export class DashboardComponent implements OnInit {
     return { Low: '#6b7280', Medium: '#2563eb', High: '#d97706', Critical: '#dc2626' }[p] ?? '#6b7280';
   }
 
-  // ── Week output chart ────────────────────────────────────────────────────────
-  sfOutputChartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-    datasets: [
-      {
-        label: 'Target',
-        data: [10, 10, 10, 10, 10],
-        backgroundColor: 'rgba(37,99,235,0.12)',
-        borderColor: '#2563eb', borderWidth: 1.5, borderRadius: 5,
-      },
-      {
-        label: 'Produced',
-        data: [10, 8, 7, 5, 2],
-        backgroundColor: 'rgba(5,150,105,0.75)',
-        borderColor: '#059669', borderWidth: 0, borderRadius: 5,
-      },
-    ],
+  // ── Task completion donut — computed from real data ───────────────────────────
+  sfDonutData = computed(() => {
+    const all    = this.myWOs();
+    const done   = all.filter(w => w.status === 'Completed').length;
+    const inProg = all.filter(w => w.status === 'In Progress').length;
+    const todo   = all.filter(w => w.status === 'Planned' || w.status === 'On Hold').length;
+    return {
+      labels: ['Done', 'In Progress', 'To Do'],
+      datasets: [{ data: [done, inProg, todo],
+        backgroundColor: ['#059669','#2563eb','#e5e7eb'],
+        borderColor: ['#fff','#fff','#fff'], borderWidth: 3, hoverOffset: 6 }],
+    };
+  });
+
+  sfDonutOptions = {
+    responsive: true, maintainAspectRatio: false, cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#1e2a3b', titleColor: '#e5e7eb', bodyColor: '#94a3b8', padding: 10, cornerRadius: 8 },
+    },
   };
+
+  sfDonutLegend = computed(() => {
+    const all    = this.myWOs();
+    const done   = all.filter(w => w.status === 'Completed').length;
+    const inProg = all.filter(w => w.status === 'In Progress').length;
+    const todo   = all.filter(w => w.status === 'Planned' || w.status === 'On Hold').length;
+    return [
+      { label: 'Done',        count: done,   color: '#059669' },
+      { label: 'In Progress', count: inProg, color: '#2563eb' },
+      { label: 'To Do',       count: todo,   color: '#9ca3af' },
+    ];
+  });
+
+  // ── Output chart — uses real produced vs quantity totals ──────────────────────
+  sfOutputChartData = computed(() => {
+    const all     = this.myWOs();
+    const target  = all.reduce((s, w) => s + w.quantity, 0);
+    const produced= all.reduce((s, w) => s + w.produced, 0);
+    return {
+      labels: ['Target', 'Produced'],
+      datasets: [
+        { label: 'Target',   data: [target, 0],   backgroundColor: 'rgba(37,99,235,0.5)',  borderRadius: 5 },
+        { label: 'Produced', data: [0, produced],  backgroundColor: 'rgba(5,150,105,0.75)', borderRadius: 5 },
+      ],
+    };
+  });
 
   sfOutputChartOptions = {
     responsive: true, maintainAspectRatio: false,
@@ -338,37 +454,25 @@ export class DashboardComponent implements OnInit {
     },
     scales: {
       x: { grid: { display: false }, border: { display: false }, ticks: { color: '#9ca3af', font: { size: 11 } } },
-      y: { min: 0, max: 12, grid: { color: 'rgba(243,244,246,0.8)' }, border: { display: false },
-           ticks: { color: '#9ca3af', font: { size: 11 }, stepSize: 2 } },
+      y: { min: 0, grid: { color: 'rgba(243,244,246,0.8)' }, border: { display: false },
+           ticks: { color: '#9ca3af', font: { size: 11 } } },
     },
   };
 
-  // ── Task completion donut ─────────────────────────────────────────────────────
-  sfDonutData = {
-    labels: ['Done', 'In Progress', 'To Do'],
-    datasets: [{ data: [1, 1, 3], backgroundColor: ['#059669', '#2563eb', '#e5e7eb'],
-      borderColor: ['#fff','#fff','#fff'], borderWidth: 3, hoverOffset: 6 }],
-  };
-  sfDonutOptions = {
-    responsive: true, maintainAspectRatio: false, cutout: '68%',
-    plugins: {
-      legend: { display: false },
-      tooltip: { backgroundColor: '#1e2a3b', titleColor: '#e5e7eb', bodyColor: '#94a3b8', padding: 10, cornerRadius: 8 },
-    },
-  };
-  sfDonutLegend = [
-    { label: 'Done',        count: 1, color: '#059669' },
-    { label: 'In Progress', count: 1, color: '#2563eb' },
-    { label: 'To Do',       count: 3, color: '#9ca3af' },
-  ];
-
-  // ── Quality Inspector KPIs ────────────────────────────────────────────────────
-  qiKpis = [
-    { label: 'Open Inspections', value: '3',   icon: 'pending',      color: 'blue',   trend: 'Awaiting review',  trendUp: false },
-    { label: 'Pass Rate',        value: '75%',  icon: 'verified',     color: 'green',  trend: '↑ 5% vs last wk', trendUp: true  },
-    { label: 'Defects Logged',   value: '5',    icon: 'bug_report',   color: 'amber',  trend: 'This month',      trendUp: false },
-    { label: 'Critical Defects', value: '2',    icon: 'report',       color: 'red',    trend: 'Needs attention',  trendUp: false },
-  ];
+  // ── Quality Inspector KPIs — computed from InspectionService ──────────────────
+  qiKpis = computed(() => {
+    const is = this.inspSvc.inspectionStats();
+    const ds = this.inspSvc.defectStats();
+    const passRate = (is.passed + is.failed) > 0
+      ? Math.round((is.passed / (is.passed + is.failed)) * 100) : 0;
+    const open = is.pending + is.inReview;
+    return [
+      { label: 'Open Inspections', value: String(open),       icon: 'pending',    color: 'blue',  trend: `${is.pending} pending, ${is.inReview} in review`, trendUp: false },
+      { label: 'Pass Rate',        value: `${passRate}%`,     icon: 'verified',   color: 'green', trend: `${is.passed} passed of ${is.passed + is.failed}`, trendUp: passRate >= 70 },
+      { label: 'Defects Logged',   value: String(ds.total),   icon: 'bug_report', color: 'amber', trend: `${ds.open} open`,                                  trendUp: false },
+      { label: 'Critical Defects', value: String(ds.critical),icon: 'report',     color: 'red',   trend: ds.critical > 0 ? 'Needs attention' : 'None',       trendUp: ds.critical === 0 },
+    ];
+  });
 
   // ── Pass/Fail trend (line chart) ─────────────────────────────────────────────
   qiTrendData = {
@@ -426,12 +530,25 @@ export class DashboardComponent implements OnInit {
   ];
 
   // ── Recent inspections needing action ────────────────────────────────────────
-  qiPendingIns = [
-    { insNumber: 'INS-1002', woRef: 'WO-0004', product: 'Control Valve',   priority: 'Critical', status: 'In Review', inspector: 'Amy Zhang',    color: '#ec4899' },
-    { insNumber: 'INS-1004', woRef: 'WO-0002', product: 'Gear Box Unit',   priority: 'Medium',   status: 'Pending',   inspector: 'Carlos Ramos', color: '#14b8a6' },
-    { insNumber: 'INS-1006', woRef: 'WO-0005', product: 'Motor Mount',     priority: 'High',     status: 'Pending',   inspector: 'Amy Zhang',    color: '#ec4899' },
-    { insNumber: 'INS-1008', woRef: 'WO-0007', product: 'Shaft Assembly',  priority: 'Medium',   status: 'Pending',   inspector: 'Emily Clark',  color: '#8b5cf6' },
-  ];
+  // ── QI pending inspections — from InspectionService ─────────────────────────
+  qiPendingIns = computed(() => {
+    const palette: Record<string, string> = {
+      'Emily Clark': '#8b5cf6', 'Amy Zhang': '#ec4899',
+      'Carlos Ramos': '#14b8a6', 'Linda Brown': '#0ea5e9',
+    };
+    return this.inspSvc.inspections()
+      .filter(i => i.status === 'Pending' || i.status === 'In Review')
+      .slice(0, 4)
+      .map(i => ({
+        insNumber: i.insNumber,
+        woRef:     i.woRef,
+        product:   i.product,
+        priority:  i.priority,
+        status:    i.status,
+        inspector: i.inspector,
+        color:     palette[i.inspector] ?? '#6b7280',
+      }));
+  });
 
   qiPriorityColor(p: string): string {
     return { Low: '#6b7280', Medium: '#2563eb', High: '#d97706', Critical: '#dc2626' }[p] ?? '#6b7280';
@@ -440,13 +557,19 @@ export class DashboardComponent implements OnInit {
     return { Pending: '#6b7280', 'In Review': '#2563eb', Passed: '#059669', Failed: '#dc2626' }[s] ?? '#6b7280';
   }
 
-  // ── Inventory Manager KPIs ───────────────────────────────────────────────────
-  imKpis = [
-    { label: 'Total Items',     value: '12',   icon: 'inventory_2',   color: 'blue',   trend: 'In catalog',       trendUp: true  },
-    { label: 'Low Stock Alerts',value: '4',    icon: 'warning',       color: 'red',    trend: 'Action needed',    trendUp: false },
-    { label: 'Open POs',        value: '5',    icon: 'shopping_cart', color: 'indigo', trend: '2 urgent',         trendUp: false },
-    { label: 'Stock Value',     value: '£24K', icon: 'payments',      color: 'green',  trend: 'Total inventory',  trendUp: true  },
-  ];
+  // ── Inventory Manager KPIs — computed from InventoryService ──────────────────
+  imKpis = computed(() => {
+    const ss  = this.invSvc.stockStats();
+    const pos = this.invSvc.poStats();
+    const val = ss.totalValue >= 1000
+      ? `£${Math.round(ss.totalValue / 1000)}K` : `£${Math.round(ss.totalValue)}`;
+    return [
+      { label: 'Total Items',     value: String(ss.total),  icon: 'inventory_2',   color: 'blue',   trend: `${ss.ok} at OK level`,         trendUp: true           },
+      { label: 'Low Stock Alerts',value: String(ss.low),    icon: 'warning',       color: 'red',    trend: ss.low > 0 ? 'Action needed' : 'All stocked', trendUp: ss.low === 0 },
+      { label: 'Open POs',        value: String(pos.pending),icon: 'shopping_cart', color: 'indigo', trend: `${pos.urgent} urgent`,          trendUp: false          },
+      { label: 'Stock Value',     value: val,               icon: 'payments',      color: 'green',  trend: 'Total inventory value',        trendUp: true           },
+    ];
+  });
 
   // ── Stock level bar chart ────────────────────────────────────────────────────
   imStockChartData = {
@@ -478,25 +601,39 @@ export class DashboardComponent implements OnInit {
     },
   };
 
-  // ── Low stock items ───────────────────────────────────────────────────────────
-  imLowStock = [
-    { sku: 'RM-002', name: 'Steel Plate 6mm',      current: 45,  min: 100, unit: 'kg',  supplier: 'SteelCo Ltd',        color: '#dc2626' },
-    { sku: 'CM-003', name: 'Hydraulic Seal Kit',   current: 28,  min: 40,  unit: 'pcs', supplier: 'GlobalSupply Co',    color: '#d97706' },
-    { sku: 'CM-005', name: 'Control Valve Body',   current: 15,  min: 20,  unit: 'pcs', supplier: 'PrecisionParts Inc', color: '#dc2626' },
-    { sku: 'CS-002', name: 'Welding Wire 0.8mm',   current: 8,   min: 10,  unit: 'rolls',supplier: 'GlobalSupply Co',   color: '#dc2626' },
-  ];
+  // ── Low stock items — from InventoryService ───────────────────────────────────
+  imLowStock = computed(() =>
+    this.invSvc.stockItems()
+      .filter(i => i.currentStock <= i.minStock)
+      .slice(0, 4)
+      .map(i => ({
+        sku:      i.sku,
+        name:     i.name,
+        current:  i.currentStock,
+        min:      i.minStock,
+        unit:     i.unit,
+        supplier: i.supplier,
+        color:    i.currentStock === 0 ? '#dc2626' :
+                  i.currentStock < i.minStock * 0.5 ? '#dc2626' : '#d97706',
+      }))
+  );
 
   imStockPct(current: number, min: number): number {
     return Math.round((current / min) * 100);
   }
 
   // ── Compliance Officer KPIs ───────────────────────────────────────────────────
-  coKpis = [
-    { label: 'Total Reports',    value: '7',   icon: 'policy',        color: 'blue',   trend: 'All periods',      trendUp: true  },
-    { label: 'Pending Approval', value: '2',   icon: 'pending',       color: 'amber',  trend: 'Action needed',    trendUp: false },
-    { label: 'Overdue Reports',  value: '1',   icon: 'alarm',         color: 'red',    trend: 'Past deadline',    trendUp: false },
-    { label: 'Audit Events',     value: '12',  icon: 'history',       color: 'indigo', trend: 'Last 2 days',      trendUp: true  },
-  ];
+  // ── Compliance Officer KPIs — computed from ComplianceService ────────────────
+  coKpis = computed(() => {
+    const rs = this.compSvc.reportStats();
+    const as = this.compSvc.auditStats();
+    return [
+      { label: 'Total Reports',    value: String(rs.total),   icon: 'policy',   color: 'blue',   trend: 'All periods',                               trendUp: true           },
+      { label: 'Pending Approval', value: String(rs.pending), icon: 'pending',  color: 'amber',  trend: rs.pending > 0 ? 'Action needed' : 'None',   trendUp: rs.pending === 0 },
+      { label: 'Overdue Reports',  value: String(rs.overdue), icon: 'alarm',    color: 'red',    trend: rs.overdue > 0 ? 'Past deadline' : 'On track',trendUp: rs.overdue === 0 },
+      { label: 'Audit Events',     value: String(as.total),   icon: 'history',  color: 'indigo', trend: `${as.errors} errors, ${as.warnings} warnings`,trendUp: as.errors === 0 },
+    ];
+  });
 
   // ── Report status donut ───────────────────────────────────────────────────────
   coStatusData = {
@@ -545,12 +682,21 @@ export class DashboardComponent implements OnInit {
   };
 
   // ── Recent reports ────────────────────────────────────────────────────────────
-  coRecentReports = [
-    { num: 'CR-0088', title: 'Q2 2025 Quality Compliance Review',       type: 'Quality',       status: 'Submitted',   deadline: '2025-06-01', typeColor: '#2563eb' },
-    { num: 'CR-0089', title: 'May 2025 Safety Incident Report',          type: 'Safety',        status: 'Approved',    deadline: '2025-06-05', typeColor: '#dc2626' },
-    { num: 'CR-0090', title: 'Environmental Impact Assessment H1 2025',  type: 'Environmental', status: 'Under Review', deadline: '2025-06-15', typeColor: '#059669' },
-    { num: 'CR-0091', title: 'Production Efficiency Compliance Q2',      type: 'Production',    status: 'Draft',        deadline: '2025-06-20', typeColor: '#7c3aed' },
-  ];
+  // ── CO recent reports — from ComplianceService ───────────────────────────────
+  coRecentReports = computed(() => {
+    const typeColors: Record<string, string> = {
+      Quality: '#2563eb', Safety: '#dc2626', Environmental: '#059669',
+      Production: '#7c3aed', Supplier: '#d97706',
+    };
+    return this.compSvc.reports().slice(0, 4).map(r => ({
+      num:       r.reportNumber,
+      title:     r.title,
+      type:      r.type,
+      status:    r.status,
+      deadline:  r.submissionDeadline,
+      typeColor: typeColors[r.type] ?? '#6b7280',
+    }));
+  });
 
   coStatusColor(s: string): string {
     return { Draft: '#6b7280', 'Under Review': '#d97706', Approved: '#2563eb', Submitted: '#059669', Rejected: '#dc2626' }[s] ?? '#6b7280';
@@ -568,5 +714,21 @@ export class DashboardComponent implements OnInit {
     return { Planned:'st-planned', 'In Progress':'st-inprogress', 'On Hold':'st-onhold', Completed:'st-completed' }[s] ?? '';
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const r = this.role();
+    if (r === 'Admin') {
+      this.usrSvc.loadAll();
+      this.woSvc.loadAll();
+      this.invSvc.loadStock();
+      this.invSvc.loadPurchaseOrders();
+      this.inspSvc.loadInspections();
+      this.compSvc.loadReports();
+      this.compSvc.loadAuditLogs();
+    }
+    if (r === 'ProductionPlanner') { this.woSvc.loadAll(); }
+    if (r === 'ShopFloorOperator') { this.woSvc.loadAll(); }
+    if (r === 'QualityInspector')  { this.inspSvc.loadInspections(); this.inspSvc.loadDefects(); }
+    if (r === 'InventoryManager')  { this.invSvc.loadStock(); this.invSvc.loadPurchaseOrders(); }
+    if (r === 'ComplianceOfficer') { this.compSvc.loadReports(); this.compSvc.loadAuditLogs(); }
+  }
 }

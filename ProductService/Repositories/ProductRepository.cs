@@ -9,7 +9,7 @@ public class ProductRepository(ProductDbContext db) : IProductRepository
 {
     public async Task<IEnumerable<Product>> GetAllAsync(string? category = null, string? status = null)
     {
-        var query = db.Products.AsQueryable();
+        var query = db.Products.Include(p => p.BomItems).AsQueryable();
         if (!string.IsNullOrWhiteSpace(category))
             query = query.Where(p => p.Category == category);
         if (!string.IsNullOrWhiteSpace(status))
@@ -18,7 +18,7 @@ public class ProductRepository(ProductDbContext db) : IProductRepository
     }
 
     public async Task<Product?> GetByIdAsync(int id) =>
-        await db.Products.FindAsync(id);
+        await db.Products.Include(p => p.BomItems).FirstOrDefaultAsync(p => p.ProductID == id);
 
     public async Task<Product?> GetByNameAsync(string name) =>
         await db.Products.FirstOrDefaultAsync(p => p.Name == name);

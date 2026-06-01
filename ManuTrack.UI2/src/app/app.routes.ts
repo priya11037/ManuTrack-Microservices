@@ -9,6 +9,12 @@ export const routes: Routes = [
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'change-password',
+    loadComponent: () =>
+      import('./features/auth/change-password/change-password.component').then((m) => m.ChangePasswordComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'app',
     loadComponent: () =>
       import('./layout/shell/shell.component').then((m) => m.ShellComponent),
@@ -38,7 +44,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/products/products.component').then((m) => m.ProductsComponent),
         canActivate: [roleGuard],
-        data: { roles: ['Admin', 'ProductionPlanner'] },
+        data: { roles: ['ProductionPlanner'] },
       },
       {
         path: 'inventory',
@@ -142,6 +148,12 @@ export const routes: Routes = [
           },
           { path: '', redirectTo: 'users', pathMatch: 'full' },
         ],
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile.component').then((m) => m.ProfileComponent),
+        canActivate: [authGuard],
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],

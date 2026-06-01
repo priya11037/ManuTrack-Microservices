@@ -3,7 +3,9 @@ import {
   signal,
   computed,
   effect,
+  OnInit,
   ChangeDetectionStrategy,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -12,89 +14,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { ProductService, Product, BomItem } from '../../core/services/product.service';
+export type { Product, BomItem } from '../../core/services/product.service';
 
-// ── Domain interfaces ────────────────────────────────────────────────────────
-
-export interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  category: 'Mechanical' | 'Hydraulic' | 'Electronic' | 'Structural' | 'Consumable';
-  stock: number;
-  unitCost: number;
-  uom: 'pcs' | 'kg' | 'm' | 'L' | 'set';
-  hasBom: boolean;
-  description: string;
-}
-
-export interface BomItem {
-  id: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  type: 'raw-material' | 'sub-assembly' | 'purchased-part';
-  expanded?: boolean;
-  children?: BomItem[];
-}
-
-// ── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_PRODUCTS: Product[] = [
-  { id: '1', name: 'Shaft Assembly',   sku: 'SA-1042', category: 'Mechanical',  stock: 340, unitCost: 145.50, uom: 'pcs', hasBom: true,  description: 'Primary drive shaft assembly' },
-  { id: '2', name: 'Gear Box Unit',    sku: 'GB-2088', category: 'Mechanical',  stock: 87,  unitCost: 380.00, uom: 'pcs', hasBom: true,  description: 'Industrial gear box 1:4 ratio' },
-  { id: '3', name: 'Hydraulic Pump',   sku: 'HP-3301', category: 'Hydraulic',   stock: 42,  unitCost: 620.00, uom: 'pcs', hasBom: true,  description: 'High pressure hydraulic pump' },
-  { id: '4', name: 'Control Valve',    sku: 'CV-4410', category: 'Hydraulic',   stock: 156, unitCost: 95.75,  uom: 'pcs', hasBom: false, description: '' },
-  { id: '5', name: 'Motor Mount',      sku: 'MM-5501', category: 'Structural',  stock: 210, unitCost: 55.00,  uom: 'pcs', hasBom: true,  description: 'Heavy duty motor mounting bracket' },
-  { id: '6', name: 'Bracket Assembly', sku: 'BA-6602', category: 'Structural',  stock: 89,  unitCost: 38.25,  uom: 'pcs', hasBom: false, description: '' },
-  { id: '7', name: 'Seal Kit M25',     sku: 'SK-7701', category: 'Consumable',  stock: 580, unitCost: 12.00,  uom: 'set', hasBom: false, description: 'Sealing kit for 25mm shafts' },
-  { id: '8', name: 'PCB Controller',   sku: 'PC-8801', category: 'Electronic',  stock: 34,  unitCost: 280.00, uom: 'pcs', hasBom: true,  description: 'Main PLC controller board' },
-];
-
-const MOCK_BOMS: Record<string, BomItem[]> = {
-  '1': [
-    { id: 'b1-1', name: 'Steel Rod',    quantity: 1, unit: 'pcs', type: 'raw-material' },
-    { id: 'b1-2', name: 'Bearing Unit', quantity: 2, unit: 'pcs', type: 'purchased-part' },
-    { id: 'b1-3', name: 'Circlip',      quantity: 4, unit: 'pcs', type: 'purchased-part' },
-    {
-      id: 'b1-4', name: 'Seal Pack', quantity: 1, unit: 'set', type: 'sub-assembly', expanded: true,
-      children: [
-        { id: 'b1-4-1', name: 'O-Ring',  quantity: 2, unit: 'pcs', type: 'raw-material' },
-        { id: 'b1-4-2', name: 'Gasket',  quantity: 1, unit: 'pcs', type: 'raw-material' },
-      ],
-    },
-  ],
-  '2': [
-    { id: 'b2-1', name: 'Cast Housing', quantity: 1, unit: 'pcs', type: 'raw-material' },
-    {
-      id: 'b2-2', name: 'Gear Set', quantity: 1, unit: 'set', type: 'sub-assembly', expanded: true,
-      children: [
-        { id: 'b2-2-1', name: 'Main Gear',   quantity: 1, unit: 'pcs', type: 'purchased-part' },
-        { id: 'b2-2-2', name: 'Pinion Gear', quantity: 1, unit: 'pcs', type: 'purchased-part' },
-      ],
-    },
-    { id: 'b2-3', name: 'Input Shaft',  quantity: 1, unit: 'pcs', type: 'raw-material' },
-    { id: 'b2-4', name: 'Output Shaft', quantity: 1, unit: 'pcs', type: 'raw-material' },
-    { id: 'b2-5', name: 'Bearing Pack', quantity: 4, unit: 'pcs', type: 'purchased-part' },
-  ],
-  '3': [
-    { id: 'b3-1', name: 'Pump Body',   quantity: 1, unit: 'pcs', type: 'raw-material' },
-    {
-      id: 'b3-2', name: 'Piston Assembly', quantity: 1, unit: 'set', type: 'sub-assembly', expanded: true,
-      children: [
-        { id: 'b3-2-1', name: 'Piston',      quantity: 1, unit: 'pcs', type: 'raw-material' },
-        { id: 'b3-2-2', name: 'Piston Ring',  quantity: 4, unit: 'pcs', type: 'raw-material' },
-      ],
-    },
-    { id: 'b3-3', name: 'Valve Block', quantity: 1, unit: 'pcs', type: 'purchased-part' },
-    { id: 'b3-4', name: 'Seal Kit',    quantity: 1, unit: 'set', type: 'purchased-part' },
-  ],
-  '5': [
-    { id: 'b5-1', name: 'Steel Plate',       quantity: 1, unit: 'pcs', type: 'raw-material' },
-    { id: 'b5-2', name: 'Bolt Set M12',      quantity: 8, unit: 'pcs', type: 'purchased-part' },
-    { id: 'b5-3', name: 'Rubber Pad',        quantity: 4, unit: 'pcs', type: 'purchased-part' },
-    { id: 'b5-4', name: 'Mounting Bracket',  quantity: 1, unit: 'pcs', type: 'raw-material' },
-  ],
-};
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -114,33 +36,44 @@ const MOCK_BOMS: Record<string, BomItem[]> = {
   styleUrl: './products.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProductsComponent {
+export class ProductsComponent implements OnInit {
+  private readonly prodSvc = inject(ProductService);
+  private readonly fb      = inject(FormBuilder);
+  private readonly snack   = inject(MatSnackBar);
 
   // ── Tab state ──────────────────────────────────────────────────────────────
   activeTab = signal<'catalog' | 'bom'>('catalog');
 
-  // ── Products state ─────────────────────────────────────────────────────────
-  products = signal<Product[]>(MOCK_PRODUCTS);
+  // ── Products state — derived from ProductService ───────────────────────────
+  get products() { return this.prodSvc.products; }
 
-  // ── BOM state ─────────────────────────────────────────────────────────────
-  boms = signal<Record<string, BomItem[]>>(MOCK_BOMS);
+  // ── BOM state — service data + local UI expand state overlaid ─────────────
+  /** Local UI-only signal: expand state and DnD reorder for current BOM view */
+  private _localBomExpand = signal<Record<string, boolean>>({});
+
+  get boms() { return this.prodSvc.boms; }
   selectedProductId = signal<string | null>(null);
 
   selectedProduct = computed(() => {
     const id = this.selectedProductId();
-    return id ? this.products().find(p => p.id === id) ?? null : null;
+    if (!id) return null;
+    const svc = this.prodSvc.products().find(p => p.productID?.toString() === id);
+    return svc ? this.toViewProduct(svc) : null;
   });
 
   selectedBom = computed(() => {
     const id = this.selectedProductId();
-    return id ? (this.boms()[id] ?? []) : [];
+    if (!id) return [];
+    const bomItems = this.prodSvc.boms()[+id] ?? [];
+    const expandMap = this._localBomExpand();
+    return this.toViewBomItems(bomItems, expandMap);
   });
 
   // ── Computed stats ─────────────────────────────────────────────────────────
-  totalProducts   = computed(() => this.products().length);
-  activeProducts  = computed(() => this.products().filter(p => p.stock > 0).length);
-  withBom         = computed(() => this.products().filter(p => p.hasBom).length);
-  missingBom      = computed(() => this.products().filter(p => !p.hasBom).length);
+  totalProducts   = computed(() => this.prodSvc.products().length);
+  activeProducts  = computed(() => this.prodSvc.products().filter(p => p.stock > 0).length);
+  withBom         = computed(() => this.prodSvc.products().filter(p => p.hasBom).length);
+  missingBom      = computed(() => this.prodSvc.products().filter(p => !p.hasBom).length);
 
   // ── Drawer state ───────────────────────────────────────────────────────────
   drawerOpen    = signal(false);
@@ -158,17 +91,29 @@ export class ProductsComponent {
   readonly uoms: Product['uom'][]                    = ['pcs', 'kg', 'm', 'L', 'set'];
   readonly bomTypes: BomItem['type'][]               = ['raw-material', 'sub-assembly', 'purchased-part'];
 
-  constructor(private fb: FormBuilder, private snack: MatSnackBar) {
+  constructor() {
     this.initProductForm();
     this.initBomItemForm();
 
     // Auto-select first product with BOM when switching to BOM tab
     effect(() => {
       if (this.activeTab() === 'bom' && !this.selectedProductId()) {
-        const first = this.products().find(p => p.hasBom);
-        if (first) this.selectedProductId.set(first.id);
+        const first = this.prodSvc.products().find(p => p.hasBom);
+        if (first) this.selectedProductId.set(first.productID?.toString() ?? first.id);
       }
     });
+
+    // Load BOMs for products that have them whenever the product list changes
+    effect(() => {
+      this.prodSvc.products().forEach(p => {
+        if (p.hasBom && p.productID) this.prodSvc.loadBom(p.productID);
+      });
+    });
+  }
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
+  ngOnInit(): void {
+    this.prodSvc.loadProducts();
   }
 
   // ── Lifecycle helpers ──────────────────────────────────────────────────────
@@ -229,34 +174,27 @@ export class ProductsComponent {
     const editing   = this.editingProduct();
 
     if (editing) {
-      this.products.update(list =>
-        list.map(p => p.id === editing.id ? { ...p, ...formValue } : p)
-      );
-      this.snack.open(`"${formValue.name}" updated successfully.`, 'Dismiss', { duration: 3000 });
+      this.prodSvc.updateProduct(+editing.id, formValue).subscribe({
+        next: () => this.snack.open(`"${formValue.name}" updated successfully.`, 'Dismiss', { duration: 3000 }),
+      });
     } else {
-      const newProduct: Product = {
-        id: String(Date.now()),
-        hasBom: false,
-        ...formValue,
-      };
-      this.products.update(list => [...list, newProduct]);
-      this.snack.open(`"${formValue.name}" added to catalog.`, 'Dismiss', { duration: 3000 });
+      this.prodSvc.createProduct(formValue).subscribe({
+        next: () => this.snack.open(`"${formValue.name}" added to catalog.`, 'Dismiss', { duration: 3000 }),
+      });
     }
 
     this.closeDrawer();
   }
 
   deleteProduct(product: Product): void {
-    this.products.update(list => list.filter(p => p.id !== product.id));
-    this.boms.update(map => {
-      const copy = { ...map };
-      delete copy[product.id];
-      return copy;
+    this.prodSvc.deleteProduct(+product.id).subscribe({
+      next: () => {
+        if (this.selectedProductId() === product.id) {
+          this.selectedProductId.set(null);
+        }
+        this.snack.open(`"${product.name}" deleted.`, 'Dismiss', { duration: 3000 });
+      },
     });
-    if (this.selectedProductId() === product.id) {
-      this.selectedProductId.set(null);
-    }
-    this.snack.open(`"${product.name}" deleted.`, 'Dismiss', { duration: 3000 });
   }
 
   // ── Navigate to BOM tab for a product ─────────────────────────────────────
@@ -275,60 +213,24 @@ export class ProductsComponent {
     this.bomItemForm.reset({ name: '', quantity: 1, unit: 'pcs', type: 'raw-material' });
   }
 
-  // ── BOM tree toggle ────────────────────────────────────────────────────────
+  // ── BOM tree toggle (UI-only expand/collapse) ──────────────────────────────
 
   toggleExpand(item: BomItem): void {
     if (!item.children?.length) return;
-    const productId = this.selectedProductId()!;
-    this.boms.update(map => ({
-      ...map,
-      [productId]: this.toggleItemExpand(map[productId], item.id),
-    }));
+    this._localBomExpand.update(map => ({ ...map, [item.id]: !map[item.id] }));
   }
 
-  private toggleItemExpand(items: BomItem[], targetId: string): BomItem[] {
-    return items.map(item => {
-      if (item.id === targetId) return { ...item, expanded: !item.expanded };
-      if (item.children?.length) {
-        return { ...item, children: this.toggleItemExpand(item.children, targetId) };
-      }
-      return item;
-    });
-  }
-
-  // ── BOM DnD (root level) ───────────────────────────────────────────────────
+  // ── BOM DnD (root level) — visual reorder only; no backend call ────────────
 
   onRootDrop(event: CdkDragDrop<BomItem[]>): void {
+    // DnD operates on the computed selectedBom view — reorder is visual only
     if (event.previousIndex === event.currentIndex) return;
-    const productId = this.selectedProductId()!;
-    this.boms.update(map => {
-      const items = [...(map[productId] ?? [])];
-      moveItemInArray(items, event.previousIndex, event.currentIndex);
-      return { ...map, [productId]: items };
-    });
+    moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
   }
 
-  onChildDrop(event: CdkDragDrop<BomItem[] | undefined>, parentId: string): void {
-    if (event.previousIndex === event.currentIndex) return;
-    const productId = this.selectedProductId()!;
-    this.boms.update(map => ({
-      ...map,
-      [productId]: this.reorderChildren(map[productId], parentId, event.previousIndex, event.currentIndex),
-    }));
-  }
-
-  private reorderChildren(items: BomItem[], parentId: string, from: number, to: number): BomItem[] {
-    return items.map(item => {
-      if (item.id === parentId && item.children) {
-        const children = [...item.children];
-        moveItemInArray(children, from, to);
-        return { ...item, children };
-      }
-      if (item.children?.length) {
-        return { ...item, children: this.reorderChildren(item.children, parentId, from, to) };
-      }
-      return item;
-    });
+  onChildDrop(event: CdkDragDrop<BomItem[] | undefined>, _parentId: string): void {
+    if (event.previousIndex === event.currentIndex || !event.container.data) return;
+    moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
   }
 
   // ── Add BOM item ───────────────────────────────────────────────────────────
@@ -354,60 +256,58 @@ export class ProductsComponent {
     const parentId  = this.addBomParentId();
     const val       = this.bomItemForm.getRawValue();
 
-    const newItem: BomItem = {
-      id:       `${productId}-${Date.now()}`,
-      name:     val.name,
-      quantity: val.quantity,
-      unit:     val.unit,
-      type:     val.type,
-    };
-
-    this.boms.update(map => {
-      const rootItems = map[productId] ?? [];
-      if (parentId === null) {
-        return { ...map, [productId]: [...rootItems, newItem] };
-      }
-      return { ...map, [productId]: this.addChildToItem(rootItems, parentId, newItem) };
+    this.prodSvc.addBomItem({
+      productID: +productId,
+      name:      val.name,
+      quantity:  val.quantity,
+      unit:      val.unit,
+      type:      val.type,
+      parentID:  parentId ? +parentId : undefined,
+    }).subscribe({
+      next: () => this.snack.open(`"${val.name}" added to BOM.`, 'Dismiss', { duration: 2500 }),
     });
-
-    // If this is the first BOM item, mark product as having BOM
-    this.products.update(list =>
-      list.map(p => p.id === productId ? { ...p, hasBom: true } : p)
-    );
 
     this.cancelAddBomItem();
-    this.snack.open(`"${newItem.name}" added to BOM.`, 'Dismiss', { duration: 2500 });
-  }
-
-  private addChildToItem(items: BomItem[], parentId: string, newChild: BomItem): BomItem[] {
-    return items.map(item => {
-      if (item.id === parentId) {
-        return { ...item, expanded: true, children: [...(item.children ?? []), newChild] };
-      }
-      if (item.children?.length) {
-        return { ...item, children: this.addChildToItem(item.children, parentId, newChild) };
-      }
-      return item;
-    });
   }
 
   // ── Delete BOM item ────────────────────────────────────────────────────────
 
   deleteBomItem(itemId: string): void {
     const productId = this.selectedProductId()!;
-    this.boms.update(map => {
-      const updated = this.removeItemById(map[productId] ?? [], itemId);
-      return { ...map, [productId]: updated };
-    });
+    this.prodSvc.deleteBomItem(+itemId, +productId).subscribe();
   }
 
-  private removeItemById(items: BomItem[], targetId: string): BomItem[] {
-    return items
-      .filter(item => item.id !== targetId)
-      .map(item => ({
-        ...item,
-        children: item.children ? this.removeItemById(item.children, targetId) : undefined,
-      }));
+  // ── Service → View model mappers ───────────────────────────────────────────
+
+  private toViewProduct(p: import('../../core/services/product.service').Product): Product {
+    return {
+      id:          p.productID?.toString() ?? p.id,
+      name:        p.name,
+      sku:         p.sku,
+      category:    p.category as Product['category'],
+      stock:       p.stock,
+      unitCost:    p.unitCost,
+      uom:         p.uom as Product['uom'],
+      hasBom:      p.hasBom,
+      description: p.description,
+    };
+  }
+
+  private toViewBomItems(
+    items: import('../../core/services/product.service').BomItem[],
+    expandMap: Record<string, boolean> = {}
+  ): BomItem[] {
+    return items.map(item => ({
+      id:       item.bomItemID?.toString() ?? item.id ?? '',
+      name:     item.name,
+      quantity: item.quantity,
+      unit:     item.unit,
+      type:     item.type,
+      expanded: expandMap[item.bomItemID?.toString() ?? item.id ?? ''] ?? false,
+      children: item.children?.length
+        ? this.toViewBomItems(item.children, expandMap)
+        : undefined,
+    }));
   }
 
   // ── Utility helpers ────────────────────────────────────────────────────────

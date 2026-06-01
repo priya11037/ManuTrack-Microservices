@@ -89,11 +89,12 @@ public class ProductServiceImpl(
 
         var product = new Product
         {
-            Name = request.Name,
-            Category = request.Category,
-            Version = request.Version,
+            Name        = request.Name,
+            Sku         = request.Sku ?? string.Empty,
+            Category    = request.Category,
+            Version     = request.Version,
             Description = request.Description,
-            Status = ProductStatus.Draft,
+            Status      = ProductStatus.Draft,
             CreatedDate = DateTime.UtcNow
         };
 
@@ -111,9 +112,10 @@ public class ProductServiceImpl(
         var product = await repo.GetByIdAsync(id)
             ?? throw new NotFoundException($"Product {id} not found.");
 
-        if (request.Name != null) product.Name = request.Name;
-        if (request.Category != null) product.Category = request.Category;
-        if (request.Version != null) product.Version = request.Version;
+        if (request.Name        != null) product.Name        = request.Name;
+        if (request.Sku         != null) product.Sku         = request.Sku;
+        if (request.Category    != null) product.Category    = request.Category;
+        if (request.Version     != null) product.Version     = request.Version;
         if (request.Description != null) product.Description = request.Description;
         product.ModifiedDate = DateTime.UtcNow;
 
@@ -161,13 +163,15 @@ public class ProductServiceImpl(
 
     private static ProductViewModel Map(Product p) => new()
     {
-        ProductID = p.ProductID,
-        Name = p.Name,
-        Category = p.Category,
-        Version = p.Version,
-        Status = p.Status,
-        Description = p.Description,
-        CreatedDate = p.CreatedDate,
+        ProductID    = p.ProductID,
+        Name         = p.Name,
+        Sku          = p.Sku,
+        Category     = p.Category,
+        Version      = p.Version,
+        Status       = p.Status,
+        Description  = p.Description,
+        HasBom       = p.BomItems?.Any() ?? false,
+        CreatedDate  = p.CreatedDate,
         ModifiedDate = p.ModifiedDate
     };
 }

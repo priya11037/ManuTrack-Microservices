@@ -184,40 +184,44 @@ export class InventoryService {
     this._purchaseOrders.update(list => list.filter(o => o.id !== id));
   }
 
-  // ── DTO mappers ────────────────────────────────────────────────────────────
-  private fromStockDto(dto: StockItemDto): StockItem {
+  // ── DTO mappers — handle multiple possible field name casings from backend ──
+  private fromStockDto(dto: any): StockItem {
+    // Backend may serialize as inventoryID, itemID, InventoryID etc.
+    const rawId = dto.inventoryID ?? dto.itemID ?? dto.InventoryID ?? 0;
     return {
-      id:           dto.itemID.toString(),
-      itemID:       dto.itemID,
-      sku:          dto.sku,
-      name:         dto.name,
-      category:     dto.category,
-      unit:         dto.unit,
-      currentStock: dto.currentStock,
-      minStock:     dto.minStock,
-      maxStock:     dto.maxStock,
-      unitCost:     dto.unitCost,
-      supplier:     dto.supplier,
-      location:     dto.location,
-      lastUpdated:  dto.lastUpdated?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+      id:           rawId.toString(),
+      itemID:       rawId,
+      sku:          dto.sku ?? '',
+      name:         dto.name ?? dto.productName ?? '',
+      category:     dto.category ?? '',
+      unit:         dto.unit ?? 'pcs',
+      currentStock: dto.currentStock ?? dto.quantityOnHand ?? 0,
+      minStock:     dto.minStock ?? dto.minimumQuantity ?? 0,
+      maxStock:     dto.maxStock ?? dto.maximumQuantity ?? 9999,
+      unitCost:     dto.unitCost ?? 0,
+      supplier:     dto.supplier ?? '',
+      location:     dto.location?.name ?? dto.location ?? dto.locationName ?? '',
+      lastUpdated:  dto.lastUpdated?.split('T')[0] ?? dto.modifiedDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     };
   }
 
-  private fromPoDto(dto: PurchaseOrderDto): PurchaseOrder {
+  private fromPoDto(dto: any): PurchaseOrder {
+    // Backend may serialize POID as pOID, poid, purchaseOrderID etc.
+    const rawId = dto.pOID ?? dto.poid ?? dto.purchaseOrderID ?? dto.POID ?? 0;
     return {
-      id:              dto.purchaseOrderID.toString(),
-      purchaseOrderID: dto.purchaseOrderID,
-      poNumber:        dto.poNumber,
-      supplier:        dto.supplier,
-      item:            dto.itemName,
-      sku:             dto.sku,
-      quantity:        dto.quantity,
-      unitCost:        dto.unitCost,
-      totalCost:       dto.totalCost,
-      status:          dto.status,
-      priority:        dto.priority,
-      orderDate:       dto.orderDate?.split('T')[0] ?? '',
-      expectedDate:    dto.expectedDate?.split('T')[0] ?? '',
+      id:              rawId.toString(),
+      purchaseOrderID: rawId,
+      poNumber:        dto.poNumber ?? `PO-${rawId}`,
+      supplier:        dto.supplierName ?? dto.supplier ?? '',
+      item:            dto.itemName ?? dto.item ?? '',
+      sku:             dto.sku ?? '',
+      quantity:        dto.quantity ?? dto.items?.[0]?.quantity ?? 0,
+      unitCost:        dto.unitCost ?? dto.items?.[0]?.unitPrice ?? 0,
+      totalCost:       dto.totalCost ?? dto.totalAmount ?? 0,
+      status:          dto.status ?? 'Draft',
+      priority:        dto.priority ?? 'Medium',
+      orderDate:       dto.orderDate?.split('T')[0] ?? dto.createdDate?.split('T')[0] ?? '',
+      expectedDate:    dto.expectedDate?.split('T')[0] ?? dto.expectedDeliveryDate?.split('T')[0] ?? '',
       notes:           dto.notes ?? '',
     };
   }

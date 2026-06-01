@@ -141,12 +141,27 @@ export class UserManagementComponent implements OnInit {
       return; // keep drawer open to show invite confirmation
     } else {
       const user = this.selectedUser()!;
-      // Update active status based on form
-      const newStatus = v.status as 'Active' | 'Inactive';
-      if (newStatus === 'Active'   && user.status !== 'Active')   this.usrSvc.activate(+user.id).subscribe();
-      if (newStatus === 'Inactive' && user.status === 'Active')   this.usrSvc.deactivate(+user.id).subscribe();
-      this.toast('User updated successfully', 'success');
-      this.closeDrawer();
+      const uid  = +user.id;
+
+      // 1. Update profile fields (name, email, role) via PUT /auth/users/{id}
+      this.usrSvc.updateUser(uid, {
+        name:  v.name  ?? undefined,
+        email: v.email ?? undefined,
+        role:  v.role  ?? undefined,
+      }).subscribe({
+        next: () => {
+          // 2. Also update active status if it changed
+          const newStatus = v.status as 'Active' | 'Inactive';
+          if (newStatus === 'Active'   && user.status !== 'Active')
+            this.usrSvc.activate(uid).subscribe();
+          if (newStatus === 'Inactive' && user.status === 'Active')
+            this.usrSvc.deactivate(uid).subscribe();
+
+          this.toast('User updated successfully', 'success');
+          this.closeDrawer();
+        },
+        error: () => this.toast('Failed to update user', 'warn'),
+      });
     }
   }
 
@@ -172,9 +187,13 @@ export class UserManagementComponent implements OnInit {
   cancelDelete():            void { this.deleteConfirmId.set(null); }
 
   deleteUser(id: string): void {
-    this.usrSvc.removeLocalUser(id);
-    this.deleteConfirmId.set(null);
-    this.toast('User deleted', 'warn');
+    this.usrSvc.deleteUser(+id).subscribe({
+      next: () => {
+        this.deleteConfirmId.set(null);
+        this.toast('User deleted', 'warn');
+      },
+      error: () => this.toast('Failed to delete user', 'warn'),
+    });
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

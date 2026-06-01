@@ -20,6 +20,8 @@ import {
   transferArrayItem,
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
+import { WorkOrderService, WorkOrder } from '../../core/services/work-order.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 // ── Domain Model ──────────────────────────────────────────────────────────────
 
@@ -83,47 +85,7 @@ const AVATAR_COLORS = [
   '#7c3aed', '#0891b2', '#db2777', '#65a30d',
 ];
 
-const PRODUCTS = [
-  'Steel Frame A-400',
-  'Hydraulic Valve V-22',
-  'Conveyor Belt CB-10',
-  'Gear Assembly G-88',
-  'Control Panel CP-5',
-  'Pump Housing PH-3',
-  'Heat Exchanger HE-7',
-  'Pressure Vessel PV-14',
-];
-
 const PROD_LINES = ['Line A', 'Line B', 'Line C', 'Line D'];
-
-const OPERATORS = [
-  'James Carter', 'Maria Santos', 'David Kim',
-  'Priya Nair',  'Luke Morgan',  'Sarah Okafor',
-];
-
-// ── Seed data factory ────────────────────────────────────────────────────────
-
-function generateMockWOs(weekStart: Date): ScheduledWO[] {
-  const seed: Omit<ScheduledWO, 'scheduledDay'>[] = [
-    { id: 'wo-1',  woNumber: 'WO-3041', product: 'Steel Frame A-400',       priority: 'High',     status: 'In Progress', assignedTo: 'James Carter', line: 'Line A', quantity: 50,  avatarColor: AVATAR_COLORS[0] },
-    { id: 'wo-2',  woNumber: 'WO-3042', product: 'Hydraulic Valve V-22',    priority: 'Critical', status: 'Planned',     assignedTo: 'Maria Santos', line: 'Line B', quantity: 120, avatarColor: AVATAR_COLORS[1] },
-    { id: 'wo-3',  woNumber: 'WO-3043', product: 'Conveyor Belt CB-10',     priority: 'Medium',   status: 'Planned',     assignedTo: 'David Kim',    line: 'Line C', quantity: 30,  avatarColor: AVATAR_COLORS[2] },
-    { id: 'wo-4',  woNumber: 'WO-3044', product: 'Gear Assembly G-88',      priority: 'Low',      status: 'On Hold',     assignedTo: 'Priya Nair',   line: 'Line D', quantity: 75,  avatarColor: AVATAR_COLORS[3] },
-    { id: 'wo-5',  woNumber: 'WO-3045', product: 'Control Panel CP-5',      priority: 'High',     status: 'Planned',     assignedTo: 'Luke Morgan',  line: 'Line A', quantity: 20,  avatarColor: AVATAR_COLORS[4] },
-    { id: 'wo-6',  woNumber: 'WO-3046', product: 'Pump Housing PH-3',       priority: 'Medium',   status: 'In Progress', assignedTo: 'Sarah Okafor', line: 'Line B', quantity: 60,  avatarColor: AVATAR_COLORS[5] },
-    { id: 'wo-7',  woNumber: 'WO-3047', product: 'Heat Exchanger HE-7',     priority: 'Critical', status: 'Planned',     assignedTo: 'James Carter', line: 'Line C', quantity: 15,  avatarColor: AVATAR_COLORS[0] },
-    { id: 'wo-8',  woNumber: 'WO-3048', product: 'Pressure Vessel PV-14',   priority: 'High',     status: 'Completed',   assignedTo: 'Maria Santos', line: 'Line D', quantity: 8,   avatarColor: AVATAR_COLORS[1] },
-    { id: 'wo-9',  woNumber: 'WO-3049', product: 'Steel Frame A-400',       priority: 'Low',      status: 'Planned',     assignedTo: 'David Kim',    line: 'Line A', quantity: 200, avatarColor: AVATAR_COLORS[2] },
-    { id: 'wo-10', woNumber: 'WO-3050', product: 'Hydraulic Valve V-22',    priority: 'Medium',   status: 'On Hold',     assignedTo: 'Priya Nair',   line: 'Line B', quantity: 45,  avatarColor: AVATAR_COLORS[3] },
-  ];
-
-  // Spread Mon–Fri (indices 0–4) across 10 WOs
-  const dayOffsets = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4];
-  return seed.map((wo, i) => ({
-    ...wo,
-    scheduledDay: toIso(addDays(weekStart, dayOffsets[i])),
-  }));
-}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -147,6 +109,8 @@ export class ScheduleComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly fb       = inject(FormBuilder);
   private readonly cdr      = inject(ChangeDetectorRef);
+  private readonly woSvc    = inject(WorkOrderService);
+  private readonly authSvc  = inject(AuthService);
 
   // ── Week navigation signals ──────────────────────────────────────────────
   currentWeekStart = signal<Date>(getMonday(new Date()));
@@ -171,20 +135,38 @@ export class ScheduleComponent implements OnInit {
     return formatMonthRange(start, end);
   });
 
-  allDayIds = computed<string[]>(() => this.weekDays().map(d => d.date));
+  // ── Line × Day map for new Gantt layout ──────────────────────────────────
+  // Key: `${line}-${date}`, Value: ScheduledWO[]
+  linedayMap: Record<string, ScheduledWO[]> = {};
 
-  // ── Work order state ─────────────────────────────────────────────────────
-  /** Master list signal – source of truth */
-  workOrders = signal<ScheduledWO[]>([]);
+  /** All possible CDK drop list IDs (line × day combinations) */
+  allDropIds = computed<string[]>(() => {
+    const ids: string[] = [];
+    for (const line of PROD_LINES) {
+      for (const day of this.weekDays()) {
+        ids.push(`${line}-${day.date}`);
+      }
+    }
+    return ids;
+  });
 
-  /** Mutable map used by CDK DnD (day date → WO array) */
+  /** WOs that have no scheduledDay in the current week — shown in unscheduled panel */
+  unscheduledWOs = computed<ScheduledWO[]>(() => {
+    const weekDates = new Set(this.weekDays().map(d => d.date));
+    return this.woSvc.workOrders()
+      .map(wo => this.fromWorkOrder(wo))
+      .filter(w => !weekDates.has(w.scheduledDay) && w.status !== 'Completed');
+  });
+
+  /** Mutable map used by CDK DnD (date → WO array) */
   dayMap: Record<string, ScheduledWO[]> = {};
 
-  // ── Stats ────────────────────────────────────────────────────────────────
+  // ── Stats — computed directly from service, no local signal ─────────────
   statsThisWeek = computed(() => {
-    const wos = this.workOrders();
     const days = new Set(this.weekDays().map(d => d.date));
-    const week  = wos.filter(w => days.has(w.scheduledDay));
+    const week = this.woSvc.workOrders()
+      .map(wo => this.fromWorkOrder(wo))
+      .filter(w => days.has(w.scheduledDay));
     return {
       total:      week.length,
       planned:    week.filter(w => w.status === 'Planned').length,
@@ -198,10 +180,11 @@ export class ScheduleComponent implements OnInit {
   drawerOpen = signal(false);
   scheduleForm!: FormGroup;
 
-  readonly products   = PRODUCTS;
   readonly prodLines  = PROD_LINES;
-  readonly operators  = OPERATORS;
   readonly priorities: Priority[] = ['Low', 'Medium', 'High', 'Critical'];
+  // Form dropdowns — loaded from services where available, fallback otherwise
+  readonly products  = ['Shaft Assembly','Gear Box Unit','Hydraulic Pump','Control Valve','Motor Mount','Bracket Assembly','PCB Controller'];
+  readonly operators = ['Mike Johnson','Tom Wilson','Carlos Ramos','Amy Zhang','Linda Brown'];
 
   // ── Priority / Status colour maps ────────────────────────────────────────
   readonly priorityColor: Record<Priority, string> = {
@@ -227,10 +210,11 @@ export class ScheduleComponent implements OnInit {
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
   constructor() {
-    // Whenever the week changes, rebuild dayMap from workOrders signal
+    // Rebuild dayMap whenever service data or week changes
+    // ⚠️ Does NOT write any signal — reads only. This prevents infinite loops.
     effect(() => {
       const days = this.weekDays();
-      const wos  = this.workOrders();
+      const wos  = this.woSvc.workOrders().map((wo: WorkOrder) => this.fromWorkOrder(wo));
       this.rebuildDayMap(days, wos);
       this.cdr.markForCheck();
     });
@@ -238,58 +222,39 @@ export class ScheduleComponent implements OnInit {
 
   ngOnInit(): void {
     this.buildForm();
-    this.workOrders.set(generateMockWOs(this.currentWeekStart()));
+    this.woSvc.loadAll();
   }
 
-  // ── Week nav ─────────────────────────────────────────────────────────────
-  prevWeek(): void {
-    this.currentWeekStart.update(d => addDays(d, -7));
-    this.workOrders.update(wos => {
-      const newStart = this.currentWeekStart();
-      return rebuildWeekDays(wos, newStart, -7);
-    });
+  // ── Week nav — just change the week signal; effect re-rebuilds dayMap ────
+  prevWeek(): void { this.currentWeekStart.update(d => addDays(d, -7)); }
+  nextWeek(): void { this.currentWeekStart.update(d => addDays(d,  7)); }
+
+  // ── DnD — Line × Day based ───────────────────────────────────────────────
+  /** Get WOs for a specific line AND day */
+  getLineWOs(line: string, date: string): ScheduledWO[] {
+    const key = `${line}-${date}`;
+    return this.linedayMap[key] ?? [];
   }
 
-  nextWeek(): void {
-    this.currentWeekStart.update(d => addDays(d, 7));
-    this.workOrders.update(wos => {
-      const newStart = this.currentWeekStart();
-      return rebuildWeekDays(wos, newStart, 7);
-    });
-  }
-
-  // ── DnD ─────────────────────────────────────────────────────────────────
   getDayWOs(date: string): ScheduledWO[] {
     return this.dayMap[date] ?? [];
   }
 
-  onDrop(event: CdkDragDrop<ScheduledWO[]>): void {
+  onDrop(event: CdkDragDrop<ScheduledWO[]>, targetLine: string, targetDay: string): void {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
       return;
     }
 
-    const movedWO  = event.previousContainer.data[event.previousIndex];
-    const targetDay = event.container.id; // date string
+    const movedWO = event.previousContainer.data[event.previousIndex];
+    transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
 
-    transferArrayItem(
-      event.previousContainer.data,
-      event.container.data,
-      event.previousIndex,
-      event.currentIndex,
-    );
-
-    // Update signal to keep source of truth consistent
-    this.workOrders.update(wos =>
-      wos.map(wo => wo.id === movedWO.id ? { ...wo, scheduledDay: targetDay } : wo)
-    );
+    // Update in service (optimistic)
+    this.woSvc.updateLocal(movedWO.id, { startDate: targetDay, line: targetLine });
 
     const dayLabel = this.weekDays().find(d => d.date === targetDay)?.fullLabel ?? targetDay;
-    this.snackBar.open(
-      `${movedWO.woNumber} moved to ${dayLabel}`,
-      'Dismiss',
-      { duration: 3000, panelClass: 'snack-moved' },
-    );
+    this.snackBar.open(`${movedWO.woNumber} → ${targetLine}, ${dayLabel}`, 'Dismiss',
+      { duration: 3000 });
   }
 
   // ── Drawer ───────────────────────────────────────────────────────────────
@@ -308,29 +273,28 @@ export class ScheduleComponent implements OnInit {
       return;
     }
 
-    const v = this.scheduleForm.value;
-    const idx = this.workOrders().length + 1;
-    const newWO: ScheduledWO = {
-      id:           `wo-${Date.now()}`,
-      woNumber:     `WO-${3050 + idx}`,
-      product:      v.product,
-      priority:     v.priority,
-      status:       'Planned',
-      assignedTo:   v.assignedTo,
-      line:         v.line,
-      scheduledDay: v.scheduledDay,
-      quantity:     v.quantity,
-      notes:        v.notes ?? '',
-      avatarColor:  AVATAR_COLORS[idx % AVATAR_COLORS.length],
-    };
+    const v   = this.scheduleForm.value;
+    const idx = this.woSvc.workOrders().length + 1;
 
-    this.workOrders.update(wos => [...wos, newWO]);
-    this.closeDrawer();
-    this.snackBar.open(
-      `${newWO.woNumber} scheduled successfully`,
-      'Dismiss',
-      { duration: 3500, panelClass: 'snack-success' },
-    );
+    // Persist to backend via WorkOrderService
+    this.woSvc.create({
+      productID:      1,  // TODO: resolve from product catalog
+      productName:    v.product,
+      quantity:       v.quantity,
+      priority:       v.priority,
+      startDate:      v.scheduledDay,
+      endDate:        v.scheduledDay,
+      assignedTo:     v.assignedTo,
+      productionLine: v.line,
+      notes:          v.notes ?? '',
+    }).subscribe({
+      next: () => {
+        this.closeDrawer();
+        this.snackBar.open('Work order scheduled successfully', 'Dismiss',
+          { duration: 3500, panelClass: 'snack-success' });
+      },
+      error: () => this.closeDrawer(),
+    });
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -350,18 +314,46 @@ export class ScheduleComponent implements OnInit {
     return day.date;
   }
 
+  // ── WorkOrder → ScheduledWO mapping ─────────────────────────────────────
+  private fromWorkOrder(wo: WorkOrder): ScheduledWO {
+    return {
+      id:           wo.id,
+      woNumber:     wo.woNumber,
+      product:      wo.product,
+      priority:     wo.priority as Priority,
+      status:       this.mapStatus(wo.status),
+      assignedTo:   wo.assignedTo,
+      line:         wo.line,
+      scheduledDay: wo.startDate, // use startDate as the scheduled day
+      quantity:     wo.quantity,
+      avatarColor:  wo.avatarColor,
+    };
+  }
+
+  private mapStatus(s: string): WOStatus {
+    if (s === 'In Progress') return 'In Progress';
+    if (s === 'Completed')   return 'Completed';
+    if (s === 'On Hold')     return 'On Hold';
+    return 'Planned';
+  }
+
   // ── Private ──────────────────────────────────────────────────────────────
   private rebuildDayMap(days: DayColumn[], wos: ScheduledWO[]): void {
+    // Simple day map (legacy)
     const next: Record<string, ScheduledWO[]> = {};
-    for (const day of days) {
-      next[day.date] = [];
+    for (const day of days) next[day.date] = [];
+    // Line × Day map for Gantt
+    const lineday: Record<string, ScheduledWO[]> = {};
+    for (const line of PROD_LINES) {
+      for (const day of days) lineday[`${line}-${day.date}`] = [];
     }
     for (const wo of wos) {
-      if (next[wo.scheduledDay]) {
-        next[wo.scheduledDay].push(wo);
-      }
+      if (next[wo.scheduledDay]) next[wo.scheduledDay].push(wo);
+      const ldKey = `${wo.line}-${wo.scheduledDay}`;
+      if (lineday[ldKey]) lineday[ldKey].push(wo);
     }
-    this.dayMap = next;
+    this.dayMap    = next;
+    this.linedayMap = lineday;
   }
 
   private buildForm(): void {

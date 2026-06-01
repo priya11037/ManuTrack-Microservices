@@ -31,4 +31,10 @@ public class AuthUser
     public string PasswordHash { get; set; } = string.Empty;
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// When true, user must change password on next login.
+    /// Set to true when Admin creates the account; reset to false after first password change.
+    /// </summary>
+    public bool MustChangePassword { get; set; } = false;
 }

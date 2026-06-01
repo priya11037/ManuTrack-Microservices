@@ -11,58 +11,29 @@ namespace ProductService.Controllers;
 [Authorize]
 public class BomController(IBomService service) : ControllerBase
 {
-    [HttpGet]
-    public async Task<ActionResult<ApiResponse<IEnumerable<BomViewModel>>>> GetAll(
-        [FromQuery] int? productId,
-        [FromQuery] string? status)
-    {
-        var result = await service.GetAllBomsAsync(productId, status);
-        return Ok(result);
-    }
-
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<ApiResponse<BomViewModel>>> GetById(int id)
-    {
-        var result = await service.GetBomByIdAsync(id);
-        return Ok(result);
-    }
-
+    /// <summary>GET /api/v1/bom/product/{productId} — returns nested BOM tree for a product</summary>
     [HttpGet("product/{productId:int}")]
-    public async Task<ActionResult<ApiResponse<IEnumerable<BomViewModel>>>> GetByProduct(int productId)
+    public async Task<ActionResult<ApiResponse<IEnumerable<BomItemViewModel>>>> GetByProduct(int productId)
     {
         var result = await service.GetBomsByProductIdAsync(productId);
         return Ok(result);
     }
 
+    /// <summary>POST /api/v1/bom — add a BOM item (root or child)</summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Planner")]
-    public async Task<ActionResult<ApiResponse<BomViewModel>>> Create([FromBody] CreateBomRequest request)
+    [Authorize(Roles = "Admin,ProductionPlanner")]
+    public async Task<ActionResult<ApiResponse<BomItemViewModel>>> Create([FromBody] CreateBomItemRequest request)
     {
-        var result = await service.CreateBomAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = result.Data!.BOMID }, result);
-    }
-
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin,Planner")]
-    public async Task<ActionResult<ApiResponse<BomViewModel>>> Update(int id, [FromBody] UpdateBomRequest request)
-    {
-        var result = await service.UpdateBomAsync(id, request);
+        var result = await service.CreateBomItemAsync(request);
         return Ok(result);
     }
 
-    [HttpPut("{id:int}/status")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<BomViewModel>>> UpdateStatus(int id, [FromBody] UpdateBomStatusRequest request)
-    {
-        var result = await service.UpdateBomStatusAsync(id, request);
-        return Ok(result);
-    }
-
+    /// <summary>DELETE /api/v1/bom/{id} — remove a BOM item and its children</summary>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,ProductionPlanner")]
     public async Task<ActionResult<ApiResponse>> Delete(int id)
     {
-        var result = await service.DeleteBomAsync(id);
+        var result = await service.DeleteBomItemAsync(id);
         return Ok(result);
     }
 }

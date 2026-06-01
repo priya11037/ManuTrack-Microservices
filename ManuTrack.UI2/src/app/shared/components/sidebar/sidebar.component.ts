@@ -23,17 +23,31 @@ export class SidebarComponent {
   private auth = inject(AuthService);
 
   private allNavItems: NavItem[] = [
+    // ── All roles ──────────────────────────────────────────────────────────
     { icon: 'dashboard',             label: 'Dashboard',   route: '/app/dashboard',      roles: ['all'] },
-    { icon: 'task_alt',              label: 'My Tasks',    route: '/app/tasks',          roles: ['ShopFloorOperator'] },
-    { icon: 'assignment',            label: 'Work Orders', route: '/app/work-orders',    roles: ['Admin', 'ProductionPlanner'] },
-    { icon: 'calendar_month',        label: 'Schedule',    route: '/app/schedule',       roles: ['ProductionPlanner'] },
-    { icon: 'category',              label: 'Products',    route: '/app/products',       roles: ['Admin', 'ProductionPlanner'] },
-    { icon: 'inventory_2',           label: 'Inventory',   route: '/app/inventory',      roles: ['InventoryManager'] },
-    { icon: 'verified',              label: 'Quality',     route: '/app/quality',        roles: ['QualityInspector'] },
-    { icon: 'policy',                label: 'Compliance',  route: '/app/compliance',     roles: ['ComplianceOfficer'] },
-    { icon: 'analytics',             label: 'Analytics',   route: '/app/analytics',      roles: ['ProductionPlanner', 'QualityInspector', 'InventoryManager', 'ComplianceOfficer'] },
     { icon: 'notifications',         label: 'Alerts',      route: '/app/notifications',  roles: ['all'] },
+
+    // ── Admin — system oversight only ──────────────────────────────────────
     { icon: 'admin_panel_settings',  label: 'Admin',       route: '/app/admin',          roles: ['Admin'] },
+    { icon: 'assignment',            label: 'Work Orders', route: '/app/work-orders',    roles: ['Admin'] },  // read-only view
+
+    // ── Production Planner ─────────────────────────────────────────────────
+    { icon: 'assignment',            label: 'Work Orders', route: '/app/work-orders',    roles: ['ProductionPlanner'] },
+    { icon: 'calendar_month',        label: 'Schedule',    route: '/app/schedule',       roles: ['ProductionPlanner'] },
+    { icon: 'category',              label: 'Products',    route: '/app/products',       roles: ['ProductionPlanner'] },
+    { icon: 'analytics',             label: 'Analytics',   route: '/app/analytics',      roles: ['ProductionPlanner', 'QualityInspector', 'InventoryManager', 'ComplianceOfficer'] },
+
+    // ── Shop Floor Operator ────────────────────────────────────────────────
+    { icon: 'task_alt',              label: 'My Tasks',    route: '/app/tasks',          roles: ['ShopFloorOperator'] },
+
+    // ── Quality Inspector ─────────────────────────────────────────────────
+    { icon: 'verified',              label: 'Quality',     route: '/app/quality',        roles: ['QualityInspector'] },
+
+    // ── Inventory Manager ─────────────────────────────────────────────────
+    { icon: 'inventory_2',           label: 'Inventory',   route: '/app/inventory',      roles: ['InventoryManager'] },
+
+    // ── Compliance Officer ────────────────────────────────────────────────
+    { icon: 'policy',                label: 'Compliance',  route: '/app/compliance',     roles: ['ComplianceOfficer'] },
   ];
 
   navItems = computed(() => {

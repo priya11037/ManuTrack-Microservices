@@ -27,7 +27,7 @@
 
     <!-- KPI Row -->
     <div class="kpi-row">
-      @for (kpi of kpiCards; track kpi.label) {
+      @for (kpi of kpiCards(); track kpi.label) {
         <div class="kpi-card card {{ kpi.color }}">
           <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
           <div class="kpi-body">
@@ -61,14 +61,14 @@
       <div class="card role-card">
         <div class="card-header"><span class="card-title">Users by Role</span></div>
         <div class="role-chart-area">
-          <p-chart type="bar" [data]="roleChartData" [options]="roleChartOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="roleChartData()" [options]="roleChartOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="role-legend">
-          @for (item of roleChartData.datasets[0].backgroundColor; track $index) {
+          @for (item of roleChartData().datasets[0].backgroundColor; track $index) {
             <div class="role-leg-item">
               <span class="role-dot" [style.background]="item"></span>
-              <span class="role-name">{{ roleChartData.labels[$index] }}</span>
-              <span class="role-count">{{ roleChartData.datasets[0].data[$index] }}</span>
+              <span class="role-name">{{ roleChartData().labels[$index] }}</span>
+              <span class="role-count">{{ roleChartData().datasets[0].data[$index] }}</span>
             </div>
           }
         </div>
@@ -87,7 +87,7 @@
             <tr><th>User</th><th>Module</th><th>Action</th><th>Time</th></tr>
           </thead>
           <tbody>
-            @for (log of auditLogs; track log.time) {
+            @for (log of auditLogs(); track $index) {
               <tr>
                 <td>
                   <div class="audit-user">
@@ -110,7 +110,7 @@
           <span class="card-sub-inline">Module counts</span>
         </div>
         <div class="module-grid">
-          @for (m of moduleStats; track m.label) {
+          @for (m of moduleStats(); track m.label) {
             <div class="module-card card">
               <div class="module-icon" [style.background]="m.color + '18'" [style.color]="m.color">
                 <mat-icon>{{ m.icon }}</mat-icon>
@@ -159,7 +159,7 @@
 
     <!-- KPI Row -->
     <div class="kpi-row">
-      @for (kpi of plannerKpis; track kpi.label) {
+      @for (kpi of plannerKpis(); track kpi.label) {
         <div class="kpi-card card {{ kpi.color }}">
           <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
           <div class="kpi-body">
@@ -225,7 +225,7 @@
             <tr><th>WO #</th><th>Product</th><th>Priority</th><th>Status</th><th>Due Date</th><th>Assigned</th></tr>
           </thead>
           <tbody>
-            @for (wo of upcomingWOs; track wo.woNumber) {
+            @for (wo of upcomingWOs(); track wo.woNumber) {
               <tr>
                 <td><span class="wo-num-badge">{{ wo.woNumber }}</span></td>
                 <td class="audit-action">{{ wo.product }}</td>
@@ -258,7 +258,7 @@
           <span class="card-sub-inline">Live</span>
         </div>
         <div class="line-status-list">
-          @for (l of lineStats; track l.line) {
+          @for (l of lineStats(); track l.line) {
             <div class="line-status-card card">
               <div class="ls-dot" [style.background]="l.utilColor"></div>
               <div class="ls-info">
@@ -308,7 +308,7 @@
 
     <!-- KPI Row -->
     <div class="kpi-row">
-      @for (kpi of sfKpis; track kpi.label) {
+      @for (kpi of sfKpis(); track kpi.label) {
         <div class="kpi-card card {{ kpi.color }}">
           <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
           <div class="kpi-body">
@@ -335,17 +335,17 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="sfOutputChartData" [options]="sfOutputChartOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="sfOutputChartData()" [options]="sfOutputChartOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
 
       <div class="card role-card">
         <div class="card-header"><span class="card-title">Task Breakdown</span></div>
         <div class="role-chart-area donut-wrap">
-          <p-chart type="doughnut" [data]="sfDonutData" [options]="sfDonutOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="doughnut" [data]="sfDonutData()" [options]="sfDonutOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="role-legend">
-          @for (item of sfDonutLegend; track item.label) {
+          @for (item of sfDonutLegend(); track item.label) {
             <div class="role-leg-item">
               <span class="role-dot" [style.background]="item.color"></span>
               <span class="role-name">{{ item.label }}</span>
@@ -368,7 +368,7 @@
             <tr><th>WO #</th><th>Product</th><th>Priority</th><th>Progress</th><th>Status</th><th>Due</th></tr>
           </thead>
           <tbody>
-            @for (t of sfTasks; track t.woNumber) {
+            @for (t of sfTasks(); track t.woNumber) {
               <tr>
                 <td><span class="wo-num-badge">{{ t.woNumber }}</span></td>
                 <td class="audit-action">{{ t.product }}</td>
@@ -478,7 +478,7 @@
     </div>
 
     <div class="kpi-row">
-      @for (kpi of qiKpis; track kpi.label) {
+      @for (kpi of qiKpis(); track kpi.label) {
         <div class="kpi-card card {{ kpi.color }}">
           <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
           <div class="kpi-body">
@@ -536,7 +536,7 @@
             <tr><th>INS #</th><th>WO Ref</th><th>Product</th><th>Priority</th><th>Status</th><th>Inspector</th></tr>
           </thead>
           <tbody>
-            @for (i of qiPendingIns; track i.insNumber) {
+            @for (i of qiPendingIns(); track i.insNumber) {
               <tr>
                 <td><span class="wo-num-badge" style="color:#6d28d9;background:#ede9fe">{{ i.insNumber }}</span></td>
                 <td class="audit-time">{{ i.woRef }}</td>
@@ -651,7 +651,7 @@
     </div>
 
     <div class="kpi-row">
-      @for (kpi of imKpis; track kpi.label) {
+      @for (kpi of imKpis(); track kpi.label) {
         <div class="kpi-card card {{ kpi.color }}">
           <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
           <div class="kpi-body">
@@ -683,7 +683,7 @@
           <span class="card-title">⚠️ Low Stock Alerts</span>
         </div>
         <div class="role-legend" style="margin-top:0">
-          @for (item of imLowStock; track item.sku) {
+          @for (item of imLowStock(); track item.sku) {
             <div class="role-leg-item" style="flex-direction:column;align-items:flex-start;gap:4px;padding:0.5rem 0;border-bottom:1px solid #f3f4f6">
               <div style="display:flex;align-items:center;gap:0.5rem;width:100%">
                 <span class="role-dot" [style.background]="item.color"></span>
@@ -799,7 +799,7 @@
     </div>
 
     <div class="kpi-row">
-      @for (kpi of coKpis; track kpi.label) {
+      @for (kpi of coKpis(); track kpi.label) {
         <div class="kpi-card card {{ kpi.color }}">
           <div class="kpi-icon-wrap"><mat-icon>{{ kpi.icon }}</mat-icon></div>
           <div class="kpi-body">
@@ -850,7 +850,7 @@
         <table class="audit-table">
           <thead><tr><th>CR #</th><th>Title</th><th>Type</th><th>Status</th><th>Deadline</th></tr></thead>
           <tbody>
-            @for (r of coRecentReports; track r.num) {
+            @for (r of coRecentReports(); track r.num) {
               <tr>
                 <td><span class="wo-num-badge" style="color:#1e40af;background:#eff6ff">{{ r.num }}</span></td>
                 <td class="audit-action" style="max-width:260px">{{ r.title }}</td>

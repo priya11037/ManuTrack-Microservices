@@ -191,38 +191,44 @@ export class InspectionService {
     ) as unknown as Observable<Defect>;
   }
 
-  // ── DTO mappers ────────────────────────────────────────────────────────────
-  private fromInspDto(dto: InspectionDto): Inspection {
-    const palette = ['#8b5cf6','#ec4899','#14b8a6','#0ea5e9','#f59e0b','#2563eb'];
+  // ── DTO mappers — defensive with fallback field names ─────────────────────
+  private fromInspDto(dto: any): Inspection {
+    const palette   = ['#8b5cf6','#ec4899','#14b8a6','#0ea5e9','#f59e0b','#2563eb'];
+    const inspID    = dto.inspectionID ?? dto.InspectionID ?? 0;
+    const woID      = dto.workOrderID  ?? dto.WorkOrderID  ?? 0;
+    const result    = dto.result ?? dto.status ?? dto.Result ?? 'Pending';
     return {
-      id:            dto.inspectionID.toString(),
-      inspectionID:  dto.inspectionID,
-      insNumber:     `INS-${dto.inspectionID.toString().padStart(4,'0')}`,
-      woRef:         `WO-${dto.workOrderID.toString().padStart(4,'0')}`,
-      product:       dto.productName,
+      id:            inspID.toString(),
+      inspectionID:  inspID,
+      insNumber:     `INS-${inspID.toString().padStart(4,'0')}`,
+      woRef:         `WO-${woID.toString().padStart(4,'0')}`,
+      product:       dto.productName ?? dto.ProductName ?? '',
       sku:           dto.sku ?? '',
-      quantity:      dto.quantity,
-      inspectedQty:  dto.inspectedQty ?? 0,
-      status:        dto.result,
-      result:        dto.result,
-      priority:      dto.priority,
-      inspector:     dto.inspectorName,
-      scheduledDate: dto.scheduledDate?.split('T')[0] ?? '',
+      quantity:      dto.quantity ?? 0,
+      inspectedQty:  dto.inspectedQty ?? dto.inspectedQuantity ?? 0,
+      status:        result as Inspection['status'],
+      result:        result as Inspection['status'],
+      priority:      (dto.priority ?? dto.Priority ?? 'Medium') as Inspection['priority'],
+      inspector:     dto.inspectorName ?? dto.inspectorID ?? '',
+      scheduledDate: dto.scheduledDate?.split('T')[0] ?? dto.inspectionDate?.split('T')[0] ?? '',
       completedDate: dto.completedDate?.split('T')[0] ?? '',
       notes:         dto.notes ?? '',
-      avatarColor:   palette[dto.inspectionID % palette.length],
+      avatarColor:   palette[inspID % palette.length],
       defectsLogged: 0,
     };
   }
 
-  private fromDefectDto(dto: DefectDto): Defect {
+  private fromDefectDto(dto: any): Defect {
+    const defectID = dto.defectID ?? dto.DefectID ?? 0;
+    const inspID   = dto.inspectionID ?? dto.InspectionID ?? 0;
+    const woID     = dto.workOrderID  ?? dto.WorkOrderID  ?? 0;
     return {
-      id:             dto.defectID.toString(),
-      defectID:       dto.defectID,
-      defectNumber:   `DEF-${dto.defectID.toString().padStart(4,'0')}`,
-      insRef:         `INS-${dto.inspectionID.toString().padStart(4,'0')}`,
-      woRef:          `WO-${dto.workOrderID.toString().padStart(4,'0')}`,
-      product:        dto.productName,
+      id:             defectID.toString(),
+      defectID:       defectID,
+      defectNumber:   `DEF-${defectID.toString().padStart(4,'0')}`,
+      insRef:         `INS-${inspID.toString().padStart(4,'0')}`,
+      woRef:          `WO-${woID.toString().padStart(4,'0')}`,
+      product:        dto.productName ?? dto.ProductName ?? '',
       severity:       dto.severity,
       defectType:     dto.defectType,
       defectiveUnits: dto.defectiveUnits,

@@ -1,0 +1,172 @@
+<div class="profile-page">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="prof-header">
+    <div>
+      <h2 class="prof-title">My Profile</h2>
+      <p class="prof-sub">Manage your personal information and account settings</p>
+    </div>
+    @if (!isEditing()) {
+      <button class="edit-btn" (click)="startEditing()">
+        <mat-icon>edit</mat-icon> Edit Profile
+      </button>
+    }
+  </div>
+
+  <div class="prof-layout">
+
+    <!-- ── Left Card — Avatar + Role ────────────────────────────────────────── -->
+    <div class="prof-card identity-card">
+      <div class="avatar-ring" [style.border-color]="roleColor()">
+        <div class="avatar-circle" [style.background]="roleColor()">
+          {{ initials() }}
+        </div>
+      </div>
+
+      <h3 class="identity-name">{{ currentUser()?.name }}</h3>
+      <p class="identity-email">{{ currentUser()?.email }}</p>
+
+      <span class="role-chip" [style.background]="roleColor() + '15'" [style.color]="roleColor()" [style.border-color]="roleColor() + '30'">
+        {{ roleLabel() }}
+      </span>
+
+      <div class="identity-divider"></div>
+
+      <div class="identity-stat">
+        <mat-icon>shield</mat-icon>
+        <span>Account Status</span>
+        <span class="stat-val status-active">Active</span>
+      </div>
+      <div class="identity-stat">
+        <mat-icon>badge</mat-icon>
+        <span>User ID</span>
+        <span class="stat-val">#{{ currentUser()?.userId }}</span>
+      </div>
+      <div class="identity-stat">
+        <mat-icon>security</mat-icon>
+        <span>Access Level</span>
+        <span class="stat-val">{{ roleLabel() }}</span>
+      </div>
+    </div>
+
+    <!-- ── Right Card — Profile Form ─────────────────────────────────────────── -->
+    <div class="prof-card details-card">
+
+      @if (!isEditing()) {
+        <!-- View Mode -->
+        <div class="section-title">
+          <mat-icon>person_outline</mat-icon>
+          Personal Information
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Full Name</span>
+            <span class="info-value">{{ currentUser()?.name }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Email Address</span>
+            <span class="info-value">{{ currentUser()?.email }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Role</span>
+            <span class="info-value">{{ roleLabel() }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">User ID</span>
+            <span class="info-value">#{{ currentUser()?.userId }}</span>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:2rem">
+          <mat-icon>lock_outline</mat-icon>
+          Security
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Password</span>
+            <span class="info-value">••••••••••</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Last Login</span>
+            <span class="info-value">Just now</span>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <mat-icon>info_outline</mat-icon>
+          <span>Your role and access level are managed by your system administrator. Contact admin to request changes.</span>
+        </div>
+
+      } @else {
+        <!-- Edit Mode -->
+        <div class="section-title">
+          <mat-icon>edit_note</mat-icon>
+          Edit Personal Information
+        </div>
+
+        <form class="prof-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()" novalidate>
+
+          <div class="ff">
+            <label class="ff-label">Full Name <span class="req">*</span></label>
+            <div class="ff-input-wrap" [class.ff-invalid]="profileForm.get('name')?.invalid && profileForm.get('name')?.touched">
+              <mat-icon>person_outline</mat-icon>
+              <input type="text" formControlName="name" placeholder="Your full name" />
+            </div>
+            @if (profileForm.get('name')?.errors?.['required'] && profileForm.get('name')?.touched) {
+              <span class="ff-err">Name is required</span>
+            }
+            @if (profileForm.get('name')?.errors?.['minlength'] && profileForm.get('name')?.touched) {
+              <span class="ff-err">Name must be at least 2 characters</span>
+            }
+          </div>
+
+          <div class="ff">
+            <label class="ff-label">Email Address <span class="req">*</span></label>
+            <div class="ff-input-wrap" [class.ff-invalid]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
+              <mat-icon>email</mat-icon>
+              <input type="email" formControlName="email" placeholder="your@email.com" />
+            </div>
+            @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
+              <span class="ff-err">Valid email address is required</span>
+            }
+          </div>
+
+          <div class="ff">
+            <label class="ff-label">Phone Number</label>
+            <div class="ff-input-wrap" [class.ff-invalid]="profileForm.get('phone')?.invalid && profileForm.get('phone')?.touched">
+              <mat-icon>phone</mat-icon>
+              <input type="tel" formControlName="phone" placeholder="e.g. +441234567890" />
+            </div>
+            @if (profileForm.get('phone')?.invalid && profileForm.get('phone')?.touched) {
+              <span class="ff-err">Enter a valid phone number (10-15 digits)</span>
+            }
+          </div>
+
+          <div class="ff readonly-field">
+            <label class="ff-label">Role</label>
+            <div class="ff-input-wrap disabled">
+              <mat-icon>badge</mat-icon>
+              <input type="text" [value]="roleLabel()" readonly />
+              <span class="locked-badge"><mat-icon>lock</mat-icon>Admin controlled</span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" (click)="cancelEditing()">Cancel</button>
+            <button type="submit" class="btn-save" [disabled]="isLoading()">
+              @if (isLoading()) {
+                <mat-icon class="spin-icon">autorenew</mat-icon> Saving…
+              } @else {
+                <mat-icon>save</mat-icon> Save Changes
+              }
+            </button>
+          </div>
+
+        </form>
+      }
+    </div>
+
+  </div>
+</div>

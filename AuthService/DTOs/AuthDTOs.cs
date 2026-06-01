@@ -63,18 +63,50 @@ public class ChangePasswordRequest
 }
 
 public record LoginUserInfo(
-    int UserId,
+    int    UserId,
     string Name,
     string Email,
-    string Role);
+    string Role,
+    bool   MustChangePassword);
 
 public record LoginResponse(
     string Token,
     LoginUserInfo User);
+/// <summary>Used by any authenticated user to update their OWN profile (name, email, phone only)</summary>
+public class UpdateProfileRequest
+{
+    [StringLength(100, MinimumLength = 2)]
+    public string? Name  { get; set; }
+
+    [EmailAddress][StringLength(100)]
+    public string? Email { get; set; }
+
+    [RegularExpression(@"^\+?[0-9]{10,15}$")]
+    public string? Phone { get; set; }
+}
+
+public class UpdateUserRequest
+{
+    [StringLength(100, MinimumLength = 2)]
+    public string? Name  { get; set; }
+
+    [EmailAddress]
+    [StringLength(100)]
+    public string? Email { get; set; }
+
+    [RegularExpression("^(Admin|ProductionPlanner|ShopFloorOperator|QualityInspector|InventoryManager|ComplianceOfficer)$",
+        ErrorMessage = "Invalid role.")]
+    public string? Role  { get; set; }
+
+    [RegularExpression(@"^\+?[0-9]{10,15}$")]
+    public string? Phone { get; set; }
+}
+
 public record AuthUserViewModel(
-    int UserID,
+    int    UserID,
     string Name,
     string Role,
     string Email,
     string Phone,
-    bool IsActive);
+    bool   IsActive,
+    bool   MustChangePassword);  // true = Pending (first login, password not set yet)

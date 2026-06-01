@@ -41,6 +41,19 @@
   &:not(.vt-active):hover { color: #374151; }
 }
 
+// ── Read-only badge ────────────────────────────────────────────────────────────
+.readonly-badge {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  background: #fffbeb; border: 1.5px solid #fde68a;
+  border-radius: 8px; font-size: 0.78rem; font-weight: 600; color: #d97706;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+
+.view-only-label {
+  font-size: 0.72rem; color: #9ca3af; font-style: italic;
+}
+
 .add-btn {
   display: flex; align-items: center; gap: 0.4rem;
   padding: 0.5rem 1.1rem;

@@ -9,6 +9,7 @@ public interface IAuthRepository
     Task<List<AuthUser>> GetAllAsync();
     Task<AuthUser> CreateAsync(AuthUser user);
     Task<AuthUser> UpdateAsync(AuthUser user);
+    Task DeleteAsync(AuthUser user);
     Task<bool> EmailExistsAsync(string email);
     Task<bool> EmailExistsExceptUserAsync(string email, int userId);
 }

@@ -50,18 +50,19 @@ export interface CreateWorkOrderRequest {
   priority:     WorkOrder['priority'];
   startDate:    string;
   endDate:      string;
-  assignedTo?:  string;
-  line?:        string;
-  notes?:       string;
+  assignedTo?:      string;
+  productionLine?:  string;  // backend field name (was 'line' in frontend)
+  notes?:           string;
 }
 
 export interface UpdateWorkOrderRequest {
-  quantity?:   number;
-  startDate?:  string;
-  endDate?:    string;
-  assignedTo?: string;
-  line?:       string;
-  notes?:      string;
+  quantity?:        number;
+  priority?:        string;
+  startDate?:       string;
+  endDate?:         string;
+  assignedTo?:      string;
+  productionLine?:  string;
+  notes?:           string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -90,13 +91,14 @@ export class WorkOrderService {
   });
 
   // ── API ───────────────────────────────────────────────────────────────────
-  loadAll(status?: string, productId?: number): void {
+  loadAll(status?: string, productId?: number, assignedTo?: string): void {
     this.isLoading.set(true);
     this.error.set(null);
 
     let params = new HttpParams();
-    if (status)    params = params.set('status', status);
-    if (productId) params = params.set('productId', productId);
+    if (status)     params = params.set('status',     status);
+    if (productId)  params = params.set('productId',  productId);
+    if (assignedTo) params = params.set('assignedTo', assignedTo);
 
     this.http.get<WorkOrderDto[]>(this.url, { params })
       .pipe(finalize(() => this.isLoading.set(false)))
@@ -136,6 +138,19 @@ export class WorkOrderService {
     ) as unknown as Observable<WorkOrder>;
   }
 
+  /**
+   * SFO-safe progress update — calls PUT /workorders/{id}/progress
+   * which allows ShopFloorOperator role (unlike the full PUT /workorders/{id}).
+   */
+  updateProgress(id: string, producedQty: number): Observable<WorkOrder> {
+    return this.http.put<WorkOrderDto>(`${this.url}/${id}/progress`, { producedQty }).pipe(
+      tap(dto => {
+        const updated = this.fromDto(dto);
+        this._workOrders.update(list => list.map(w => w.id === id ? updated : w));
+      }),
+    ) as unknown as Observable<WorkOrder>;
+  }
+
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`).pipe(
       tap(() => this._workOrders.update(list => list.filter(w => w.id !== id)))
@@ -163,23 +178,24 @@ export class WorkOrderService {
     this._workOrders.update(list => list.filter(w => w.id !== id));
   }
 
-  // ── DTO mapper ────────────────────────────────────────────────────────────
-  private fromDto(dto: WorkOrderDto): WorkOrder {
+  // ── DTO mapper — defensive with fallback field names ─────────────────────
+  private fromDto(dto: any): WorkOrder {
+    const rawId = dto.workOrderID ?? dto.WorkOrderID ?? dto.id ?? 0;
     return {
-      id:          dto.workOrderID.toString(),
-      woNumber:    dto.woNumber ?? `WO-${dto.workOrderID.toString().padStart(4, '0')}`,
-      product:     dto.productName,
-      sku:         dto.sku ?? '',
-      quantity:    dto.quantity,
-      produced:    dto.producedQty ?? 0,
-      priority:    dto.priority,
-      status:      dto.status,
-      startDate:   dto.startDate?.split('T')[0] ?? '',
-      dueDate:     dto.endDate?.split('T')[0] ?? '',
-      assignedTo:  dto.assignedTo ?? '',
-      line:        dto.line ?? 'Line A',
-      notes:       dto.notes ?? '',
-      avatarColor: this.pickColor(dto.assignedOperatorID ?? 0),
+      id:          rawId.toString(),
+      woNumber:    dto.woNumber ?? dto.WoNumber ?? `WO-${rawId.toString().padStart(4, '0')}`,
+      product:     dto.productName ?? dto.ProductName ?? '',
+      sku:         dto.sku ?? dto.Sku ?? '',
+      quantity:    dto.quantity ?? 0,
+      produced:    dto.producedQty ?? dto.ProducedQty ?? 0,
+      priority:    (dto.priority ?? dto.Priority ?? 'Medium') as WorkOrder['priority'],
+      status:      (dto.status ?? dto.Status ?? 'Planned') as WorkOrder['status'],
+      startDate:   dto.startDate?.split('T')[0] ?? dto.StartDate?.split('T')[0] ?? '',
+      dueDate:     dto.endDate?.split('T')[0] ?? dto.EndDate?.split('T')[0] ?? '',
+      assignedTo:  dto.assignedTo ?? dto.AssignedTo ?? '',
+      line:        dto.productionLine ?? dto.ProductionLine ?? dto.line ?? 'Line A',
+      notes:       dto.notes ?? dto.Notes ?? '',
+      avatarColor: this.pickColor(dto.assignedOperatorID ?? dto.AssignedOperatorID ?? 0),
     };
   }
 

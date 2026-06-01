@@ -2,59 +2,44 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProductService.DTOs;
 
-public class CreateBomRequest
+/// <summary>Request to add a BOM line item (free-form — no FK to Products table required).</summary>
+public class CreateBomItemRequest
 {
-    [Required(ErrorMessage = "ProductID is required.")]
+    [Required]
     [Range(1, int.MaxValue, ErrorMessage = "ProductID must be a positive integer.")]
     public int ProductID { get; set; }
 
-    [Required(ErrorMessage = "ComponentID is required.")]
-    [Range(1, int.MaxValue, ErrorMessage = "ComponentID must be a positive integer.")]
-    public int ComponentID { get; set; }
+    /// <summary>null = root level; set to parent BomItemID for sub-assemblies</summary>
+    public int? ParentID { get; set; }
 
-    [Required(ErrorMessage = "Quantity is required.")]
+    [Required]
+    [StringLength(200, MinimumLength = 1, ErrorMessage = "Name is required and cannot exceed 200 characters.")]
+    public string Name { get; set; } = string.Empty;
+
+    [Required]
     [Range(0.0001, 999999.9999, ErrorMessage = "Quantity must be between 0.0001 and 999,999.")]
     public decimal Quantity { get; set; }
 
-    [RegularExpression(@"^\d+\.\d+(\.\d+)?$", ErrorMessage = "Version must be in format like 1.0 or 1.0.0.")]
-    [MaxLength(20, ErrorMessage = "Version cannot exceed 20 characters.")]
-    public string Version { get; set; } = "1.0";
+    [Required]
+    [RegularExpression("^(pcs|kg|m|L|set|m2|m3)$", ErrorMessage = "Unit must be one of: pcs, kg, m, L, set, m2, m3.")]
+    public string Unit { get; set; } = "pcs";
 
-    [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
-    public string? Notes { get; set; }
+    [Required]
+    [RegularExpression("^(raw-material|sub-assembly|purchased-part)$",
+        ErrorMessage = "Type must be: raw-material, sub-assembly, or purchased-part.")]
+    public string Type { get; set; } = "raw-material";
 }
 
-public class UpdateBomRequest
+/// <summary>Flat view of a BOM line item returned by the API.</summary>
+public class BomItemViewModel
 {
-    [Range(0.0001, 999999.9999, ErrorMessage = "Quantity must be between 0.0001 and 999,999.")]
-    public decimal? Quantity { get; set; }
-
-    [RegularExpression(@"^\d+\.\d+(\.\d+)?$", ErrorMessage = "Version must be in format like 1.0 or 1.0.0.")]
-    [MaxLength(20, ErrorMessage = "Version cannot exceed 20 characters.")]
-    public string? Version { get; set; }
-
-    [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
-    public string? Notes { get; set; }
-}
-
-public class UpdateBomStatusRequest
-{
-    [Required(ErrorMessage = "Status is required.")]
-    [RegularExpression("^(Active|Discontinued|Draft)$",
-        ErrorMessage = "Status must be one of: Active, Discontinued, Draft.")]
-    public string Status { get; set; } = string.Empty;
-}
-
-public class BomViewModel
-{
-    public int BOMID { get; set; }
-    public int ProductID { get; set; }
-    public string ProductName { get; set; } = string.Empty;
-    public int ComponentID { get; set; }
-    public string ComponentName { get; set; } = string.Empty;
-    public decimal Quantity { get; set; }
-    public string Version { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public string? Notes { get; set; }
+    public int     BomItemID   { get; set; }
+    public int     ProductID   { get; set; }
+    public int?    ParentID    { get; set; }
+    public string  Name        { get; set; } = string.Empty;
+    public decimal Quantity    { get; set; }
+    public string  Unit        { get; set; } = string.Empty;
+    public string  Type        { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }
+    public List<BomItemViewModel>? Children { get; set; }
 }

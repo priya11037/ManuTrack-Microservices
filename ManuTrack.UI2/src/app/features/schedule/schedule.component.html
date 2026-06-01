@@ -1,303 +1,255 @@
 <div class="schedule-page">
 
-  <!-- ══ Page Header ══════════════════════════════════════════════════════════ -->
-  <div class="page-header">
-    <div class="header-left">
-      <h1 class="page-title">Production Schedule</h1>
-      <p class="page-sub">Drag and drop work orders to reschedule across the week</p>
+  <!-- ── Header ─────────────────────────────────────────────────────────────── -->
+  <div class="sch-header">
+    <div class="sch-header-left">
+      <h2 class="sch-title">Production Schedule</h2>
+      <p class="sch-sub">Weekly Gantt — drag work orders between days to reschedule</p>
     </div>
-
-    <div class="header-right">
-      <!-- Week navigator -->
+    <div class="sch-header-right">
+      <!-- Week Nav -->
       <div class="week-nav">
-        <button class="nav-btn" (click)="prevWeek()" matTooltip="Previous week">
+        <button class="nav-arrow" (click)="prevWeek()" matTooltip="Previous week">
           <mat-icon>chevron_left</mat-icon>
         </button>
         <span class="week-label">{{ weekLabel() }}</span>
-        <button class="nav-btn" (click)="nextWeek()" matTooltip="Next week">
+        <button class="nav-arrow" (click)="nextWeek()" matTooltip="Next week">
           <mat-icon>chevron_right</mat-icon>
         </button>
       </div>
-
-      <!-- Schedule WO button -->
-      <button class="btn-primary" (click)="openDrawer()">
-        <mat-icon>add</mat-icon>
-        Schedule WO
+      <button class="btn-schedule" (click)="openDrawer()">
+        <mat-icon>add</mat-icon> Schedule WO
       </button>
     </div>
   </div>
 
-  <!-- ══ Stats Row ════════════════════════════════════════════════════════════ -->
-  <div class="stats-row">
-    <div class="stat-chip total">
-      <mat-icon>assignment</mat-icon>
-      <div class="stat-body">
-        <span class="stat-value">{{ statsThisWeek().total }}</span>
-        <span class="stat-label">Total WOs</span>
-      </div>
+  <!-- ── KPI Strip ──────────────────────────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi-item">
+      <span class="kpi-num">{{ statsThisWeek().total }}</span>
+      <span class="kpi-lbl">Total WOs</span>
     </div>
-
-    <div class="stat-chip planned">
-      <mat-icon>schedule</mat-icon>
-      <div class="stat-body">
-        <span class="stat-value">{{ statsThisWeek().planned }}</span>
-        <span class="stat-label">Planned</span>
-      </div>
+    <div class="kpi-sep"></div>
+    <div class="kpi-item">
+      <span class="kpi-num planned">{{ statsThisWeek().planned }}</span>
+      <span class="kpi-lbl">Planned</span>
     </div>
-
-    <div class="stat-chip in-progress">
-      <mat-icon>autorenew</mat-icon>
-      <div class="stat-body">
-        <span class="stat-value">{{ statsThisWeek().inProgress }}</span>
-        <span class="stat-label">In Progress</span>
-      </div>
+    <div class="kpi-sep"></div>
+    <div class="kpi-item">
+      <span class="kpi-num inprogress">{{ statsThisWeek().inProgress }}</span>
+      <span class="kpi-lbl">In Progress</span>
     </div>
-
-    <div class="stat-chip on-hold">
-      <mat-icon>pause_circle</mat-icon>
-      <div class="stat-body">
-        <span class="stat-value">{{ statsThisWeek().onHold }}</span>
-        <span class="stat-label">On Hold</span>
-      </div>
+    <div class="kpi-sep"></div>
+    <div class="kpi-item">
+      <span class="kpi-num onhold">{{ statsThisWeek().onHold }}</span>
+      <span class="kpi-lbl">On Hold</span>
     </div>
-
-    <div class="stat-chip completed">
-      <mat-icon>check_circle</mat-icon>
-      <div class="stat-body">
-        <span class="stat-value">{{ statsThisWeek().completed }}</span>
-        <span class="stat-label">Completed</span>
-      </div>
+    <div class="kpi-sep"></div>
+    <div class="kpi-item">
+      <span class="kpi-num completed">{{ statsThisWeek().completed }}</span>
+      <span class="kpi-lbl">Completed</span>
+    </div>
+    <div class="sch-hint">
+      <mat-icon>drag_indicator</mat-icon>
+      Drag cards to reschedule
     </div>
   </div>
 
-  <!-- ══ Weekly Grid ══════════════════════════════════════════════════════════ -->
-  <div class="schedule-grid-wrap">
-    <div class="schedule-grid">
+  <!-- ── Gantt Grid ─────────────────────────────────────────────────────────── -->
+  <div class="gantt-wrap">
 
-      @for (day of weekDays(); track trackByDate($index, day)) {
-        <div class="day-column" [class.today]="isToday(day.date)">
-
-          <!-- Column Header -->
-          <div class="day-header">
-            <div class="day-header-top">
-              <span class="day-abbr">{{ day.label }}</span>
-              @if (isToday(day.date)) {
-                <span class="today-badge">Today</span>
-              }
-            </div>
-            <span class="day-num">{{ day.dayNum }}</span>
-            <span class="day-count-badge" [class.has-items]="getDayWOs(day.date).length > 0">
-              {{ getDayWOs(day.date).length }}
-            </span>
-          </div>
-
-          <!-- CDK Drop Zone -->
-          <div
-            class="drop-zone"
-            cdkDropList
-            [id]="day.date"
-            [cdkDropListData]="getDayWOs(day.date)"
-            [cdkDropListConnectedTo]="allDayIds()"
-            (cdkDropListDropped)="onDrop($event)">
-
-            <!-- WO Cards -->
-            @for (wo of getDayWOs(day.date); track trackById($index, wo)) {
-              <div
-                class="wo-card"
-                cdkDrag
-                [cdkDragData]="wo"
-                [matTooltip]="wo.product + ' · Qty: ' + wo.quantity"
-                matTooltipPosition="right">
-
-                <!-- Drag preview (rendered inside CDK overlay) -->
-                <div *cdkDragPreview class="wo-card drag-preview">
-                  <div class="wo-card-top">
-                    <span class="wo-number">{{ wo.woNumber }}</span>
-                    <span class="priority-dot"
-                          [style.background]="priorityColor[wo.priority]"
-                          [matTooltip]="wo.priority + ' priority'"></span>
-                  </div>
-                  <span class="wo-product">{{ wo.product }}</span>
-                  <div class="wo-card-foot">
-                    <span class="line-badge">{{ wo.line }}</span>
-                    <div class="assignee-av" [style.background]="wo.avatarColor">
-                      {{ getInitials(wo.assignedTo) }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Drag placeholder -->
-                <div *cdkDragPlaceholder class="wo-placeholder"></div>
-
-                <!-- Actual card content -->
-                <div class="wo-card-top">
-                  <span class="wo-number">{{ wo.woNumber }}</span>
-                  <span class="priority-dot"
-                        [style.background]="priorityColor[wo.priority]"
-                        [matTooltip]="wo.priority + ' priority'"></span>
-                </div>
-
-                <span class="wo-product">{{ wo.product }}</span>
-
-                <div class="wo-status-row">
-                  <span class="status-badge"
-                        [style.color]="statusColor[wo.status]"
-                        [style.background]="statusBg[wo.status]">
-                    {{ wo.status }}
-                  </span>
-                </div>
-
-                <div class="wo-card-foot">
-                  <span class="line-badge">{{ wo.line }}</span>
-                  <div class="qty-label">
-                    <mat-icon>inventory_2</mat-icon>
-                    {{ wo.quantity }}
-                  </div>
-                  <div class="assignee-av"
-                       [style.background]="wo.avatarColor"
-                       [matTooltip]="wo.assignedTo">
-                    {{ getInitials(wo.assignedTo) }}
-                  </div>
-                </div>
-
-              </div>
-            }
-
-            <!-- Empty drop indicator -->
-            @if (getDayWOs(day.date).length === 0) {
-              <div class="empty-drop-zone">
-                <mat-icon>drag_indicator</mat-icon>
-                <span>Drop here</span>
-              </div>
-            }
-
-          </div>
+    <!-- Day header -->
+    <div class="gantt-header">
+      <div class="row-label-header">Line</div>
+      @for (day of weekDays(); track day.date) {
+        <div class="day-head" [class.day-today]="isToday(day.date)" [class.day-weekend]="$index >= 5">
+          <span class="day-abbr">{{ day.label }}</span>
+          <span class="day-num" [class.today-num]="isToday(day.date)">{{ day.dayNum }}</span>
+          <span class="day-count" [class.has-wos]="getDayWOs(day.date).length > 0">
+            {{ getDayWOs(day.date).length || '' }}
+          </span>
         </div>
       }
-
     </div>
+
+    <!-- Line rows -->
+    @for (line of prodLines; track line) {
+      <div class="gantt-row" [class.gantt-row-alt]="$odd">
+
+        <!-- Row label -->
+        <div class="row-label">
+          <div class="line-indicator" [class]="'line-' + ($index + 1)"></div>
+          <span>{{ line }}</span>
+        </div>
+
+        <!-- Day cells with DnD -->
+        @for (day of weekDays(); track day.date) {
+          <div class="day-cell"
+               [class.day-cell-today]="isToday(day.date)"
+               [class.day-cell-weekend]="$index >= 5"
+               cdkDropList
+               [id]="line + '-' + day.date"
+               [cdkDropListData]="getLineWOs(line, day.date)"
+               [cdkDropListConnectedTo]="allDropIds()"
+               (cdkDropListDropped)="onDrop($event, line, day.date)">
+
+            @for (wo of getLineWOs(line, day.date); track wo.id) {
+              <div class="wo-card"
+                   cdkDrag [cdkDragData]="wo"
+                   [class.wo-critical]="wo.priority === 'Critical'"
+                   [class.wo-high]="wo.priority === 'High'"
+                   [class.wo-medium]="wo.priority === 'Medium'"
+                   [class.wo-low]="wo.priority === 'Low'"
+                   [class.wo-inprogress]="wo.status === 'In Progress'"
+                   [class.wo-onhold]="wo.status === 'On Hold'"
+                   [class.wo-completed]="wo.status === 'Completed'"
+                   [matTooltip]="wo.woNumber + ' · ' + wo.product + ' · ' + wo.status"
+                   matTooltipPosition="above">
+
+                <!-- Drag preview -->
+                <div *cdkDragPreview class="wo-card wo-drag-preview"
+                     [class.wo-critical]="wo.priority === 'Critical'"
+                     [class.wo-high]="wo.priority === 'High'"
+                     [class.wo-medium]="wo.priority === 'Medium'">
+                  <span class="wc-num">{{ wo.woNumber }}</span>
+                  <span class="wc-product">{{ wo.product }}</span>
+                </div>
+
+                <!-- Placeholder -->
+                <div *cdkDragPlaceholder class="wo-placeholder"></div>
+
+                <!-- Card content -->
+                <div class="wc-priority-bar"></div>
+                <div class="wc-body">
+                  <div class="wc-top">
+                    <span class="wc-num">{{ wo.woNumber }}</span>
+                    <span class="wc-status-dot" [class]="'dot-' + wo.status.replace(' ', '')"></span>
+                  </div>
+                  <div class="wc-product">{{ wo.product }}</div>
+                  <div class="wc-meta">
+                    <div class="wc-av" [style.background]="wo.avatarColor">
+                      {{ getInitials(wo.assignedTo) }}
+                    </div>
+                    <span class="wc-qty">{{ wo.quantity }} units</span>
+                  </div>
+                </div>
+
+              </div>
+            }
+
+            @if (getLineWOs(line, day.date).length === 0) {
+              <div class="empty-cell">
+                <mat-icon>add</mat-icon>
+              </div>
+            }
+
+          </div>
+        }
+      </div>
+    }
+
   </div>
+
+  <!-- ── Unscheduled WOs Panel ──────────────────────────────────────────────── -->
+  @if (unscheduledWOs().length > 0) {
+    <div class="unscheduled-panel">
+      <div class="unscheduled-title">
+        <mat-icon>inbox</mat-icon>
+        Unscheduled Work Orders
+        <span class="unsch-count">{{ unscheduledWOs().length }}</span>
+      </div>
+      <div class="unscheduled-list">
+        @for (wo of unscheduledWOs(); track wo.id) {
+          <div class="unsch-chip" [class.chip-critical]="wo.priority === 'Critical'" [class.chip-high]="wo.priority === 'High'">
+            <span class="chip-num">{{ wo.woNumber }}</span>
+            <span class="chip-product">{{ wo.product }}</span>
+            <span class="chip-priority" [class]="'pri-' + wo.priority">{{ wo.priority }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
 
 </div>
 
-<!-- ══ Schedule WO Drawer ════════════════════════════════════════════════════ -->
+<!-- ── Schedule WO Drawer ─────────────────────────────────────────────────── -->
 @if (drawerOpen()) {
   <div class="drawer-backdrop" (click)="closeDrawer()"></div>
-  <aside class="drawer" role="dialog" aria-label="Schedule Work Order">
-
+  <aside class="drawer">
     <div class="drawer-header">
       <div>
         <h2 class="drawer-title">Schedule Work Order</h2>
-        <p class="drawer-sub">Add a new WO to the production schedule</p>
+        <p class="drawer-sub">Add a work order to the production schedule</p>
       </div>
-      <button class="drawer-close" (click)="closeDrawer()" matTooltip="Close">
-        <mat-icon>close</mat-icon>
-      </button>
+      <button class="drawer-close" (click)="closeDrawer()"><mat-icon>close</mat-icon></button>
     </div>
-
     <div class="drawer-body">
       <form [formGroup]="scheduleForm" (ngSubmit)="submitSchedule()" novalidate>
 
-        <!-- Product -->
-        <div class="form-field">
-          <label class="form-label">Product <span class="req">*</span></label>
-          <select class="form-select" formControlName="product">
-            <option value="" disabled selected>Select product…</option>
-            @for (p of products; track p) {
-              <option [value]="p">{{ p }}</option>
-            }
+        <div class="ff">
+          <label class="ff-label">Product <span class="req">*</span></label>
+          <select class="ff-select" formControlName="product">
+            <option value="" disabled>Select product…</option>
+            @for (p of products; track p) { <option [value]="p">{{ p }}</option> }
           </select>
-          @if (scheduleForm.get('product')?.invalid && scheduleForm.get('product')?.touched) {
-            <span class="form-error">Product is required</span>
-          }
         </div>
 
-        <!-- Priority -->
-        <div class="form-field">
-          <label class="form-label">Priority <span class="req">*</span></label>
-          <div class="priority-selector">
+        <div class="ff">
+          <label class="ff-label">Priority</label>
+          <div class="priority-row">
             @for (p of priorities; track p) {
-              <button type="button"
-                      class="priority-btn"
-                      [class.active]="scheduleForm.get('priority')?.value === p"
-                      [style.--p-color]="priorityColor[p]"
-                      (click)="scheduleForm.get('priority')?.setValue(p)">
-                <span class="priority-dot" [style.background]="priorityColor[p]"></span>
-                {{ p }}
-              </button>
+              <button type="button" class="pri-btn" [class.pri-active]="scheduleForm.get('priority')?.value === p"
+                      [class]="'pri-btn pri-btn-' + p"
+                      (click)="scheduleForm.get('priority')?.setValue(p)">{{ p }}</button>
             }
           </div>
         </div>
 
-        <!-- Production Line -->
-        <div class="form-field">
-          <label class="form-label">Production Line <span class="req">*</span></label>
-          <div class="line-selector">
-            @for (line of prodLines; track line) {
-              <button type="button"
-                      class="line-btn"
-                      [class.active]="scheduleForm.get('line')?.value === line"
-                      (click)="scheduleForm.get('line')?.setValue(line)">
-                {{ line }}
-              </button>
+        <div class="ff">
+          <label class="ff-label">Production Line <span class="req">*</span></label>
+          <div class="line-row">
+            @for (l of prodLines; track l) {
+              <button type="button" class="line-btn" [class.line-active]="scheduleForm.get('line')?.value === l"
+                      (click)="scheduleForm.get('line')?.setValue(l)">{{ l }}</button>
             }
           </div>
-          @if (scheduleForm.get('line')?.invalid && scheduleForm.get('line')?.touched) {
-            <span class="form-error">Production line is required</span>
-          }
         </div>
 
-        <!-- Assigned To -->
-        <div class="form-field">
-          <label class="form-label">Assigned To <span class="req">*</span></label>
-          <select class="form-select" formControlName="assignedTo">
-            <option value="" disabled selected>Select operator…</option>
-            @for (op of operators; track op) {
-              <option [value]="op">{{ op }}</option>
-            }
+        <div class="ff">
+          <label class="ff-label">Assigned Operator <span class="req">*</span></label>
+          <select class="ff-select" formControlName="assignedTo">
+            <option value="" disabled>Select operator…</option>
+            @for (op of operators; track op) { <option [value]="op">{{ op }}</option> }
           </select>
-          @if (scheduleForm.get('assignedTo')?.invalid && scheduleForm.get('assignedTo')?.touched) {
-            <span class="form-error">Operator is required</span>
-          }
         </div>
 
-        <!-- Scheduled Day -->
-        <div class="form-field">
-          <label class="form-label">Scheduled Day <span class="req">*</span></label>
-          <select class="form-select" formControlName="scheduledDay">
+        <div class="ff">
+          <label class="ff-label">Scheduled Day <span class="req">*</span></label>
+          <select class="ff-select" formControlName="scheduledDay">
             @for (day of weekDays(); track day.date) {
               <option [value]="day.date">{{ day.fullLabel }}, {{ day.date }}</option>
             }
           </select>
         </div>
 
-        <!-- Quantity -->
-        <div class="form-field">
-          <label class="form-label">Quantity <span class="req">*</span></label>
-          <input class="form-input" type="number" formControlName="quantity" min="1" max="9999" placeholder="e.g. 100" />
-          @if (scheduleForm.get('quantity')?.invalid && scheduleForm.get('quantity')?.touched) {
-            <span class="form-error">Enter a valid quantity (1–9999)</span>
-          }
+        <div class="ff">
+          <label class="ff-label">Quantity <span class="req">*</span></label>
+          <input class="ff-input" type="number" formControlName="quantity" min="1" max="9999" />
         </div>
 
-        <!-- Notes -->
-        <div class="form-field">
-          <label class="form-label">Notes</label>
-          <textarea class="form-textarea" formControlName="notes" rows="3"
-                    placeholder="Optional production notes…"></textarea>
+        <div class="ff">
+          <label class="ff-label">Notes</label>
+          <textarea class="ff-textarea" formControlName="notes" rows="2" placeholder="Optional instructions…"></textarea>
         </div>
 
-        <!-- Actions -->
         <div class="drawer-actions">
           <button type="button" class="btn-ghost" (click)="closeDrawer()">Cancel</button>
-          <button type="submit" class="btn-primary" [disabled]="scheduleForm.invalid">
-            <mat-icon>add_task</mat-icon>
-            Schedule WO
+          <button type="submit" class="btn-primary">
+            <mat-icon>add_task</mat-icon> Schedule WO
           </button>
         </div>
 
       </form>
     </div>
-
   </aside>
 }

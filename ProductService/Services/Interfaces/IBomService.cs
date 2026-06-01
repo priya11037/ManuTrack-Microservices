@@ -5,11 +5,12 @@ namespace ProductService.Services.Interfaces;
 
 public interface IBomService
 {
-    Task<ApiResponse<IEnumerable<BomViewModel>>> GetAllBomsAsync(int? productId, string? status);
-    Task<ApiResponse<BomViewModel>> GetBomByIdAsync(int id);
-    Task<ApiResponse<IEnumerable<BomViewModel>>> GetBomsByProductIdAsync(int productId);
-    Task<ApiResponse<BomViewModel>> CreateBomAsync(CreateBomRequest request);
-    Task<ApiResponse<BomViewModel>> UpdateBomAsync(int id, UpdateBomRequest request);
-    Task<ApiResponse<BomViewModel>> UpdateBomStatusAsync(int id, UpdateBomStatusRequest request);
-    Task<ApiResponse> DeleteBomAsync(int id);
+    /// <summary>Get all BOM items for a product as a nested tree.</summary>
+    Task<ApiResponse<IEnumerable<BomItemViewModel>>> GetBomsByProductIdAsync(int productId);
+
+    /// <summary>Create a new BOM line item (root or nested).</summary>
+    Task<ApiResponse<BomItemViewModel>> CreateBomItemAsync(CreateBomItemRequest request);
+
+    /// <summary>Delete a BOM item and all its children.</summary>
+    Task<ApiResponse> DeleteBomItemAsync(int id);
 }

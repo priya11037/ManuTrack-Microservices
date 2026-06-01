@@ -103,13 +103,9 @@
         </div>
       </div>
       <div class="menu-divider"></div>
-      <button mat-menu-item>
-        <mat-icon>person</mat-icon>
+      <button mat-menu-item routerLink="/app/profile">
+        <mat-icon>manage_accounts</mat-icon>
         <span>My Profile</span>
-      </button>
-      <button mat-menu-item>
-        <mat-icon>tune</mat-icon>
-        <span>Preferences</span>
       </button>
       <div class="menu-divider"></div>
       <button mat-menu-item class="logout-item" (click)="logout()">

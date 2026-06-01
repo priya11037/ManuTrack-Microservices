@@ -14,9 +14,10 @@ public class WorkOrderController(IWorkOrderService service) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ApiResponse<IEnumerable<WorkOrderViewModel>>>> GetAll(
         [FromQuery] string? status,
-        [FromQuery] int? productId)
+        [FromQuery] int?    productId,
+        [FromQuery] string? assignedTo)
     {
-        var result = await service.GetAllAsync(status, productId);
+        var result = await service.GetAllAsync(status, productId, assignedTo);
         return Ok(result);
     }
 
@@ -48,6 +49,16 @@ public class WorkOrderController(IWorkOrderService service) : ControllerBase
     public async Task<ActionResult<ApiResponse<WorkOrderViewModel>>> UpdateStatus(int id, [FromBody] UpdateWorkOrderStatusRequest request)
     {
         var result = await service.UpdateStatusAsync(id, request);
+        return Ok(result);
+    }
+
+    /// <summary>SFO-only endpoint: update produced qty + optionally status in one call.</summary>
+    [HttpPut("{id:int}/progress")]
+    [Authorize(Roles = "Admin,ProductionPlanner,ShopFloorOperator")]
+    public async Task<ActionResult<ApiResponse<WorkOrderViewModel>>> UpdateProgress(
+        int id, [FromBody] UpdateWorkOrderRequest request)
+    {
+        var result = await service.UpdateAsync(id, request);
         return Ok(result);
     }
 

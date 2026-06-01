@@ -4,9 +4,17 @@
   <div class="wo-header">
     <div>
       <h2 class="wo-title">Work Orders</h2>
-      <p class="wo-sub">Plan, track and manage production work orders</p>
+      <p class="wo-sub">
+        {{ isReadOnly() ? 'System-wide work order overview — read only' : 'Plan, track and manage production work orders' }}
+      </p>
     </div>
     <div class="header-actions">
+      @if (isReadOnly()) {
+        <span class="readonly-badge">
+          <mat-icon>visibility</mat-icon>
+          Read Only
+        </span>
+      }
       <!-- View Toggle -->
       <div class="view-toggle">
         <button class="vt-btn" [class.vt-active]="viewMode() === 'table'" (click)="viewMode.set('table')" matTooltip="Table view">
@@ -16,10 +24,12 @@
           <mat-icon>view_kanban</mat-icon>
         </button>
       </div>
-      <button class="add-btn" (click)="openAddDrawer()">
-        <mat-icon>add</mat-icon>
-        Create Work Order
-      </button>
+      @if (!isReadOnly()) {
+        <button class="add-btn" (click)="openAddDrawer()">
+          <mat-icon>add</mat-icon>
+          Create Work Order
+        </button>
+      }
     </div>
   </div>
 
@@ -167,19 +177,23 @@
                   <span class="av-name">{{ wo.assignedTo.split(' ')[0] }}</span>
                 </div>
               </td>
-              <!-- Actions -->
+              <!-- Actions — hidden for Admin (read-only) -->
               <td>
-                @if (deleteConfirmId() === wo.id) {
-                  <div class="del-confirm">
-                    <span>Delete?</span>
-                    <button class="dc-yes" (click)="deleteWO(wo.id)">Yes</button>
-                    <button class="dc-no" (click)="cancelDelete()">No</button>
-                  </div>
+                @if (!isReadOnly()) {
+                  @if (deleteConfirmId() === wo.id) {
+                    <div class="del-confirm">
+                      <span>Delete?</span>
+                      <button class="dc-yes" (click)="deleteWO(wo.id)">Yes</button>
+                      <button class="dc-no" (click)="cancelDelete()">No</button>
+                    </div>
+                  } @else {
+                    <div class="action-row">
+                      <button class="act-btn edit" matTooltip="Edit" (click)="openEditDrawer(wo, $event)"><mat-icon>edit</mat-icon></button>
+                      <button class="act-btn del"  matTooltip="Delete" (click)="confirmDelete(wo.id, $event)"><mat-icon>delete_outline</mat-icon></button>
+                    </div>
+                  }
                 } @else {
-                  <div class="action-row">
-                    <button class="act-btn edit" matTooltip="Edit" (click)="openEditDrawer(wo, $event)"><mat-icon>edit</mat-icon></button>
-                    <button class="act-btn del"  matTooltip="Delete" (click)="confirmDelete(wo.id, $event)"><mat-icon>delete_outline</mat-icon></button>
-                  </div>
+                  <span class="view-only-label">View only</span>
                 }
               </td>
             </tr>
@@ -264,7 +278,7 @@
             }
 
             @for (wo of col.items; track wo.id) {
-              <div class="kanban-card" cdkDrag [cdkDragData]="wo">
+              <div class="kanban-card" cdkDrag [cdkDragData]="wo" [cdkDragDisabled]="isReadOnly()">
 
                 <!-- Drag preview -->
                 <div *cdkDragPreview class="kanban-card drag-preview">
@@ -303,14 +317,16 @@
                   </span>
                 </div>
 
-                <div class="kc-actions">
-                  <button class="kc-act-btn" matTooltip="Edit" (click)="openEditDrawer(wo, $event)">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                  <button class="kc-act-btn del" matTooltip="Delete" (click)="confirmDelete(wo.id, $event)">
-                    <mat-icon>delete_outline</mat-icon>
-                  </button>
-                </div>
+                @if (!isReadOnly()) {
+                  <div class="kc-actions">
+                    <button class="kc-act-btn" matTooltip="Edit" (click)="openEditDrawer(wo, $event)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button class="kc-act-btn del" matTooltip="Delete" (click)="confirmDelete(wo.id, $event)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+                }
 
               </div>
             }
@@ -438,7 +454,7 @@
           <mat-icon>engineering</mat-icon>
           <select formControlName="assignedTo">
             <option value="" disabled>Select operator…</option>
-            @for (op of operators; track op) { <option [value]="op">{{ op }}</option> }
+            @for (op of operators(); track op) { <option [value]="op">{{ op }}</option> }
           </select>
           <mat-icon class="sel-arrow">expand_more</mat-icon>
         </div>

@@ -55,15 +55,23 @@ export class LoginComponent implements OnInit, OnDestroy {
   ];
 
   quickLogin(demo: typeof this.demoRoles[0]): void {
-    localStorage.setItem('token', `demo-token-${demo.role}`);
-    localStorage.setItem('user', JSON.stringify({
-      userId: demo.userId,
-      name:   demo.name,
-      email:  demo.email,
-      role:   demo.role,
-    }));
-    // Full navigation triggers app reinit → loadFromStorage picks up new values
-    window.location.href = '/app/dashboard';
+    // Use real backend login so we get a valid JWT token
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.authService.login(demo.email, 'Admin@1234!').subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        const dest = this.authService.mustChangePassword() ? '/change-password' : '/app/dashboard';
+        this.router.navigate([dest]);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.errorMessage.set(
+          `Could not auto-login as ${demo.name}. Please use the form above with password Admin@1234!`
+        );
+      },
+    });
   }
 
   slides = [
@@ -134,7 +142,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.authService.login(email!, password!).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/app/dashboard']);
+        const dest = this.authService.mustChangePassword() ? '/change-password' : '/app/dashboard';
+        this.router.navigate([dest]);
       },
       error: (err) => {
         this.isLoading.set(false);

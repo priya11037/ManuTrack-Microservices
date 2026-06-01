@@ -1,9 +1,9 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { NotificationService, AppNotification, NotifModule } from '../../core/services/notification.service';
+import { NotificationService, AppNotification } from '../../core/services/notification.service';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
@@ -13,12 +13,10 @@ import { AuthService } from '../../core/auth/auth.service';
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.scss',
 })
-export class NotificationsComponent {
+export class NotificationsComponent implements OnInit {
   notifService = inject(NotificationService);
   private auth = inject(AuthService);
   private router = inject(Router);
-
-  role = computed(() => this.auth.userRole());
 
   // ── Filters ───────────────────────────────────────────────────────────────
   readFilter   = signal<'all' | 'unread'>('all');
@@ -28,14 +26,13 @@ export class NotificationsComponent {
   modules = ['WorkOrders', 'Quality', 'Inventory', 'Compliance', 'Users', 'System', 'Auth', 'Schedule'];
   types   = ['info', 'warning', 'error', 'success'];
 
-  // ── Filtered list scoped to current role ─────────────────────────────────
+  // Backend already filters by userId — use all() directly
   filtered = computed(() => {
-    const role = this.role();
-    const rf   = this.readFilter();
-    const mf   = this.moduleFilter();
-    const tf   = this.typeFilter();
+    const rf = this.readFilter();
+    const mf = this.moduleFilter();
+    const tf = this.typeFilter();
 
-    return this.notifService.forRole(role).filter(n => {
+    return this.notifService.all().filter(n => {
       const matchRead   = rf === 'all' || !n.read;
       const matchModule = mf === 'all' || n.module === mf;
       const matchType   = tf === 'all' || n.type === tf;
@@ -44,14 +41,22 @@ export class NotificationsComponent {
   });
 
   stats = computed(() => {
-    const all = this.notifService.forRole(this.role());
+    const all = this.notifService.all();
     return {
-      total:   all.length,
-      unread:  all.filter(n => !n.read).length,
-      errors:  all.filter(n => n.type === 'error').length,
-      warnings:all.filter(n => n.type === 'warning').length,
+      total:    all.length,
+      unread:   all.filter(n => !n.read).length,
+      errors:   all.filter(n => n.type === 'error').length,
+      warnings: all.filter(n => n.type === 'warning').length,
     };
   });
+
+  ngOnInit(): void {
+    // Load from backend if not already loaded by navbar
+    if (this.notifService.all().length === 0) {
+      const userId = this.auth.currentUser()?.userId;
+      if (userId) this.notifService.loadForUser(userId);
+    }
+  }
 
   // ── Actions ───────────────────────────────────────────────────────────────
   onNotifClick(n: AppNotification): void {
@@ -70,7 +75,6 @@ export class NotificationsComponent {
   }
 
   markAllRead(): void {
-    const role = this.role();
-    if (role) this.notifService.markAllRead(role);
+    this.notifService.markAllRead('all'); // mark all loaded notifications read
   }
 }

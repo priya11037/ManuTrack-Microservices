@@ -1,6 +1,6 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -14,14 +14,14 @@ import { NotificationService, AppNotification } from '../../../core/services/not
   selector: 'app-navbar',
   standalone: true,
   imports: [
-    CommonModule, RouterLink, FormsModule,
+    CommonModule, RouterLink, RouterModule, FormsModule,
     MatIconModule, MatButtonModule, MatMenuModule,
     MatTooltipModule, MatBadgeModule,
   ],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   private auth    = inject(AuthService);
   private router  = inject(Router);
   notifService    = inject(NotificationService);
@@ -31,17 +31,22 @@ export class NavbarComponent {
   currentUser = this.auth.currentUser;
   userRole    = this.auth.userRole;
 
-  // Unread count scoped to logged-in role
-  unreadCount = computed(() => this.notifService.unreadForRole(this.userRole()));
-
-  // Latest 5 notifications for dropdown preview
-  previewNotifs = computed(() =>
-    this.notifService.forRole(this.userRole()).slice(0, 5)
-  );
+  // Since backend returns notifications already filtered by userId,
+  // forRole('all') returns everything loaded for this user
+  unreadCount   = computed(() => this.notifService.all().filter(n => !n.read).length);
+  previewNotifs = computed(() => this.notifService.all().slice(0, 5));
 
   get userInitials(): string {
     const name = this.currentUser()?.name ?? '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  ngOnInit(): void {
+    // Load notifications from backend when user is authenticated
+    const userId = this.auth.currentUser()?.userId;
+    if (userId) {
+      this.notifService.loadForUser(userId);
+    }
   }
 
   onNotifClick(n: AppNotification): void {

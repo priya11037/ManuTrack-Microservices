@@ -9,6 +9,9 @@ public interface IAuthService
     Task<AuthUserViewModel> GetByIdAsync(int id);
     Task<List<AuthUserViewModel>> GetAllAsync();
     Task ChangePasswordAsync(int userId, ChangePasswordRequest request);
+    Task<AuthUserViewModel> UpdateProfileAsync(int userId, UpdateProfileRequest request);
+    Task<AuthUserViewModel> UpdateUserAsync(int userId, UpdateUserRequest request);
+    Task DeleteUserAsync(int userId);
     Task DeactivateUserAsync(int userId);
     Task ActivateUserAsync(int userId);
 }

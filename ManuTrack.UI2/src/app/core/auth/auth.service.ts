@@ -6,10 +6,11 @@ import { environment } from '../../../environments/environment';
 
 // ── Domain models ─────────────────────────────────────────────────────────────
 export interface User {
-  userId: number;   // int from backend
-  name:   string;
-  email:  string;
-  role:   'Admin' | 'ProductionPlanner' | 'ShopFloorOperator' | 'QualityInspector' | 'InventoryManager' | 'ComplianceOfficer';
+  userId:             number;
+  name:               string;
+  email:              string;
+  role:               'Admin' | 'ProductionPlanner' | 'ShopFloorOperator' | 'QualityInspector' | 'InventoryManager' | 'ComplianceOfficer';
+  mustChangePassword?: boolean;
 }
 
 /**
@@ -26,10 +27,11 @@ export class AuthService {
   private _currentUser = signal<User | null>(null);
   private _token       = signal<string | null>(null);
 
-  readonly currentUser    = this._currentUser.asReadonly();
-  readonly token          = this._token.asReadonly();
-  readonly isAuthenticated = computed(() => !!this._token());
-  readonly userRole        = computed(() => this._currentUser()?.role ?? null);
+  readonly currentUser       = this._currentUser.asReadonly();
+  readonly token             = this._token.asReadonly();
+  readonly isAuthenticated   = computed(() => !!this._token());
+  readonly userRole          = computed(() => this._currentUser()?.role ?? null);
+  readonly mustChangePassword = computed(() => this._currentUser()?.mustChangePassword ?? false);
 
   constructor(private http: HttpClient, private router: Router) {
     this.loadFromStorage();
@@ -50,6 +52,22 @@ export class AuthService {
           localStorage.setItem('user', JSON.stringify(res.user));
         })
       );
+  }
+
+  changePassword(currentPassword: string, newPassword: string) {
+    const userId = this._currentUser()?.userId;
+    return this.http.put(
+      `${environment.api.auth}/change-password`,
+      { currentPassword, newPassword, confirmNewPassword: newPassword },
+      { headers: { Authorization: `Bearer ${this._token()}` } }
+    ).pipe(
+      tap(() => {
+        // Clear mustChangePassword flag locally after success
+        const user = this._currentUser();
+        if (user) this._currentUser.set({ ...user, mustChangePassword: false });
+        localStorage.setItem('user', JSON.stringify({ ...user, mustChangePassword: false }));
+      })
+    );
   }
 
   logout(): void {

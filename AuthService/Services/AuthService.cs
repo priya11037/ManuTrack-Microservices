@@ -42,9 +42,8 @@ public class AuthServiceImpl : IAuthService
             audience: _config["Jwt:Audience"]!,
             expiryMinutes: 60);
 
-        return new LoginResponse(token, 
-            new LoginUserInfo(user.UserID,user.Name,user.Email,user.Role)
-            );
+        return new LoginResponse(token,
+            new LoginUserInfo(user.UserID, user.Name, user.Email, user.Role, user.MustChangePassword));
     }
 
     public async Task<AuthUserViewModel> RegisterAsync(RegisterRequest request)
@@ -65,12 +64,14 @@ public class AuthServiceImpl : IAuthService
 
         var user = new AuthUser
         {
-            Name = request.Name.Trim(),
-            Email = email,
-            Phone = request.Phone.Trim(),
-            Role = request.Role,
+            Name         = request.Name.Trim(),
+            Email        = email,
+            Phone        = request.Phone.Trim(),
+            Role         = request.Role,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 4),
-            IsActive = true
+            IsActive     = true,
+            // New users created by Admin must change password on first login
+            MustChangePassword = true
         };
 
         var created = await _repo.CreateAsync(user);
@@ -101,8 +102,67 @@ public class AuthServiceImpl : IAuthService
         if (BCrypt.Net.BCrypt.Verify(request.NewPassword, user.PasswordHash))
             throw new ValidationException("New password cannot be the same as current password.");
 
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword, workFactor: 4);
+        user.PasswordHash      = BCrypt.Net.BCrypt.HashPassword(request.NewPassword, workFactor: 4);
+        user.MustChangePassword = false;  // ← reset flag after first-time password change
         await _repo.UpdateAsync(user);
+    }
+
+    public async Task<AuthUserViewModel> UpdateProfileAsync(int userId, UpdateProfileRequest request)
+    {
+        var user = await _repo.GetByIdAsync(userId)
+            ?? throw new NotFoundException("User", userId);
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+            user.Name = request.Name.Trim();
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var email = request.Email.Trim().ToLower();
+            if (await _repo.EmailExistsExceptUserAsync(email, userId))
+                throw new ConflictException($"Email '{email}' is already in use.");
+            user.Email = email;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Phone))
+            user.Phone = request.Phone.Trim();
+
+        var updated = await _repo.UpdateAsync(user);
+        return MapToViewModel(updated);
+    }
+
+    public async Task<AuthUserViewModel> UpdateUserAsync(int userId, UpdateUserRequest request)
+    {
+        var user = await _repo.GetByIdAsync(userId)
+            ?? throw new NotFoundException("User", userId);
+
+        // Update only the fields that were provided
+        if (!string.IsNullOrWhiteSpace(request.Name))
+            user.Name = request.Name.Trim();
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var email = request.Email.Trim().ToLower();
+            if (await _repo.EmailExistsExceptUserAsync(email, userId))
+                throw new ConflictException($"Email '{email}' is already in use by another account.");
+            user.Email = email;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Role))
+            user.Role = request.Role;
+
+        if (!string.IsNullOrWhiteSpace(request.Phone))
+            user.Phone = request.Phone.Trim();
+
+        var updated = await _repo.UpdateAsync(user);
+        return MapToViewModel(updated);
+    }
+
+    public async Task DeleteUserAsync(int userId)
+    {
+        var user = await _repo.GetByIdAsync(userId)
+            ?? throw new NotFoundException("User", userId);
+
+        await _repo.DeleteAsync(user);
     }
 
     public async Task DeactivateUserAsync(int userId)
@@ -130,5 +190,6 @@ public class AuthServiceImpl : IAuthService
     }
 
     private static AuthUserViewModel MapToViewModel(AuthUser user) =>
-        new(user.UserID, user.Name, user.Role, user.Email, user.Phone, user.IsActive);
+        new(user.UserID, user.Name, user.Role, user.Email, user.Phone,
+            user.IsActive, user.MustChangePassword);
 }
