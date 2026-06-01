@@ -2,117 +2,116 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ComplianceService.DTOs;
 
-public class CreateComplianceReportRequest : IValidatableObject
+// ── Compliance Report DTOs ────────────────────────────────────────────────────
+
+public class CreateComplianceReportRequest
 {
-    [Required(ErrorMessage = "Title is required.")]
-    [MinLength(3, ErrorMessage = "Title must be at least 3 characters.")]
-    [MaxLength(200, ErrorMessage = "Title cannot exceed 200 characters.")]
+    [Required][StringLength(200, MinimumLength = 3)]
     public string Title { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Scope is required.")]
-    [MinLength(5, ErrorMessage = "Scope must be at least 5 characters.")]
-    [MaxLength(500, ErrorMessage = "Scope cannot exceed 500 characters.")]
-    public string Scope { get; set; } = string.Empty;
+    [Required]
+    [RegularExpression("^(Quality|Safety|Environmental|Production|Supplier)$",
+        ErrorMessage = "Type must be: Quality, Safety, Environmental, Production, or Supplier.")]
+    public string Type { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Report type is required.")]
-    [RegularExpression("^(Safety|Quality|Environmental|Regulatory|Internal|External)$",
-        ErrorMessage = "ReportType must be one of: Safety, Quality, Environmental, Regulatory, Internal, External.")]
-    public string ReportType { get; set; } = string.Empty;
+    [RegularExpression("^(Low|Medium|High|Critical)$")]
+    public string Priority { get; set; } = "Medium";
 
-    public DateTime? PeriodStart { get; set; }
-    public DateTime? PeriodEnd { get; set; }
+    [Required][StringLength(100)]
+    public string Period { get; set; } = string.Empty;
 
-    [MaxLength(8000, ErrorMessage = "Metrics JSON cannot exceed 8000 characters.")]
-    public string Metrics { get; set; } = "{}";
+    [Required][StringLength(200)]
+    public string PreparedBy { get; set; } = string.Empty;
 
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (PeriodStart.HasValue && PeriodEnd.HasValue && PeriodEnd.Value <= PeriodStart.Value)
-            yield return new ValidationResult(
-                "PeriodEnd must be after PeriodStart.",
-                [nameof(PeriodEnd)]);
-    }
+    [StringLength(200)]
+    public string? ReviewedBy { get; set; }
+
+    [Required]
+    public DateTime SubmissionDeadline { get; set; }
+
+    public int Findings { get; set; }
+    public int Actions  { get; set; }
+
+    [StringLength(1000)]
+    public string? Notes { get; set; }
 }
 
 public class UpdateReportStatusRequest
 {
-    [Required(ErrorMessage = "Status is required.")]
-    [RegularExpression("^(Draft|InReview|Approved|Closed)$",
-        ErrorMessage = "Status must be one of: Draft, InReview, Approved, Closed.")]
+    [Required]
+    [RegularExpression("^(Draft|Under Review|Approved|Submitted|Rejected)$",
+        ErrorMessage = "Status must be: Draft, Under Review, Approved, Submitted, or Rejected.")]
     public string Status { get; set; } = string.Empty;
 }
 
+// Kept for backward compat with /approve endpoint
 public class ApproveReportRequest
 {
-    [Required(ErrorMessage = "ApprovedBy is required.")]
-    [MinLength(2, ErrorMessage = "ApprovedBy must be at least 2 characters.")]
-    [MaxLength(200, ErrorMessage = "ApprovedBy cannot exceed 200 characters.")]
-    public string ApprovedBy { get; set; } = string.Empty;
-}
-
-public class LogAuditEntryRequest
-{
-    [Required(ErrorMessage = "UserID is required.")]
-    [Range(1, int.MaxValue, ErrorMessage = "UserID must be a positive number.")]
-    public int UserID { get; set; }
-
-    [Required(ErrorMessage = "User name is required.")]
-    [MinLength(2, ErrorMessage = "User name must be at least 2 characters.")]
-    [MaxLength(200, ErrorMessage = "User name cannot exceed 200 characters.")]
-    public string UserName { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Action is required.")]
-    [MinLength(3, ErrorMessage = "Action must be at least 3 characters.")]
-    [MaxLength(200, ErrorMessage = "Action cannot exceed 200 characters.")]
-    public string Action { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Entity type is required.")]
-    [MinLength(2, ErrorMessage = "Entity type must be at least 2 characters.")]
-    [MaxLength(100, ErrorMessage = "Entity type cannot exceed 100 characters.")]
-    public string EntityType { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Entity ID is required.")]
-    [MaxLength(100, ErrorMessage = "Entity ID cannot exceed 100 characters.")]
-    public string EntityID { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Service name is required.")]
-    [RegularExpression(
-        "^(AuthService|ProductService|WorkOrderService|InventoryService|QualityService|ComplianceService|AnalyticsService|NotificationService)$",
-        ErrorMessage = "ServiceName must be a valid ManuTrack microservice name.")]
-    public string ServiceName { get; set; } = string.Empty;
-
-    [MaxLength(2000, ErrorMessage = "Details cannot exceed 2000 characters.")]
-    public string? Details { get; set; }
+    [StringLength(200)]
+    public string? ApprovedBy { get; set; }
 }
 
 public class ComplianceReportViewModel
 {
-    public int ReportID { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Scope { get; set; } = string.Empty;
-    public string Metrics { get; set; } = string.Empty;
-    public DateTime GeneratedDate { get; set; }
-    public int GeneratedByUserID { get; set; }
-    public string GeneratedBy { get; set; } = string.Empty;
-    public DateTime CreatedDate { get; set; }
-    public DateTime? UpdatedDate { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public string ReportType { get; set; } = string.Empty;
-    public DateTime? PeriodStart { get; set; }
-    public DateTime? PeriodEnd { get; set; }
-    public string? ApprovedBy { get; set; }
-    public DateTime? ApprovedDate { get; set; }
+    public int      ReportID           { get; set; }
+    public string   ReportNumber       { get; set; } = string.Empty;
+    public string   Title              { get; set; } = string.Empty;
+    public string   Type               { get; set; } = string.Empty;
+    public string   Priority           { get; set; } = string.Empty;
+    public string   Status             { get; set; } = string.Empty;
+    public string   Period             { get; set; } = string.Empty;
+    public string   PreparedBy         { get; set; } = string.Empty;
+    public string   ReviewedBy         { get; set; } = string.Empty;
+    public DateTime  SubmissionDeadline { get; set; }
+    public DateTime? SubmittedDate      { get; set; }
+    public int       Findings           { get; set; }
+    public int       Actions            { get; set; }
+    public string?   Notes              { get; set; }
+    public DateTime  CreatedDate        { get; set; }
+    public DateTime? UpdatedDate        { get; set; }
+}
+
+// ── Audit DTOs ────────────────────────────────────────────────────────────────
+
+public class LogAuditEntryRequest
+{
+    [Range(0, int.MaxValue)]
+    public int UserID { get; set; }
+
+    [StringLength(200)]
+    public string UserName { get; set; } = string.Empty;
+
+    [Required][StringLength(200, MinimumLength = 2)]
+    public string Action { get; set; } = string.Empty;
+
+    [Required][StringLength(100, MinimumLength = 2)]
+    public string EntityType { get; set; } = string.Empty;
+
+    [Required][StringLength(100)]
+    public string EntityID { get; set; } = string.Empty;
+
+    [StringLength(100)]
+    public string ServiceName { get; set; } = string.Empty;
+
+    [StringLength(2000)]
+    public string? Details { get; set; }
+
+    // Optional — defaults to "info" if not provided
+    public string Severity  { get; set; } = "info";
+    public string IpAddress { get; set; } = string.Empty;
 }
 
 public class AuditEntryViewModel
 {
-    public int AuditID { get; set; }
-    public int UserID { get; set; }
-    public string UserName { get; set; } = string.Empty;
-    public string Action { get; set; } = string.Empty;
-    public string EntityType { get; set; } = string.Empty;
-    public string EntityID { get; set; } = string.Empty;
-    public string ServiceName { get; set; } = string.Empty;
-    public string? Details { get; set; }
-    public DateTime Timestamp { get; set; }
+    public int      AuditID     { get; set; }
+    public int      UserID      { get; set; }
+    public string   UserName    { get; set; } = string.Empty;
+    public string   Action      { get; set; } = string.Empty;
+    public string   EntityType  { get; set; } = string.Empty;
+    public string   EntityID    { get; set; } = string.Empty;
+    public string   ServiceName { get; set; } = string.Empty;
+    public string?  Details     { get; set; }
+    public string   Severity    { get; set; } = "info";
+    public string   IpAddress   { get; set; } = string.Empty;
+    public DateTime Timestamp   { get; set; }
 }

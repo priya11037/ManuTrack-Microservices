@@ -186,43 +186,44 @@ export class InventoryService {
 
   // ── DTO mappers — handle multiple possible field name casings from backend ──
   private fromStockDto(dto: any): StockItem {
-    // Backend may serialize as inventoryID, itemID, InventoryID etc.
+    // Handles both old (ProductName/QuantityOnHand) and new (name/currentStock) field names
     const rawId = dto.inventoryID ?? dto.itemID ?? dto.InventoryID ?? 0;
     return {
       id:           rawId.toString(),
       itemID:       rawId,
-      sku:          dto.sku ?? '',
-      name:         dto.name ?? dto.productName ?? '',
-      category:     dto.category ?? '',
-      unit:         dto.unit ?? 'pcs',
-      currentStock: dto.currentStock ?? dto.quantityOnHand ?? 0,
-      minStock:     dto.minStock ?? dto.minimumQuantity ?? 0,
-      maxStock:     dto.maxStock ?? dto.maximumQuantity ?? 9999,
-      unitCost:     dto.unitCost ?? 0,
-      supplier:     dto.supplier ?? '',
-      location:     dto.location?.name ?? dto.location ?? dto.locationName ?? '',
-      lastUpdated:  dto.lastUpdated?.split('T')[0] ?? dto.modifiedDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+      sku:          dto.sku          ?? dto.Sku          ?? '',
+      name:         dto.name         ?? dto.Name         ?? dto.productName ?? dto.ProductName ?? '',
+      category:     dto.category     ?? dto.Category     ?? '',
+      unit:         dto.unit         ?? dto.Unit         ?? 'pcs',
+      currentStock: dto.currentStock ?? dto.CurrentStock ?? dto.quantityOnHand ?? dto.QuantityOnHand ?? 0,
+      minStock:     dto.minStock     ?? dto.MinStock     ?? dto.minimumQuantity ?? dto.MinimumQuantity ?? 0,
+      maxStock:     dto.maxStock     ?? dto.MaxStock     ?? dto.maximumQuantity ?? dto.MaximumQuantity ?? 9999,
+      unitCost:     dto.unitCost     ?? dto.UnitCost     ?? 0,
+      supplier:     dto.supplier     ?? dto.Supplier     ?? '',
+      location:     dto.location     ?? dto.Location     ?? dto.locationName   ?? dto.LocationName   ?? '',
+      lastUpdated:  (dto.modifiedDate ?? dto.ModifiedDate ?? dto.createdDate ?? dto.CreatedDate ?? '')
+                      .split?.('T')[0] ?? new Date().toISOString().split('T')[0],
     };
   }
 
   private fromPoDto(dto: any): PurchaseOrder {
-    // Backend may serialize POID as pOID, poid, purchaseOrderID etc.
-    const rawId = dto.pOID ?? dto.poid ?? dto.purchaseOrderID ?? dto.POID ?? 0;
+    // Handles both old (POID, SupplierName, ExpectedDeliveryDate) and new (purchaseOrderID etc.)
+    const rawId = dto.pOID ?? dto.POID ?? dto.purchaseOrderID ?? dto.PurchaseOrderID ?? 0;
     return {
       id:              rawId.toString(),
       purchaseOrderID: rawId,
-      poNumber:        dto.poNumber ?? `PO-${rawId}`,
-      supplier:        dto.supplierName ?? dto.supplier ?? '',
-      item:            dto.itemName ?? dto.item ?? '',
-      sku:             dto.sku ?? '',
-      quantity:        dto.quantity ?? dto.items?.[0]?.quantity ?? 0,
-      unitCost:        dto.unitCost ?? dto.items?.[0]?.unitPrice ?? 0,
-      totalCost:       dto.totalCost ?? dto.totalAmount ?? 0,
-      status:          dto.status ?? 'Draft',
-      priority:        dto.priority ?? 'Medium',
-      orderDate:       dto.orderDate?.split('T')[0] ?? dto.createdDate?.split('T')[0] ?? '',
-      expectedDate:    dto.expectedDate?.split('T')[0] ?? dto.expectedDeliveryDate?.split('T')[0] ?? '',
-      notes:           dto.notes ?? '',
+      poNumber:        dto.poNumber    ?? dto.PONumber    ?? `PO-${rawId}`,
+      supplier:        dto.supplierName ?? dto.SupplierName ?? dto.supplier ?? '',
+      item:            dto.itemName    ?? dto.ItemName    ?? dto.item ?? '',
+      sku:             dto.itemSku     ?? dto.ItemSku     ?? dto.sku ?? '',
+      quantity:        dto.quantity    ?? dto.Quantity    ?? 0,
+      unitCost:        dto.unitCost    ?? dto.UnitCost    ?? 0,
+      totalCost:       dto.totalCost   ?? dto.TotalCost   ?? dto.totalAmount ?? 0,
+      status:          dto.status      ?? dto.Status      ?? 'Draft',
+      priority:        dto.priority    ?? dto.Priority    ?? 'Medium',
+      orderDate:       (dto.orderDate    ?? dto.OrderDate    ?? '').split?.('T')[0] ?? '',
+      expectedDate:    (dto.expectedDate ?? dto.ExpectedDate ?? dto.expectedDeliveryDate ?? '').split?.('T')[0] ?? '',
+      notes:           dto.notes       ?? dto.Notes       ?? '',
     };
   }
 }

@@ -12,7 +12,7 @@ public class InspectionRepository(QualityDbContext db) : IInspectionRepository
         var query = db.Inspections.Include(i => i.Defects).AsQueryable();
         if (!string.IsNullOrWhiteSpace(status)) query = query.Where(i => i.Status == status);
         if (workOrderId.HasValue) query = query.Where(i => i.WorkOrderID == workOrderId.Value);
-        return await query.OrderByDescending(i => i.InspectionDate).ToListAsync();
+        return await query.OrderByDescending(i => i.ScheduledDate).ToListAsync();
     }
 
     public async Task<Inspection?> GetByIdAsync(int id) => await db.Inspections.FindAsync(id);

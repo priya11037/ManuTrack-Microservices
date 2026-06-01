@@ -9,6 +9,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from 
 import { WorkOrderService, WorkOrder, CreateWorkOrderRequest } from '../../core/services/work-order.service';
 import { UserService } from '../../core/services/user.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { InventoryService, StockItem } from '../../core/services/inventory.service';
 
 // Re-export so other components (e.g. schedule) can still import WorkOrder from here
 export type { WorkOrder } from '../../core/services/work-order.service';
@@ -32,6 +33,14 @@ export class WorkOrdersComponent implements OnInit {
   readonly woSvc   = inject(WorkOrderService);
   private usrSvc   = inject(UserService);
   private auth     = inject(AuthService);
+  private invSvc   = inject(InventoryService);
+
+  // ── Low-stock banner (Inventory Manager → Production Planner connection) ─────
+  /** Items that are low or out of stock — Production Planner sees these as a warning */
+  lowStockItems = computed<StockItem[]>(() =>
+    this.invSvc.stockItems().filter(i => i.currentStock <= i.minStock)
+  );
+  showStockBanner = signal(true);   // user can dismiss the banner
 
   // ── Read-only mode for Admin ───────────────────────────────────────────────────
   isReadOnly = computed(() => this.auth.userRole() === 'Admin');
@@ -133,6 +142,8 @@ export class WorkOrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.woSvc.loadAll();
+    // Load stock items so Planner can see low-stock warnings
+    this.invSvc.loadStock();
     // Only Admin can call GET /api/v1/auth/users — Production Planner uses fallback list
     if (this.auth.userRole() === 'Admin') {
       this.usrSvc.loadAll();

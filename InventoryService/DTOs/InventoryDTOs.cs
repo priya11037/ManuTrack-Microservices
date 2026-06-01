@@ -2,72 +2,176 @@ using System.ComponentModel.DataAnnotations;
 
 namespace InventoryService.DTOs;
 
+// ── Inventory Item DTOs ───────────────────────────────────────────────────────
+
 public class CreateInventoryItemRequest
 {
-    [Required(ErrorMessage = "ProductID is required.")]
-    [Range(1, int.MaxValue, ErrorMessage = "ProductID must be a positive integer.")]
-    public int ProductID { get; set; }
+    [Required][StringLength(50)]
+    public string Sku { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Product name is required.")]
-    [MinLength(2, ErrorMessage = "Product name must be at least 2 characters.")]
-    [MaxLength(200, ErrorMessage = "Product name cannot exceed 200 characters.")]
-    public string ProductName { get; set; } = string.Empty;
+    [Required][StringLength(200, MinimumLength = 2)]
+    public string Name { get; set; } = string.Empty;
 
-    // Changed: nullable int FK to InventoryLocation
-    [Range(1, int.MaxValue, ErrorMessage = "LocationID must be a positive integer.")]
-    public int? LocationID { get; set; }
+    [Required][StringLength(100)]
+    public string Category { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Quantity on hand is required.")]
-    [Range(0, 9999999.9999, ErrorMessage = "Quantity on hand must be between 0 and 9,999,999.")]
-    public decimal QuantityOnHand { get; set; }
+    [Required][StringLength(20)]
+    public string Unit { get; set; } = "pcs";
 
-    [Range(0, 9999999.9999, ErrorMessage = "Minimum quantity must be between 0 and 9,999,999.")]
-    public decimal MinimumQuantity { get; set; }
+    [StringLength(200)]
+    public string Location { get; set; } = string.Empty;
 
-    [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
+    [Range(0, 9999999)]
+    public decimal CurrentStock { get; set; }
+
+    [Range(0, 9999999)]
+    public decimal MinStock { get; set; }
+
+    [Range(1, 9999999)]
+    public decimal MaxStock { get; set; } = 9999;
+
+    [Range(0, 9999999)]
+    public decimal UnitCost { get; set; }
+
+    [StringLength(200)]
+    public string Supplier { get; set; } = string.Empty;
+
+    [StringLength(500)]
     public string? Notes { get; set; }
 }
 
 public class UpdateInventoryItemRequest
 {
-    // Changed: nullable int FK to InventoryLocation
-    [Range(1, int.MaxValue, ErrorMessage = "LocationID must be a positive integer.")]
-    public int? LocationID { get; set; }
+    [StringLength(50)]
+    public string? Sku { get; set; }
 
-    [Range(0, 9999999.9999, ErrorMessage = "Quantity on hand must be between 0 and 9,999,999.")]
-    public decimal? QuantityOnHand { get; set; }
+    [StringLength(200, MinimumLength = 2)]
+    public string? Name { get; set; }
 
-    [Range(0, 9999999.9999, ErrorMessage = "Minimum quantity must be between 0 and 9,999,999.")]
-    public decimal? MinimumQuantity { get; set; }
+    [StringLength(100)]
+    public string? Category { get; set; }
 
-    [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
+    [StringLength(20)]
+    public string? Unit { get; set; }
+
+    [StringLength(200)]
+    public string? Location { get; set; }
+
+    [Range(0, 9999999)]
+    public decimal? CurrentStock { get; set; }
+
+    [Range(0, 9999999)]
+    public decimal? MinStock { get; set; }
+
+    [Range(1, 9999999)]
+    public decimal? MaxStock { get; set; }
+
+    [Range(0, 9999999)]
+    public decimal? UnitCost { get; set; }
+
+    [StringLength(200)]
+    public string? Supplier { get; set; }
+
+    [StringLength(500)]
     public string? Notes { get; set; }
 }
 
 public class AdjustQuantityRequest
 {
-    [Required(ErrorMessage = "Adjustment value is required.")]
-    [Range(-9999999.9999, 9999999.9999, ErrorMessage = "Adjustment must be between -9,999,999 and 9,999,999.")]
+    [Required]
+    [Range(-9999999, 9999999)]
     public decimal Adjustment { get; set; }
 
-    [Required(ErrorMessage = "Reason for adjustment is required.")]
-    [MinLength(5, ErrorMessage = "Reason must be at least 5 characters.")]
-    [MaxLength(500, ErrorMessage = "Reason cannot exceed 500 characters.")]
+    [Required][MinLength(5)][MaxLength(500)]
     public string Reason { get; set; } = string.Empty;
 }
 
 public class InventoryItemViewModel
 {
-    public int InventoryID { get; set; }
-    public int ProductID { get; set; }
-    public string ProductName { get; set; } = string.Empty;
-    // Changed: int? + LocationName from navigation property
-    public int? LocationID { get; set; }
-    public string? LocationName { get; set; }
-    public decimal QuantityOnHand { get; set; }
-    public decimal MinimumQuantity { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public string? Notes { get; set; }
+    public int      InventoryID     { get; set; }
+    public string   Sku             { get; set; } = string.Empty;
+    public string   Name            { get; set; } = string.Empty;
+    public string   Category        { get; set; } = string.Empty;
+    public string   Unit            { get; set; } = string.Empty;
+    public string   Location        { get; set; } = string.Empty;
+    public decimal  CurrentStock    { get; set; }
+    public decimal  MinStock        { get; set; }
+    public decimal  MaxStock        { get; set; }
+    public decimal  UnitCost        { get; set; }
+    public string   Supplier        { get; set; } = string.Empty;
+    public string   Status          { get; set; } = string.Empty;
+    public string?  Notes           { get; set; }
+    public DateTime  CreatedDate    { get; set; }
+    public DateTime? ModifiedDate   { get; set; }
+}
+
+public class StockMovementViewModel
+{
+    public int     MovementID   { get; set; }
+    public int     InventoryID  { get; set; }
+    public string  MovementType { get; set; } = string.Empty;
+    public decimal Quantity     { get; set; }
+    public string  Reason       { get; set; } = string.Empty;
+    public string? ReferenceID  { get; set; }
+    public int     PerformedBy  { get; set; }
     public DateTime CreatedDate { get; set; }
+}
+
+// ── Purchase Order DTOs ───────────────────────────────────────────────────────
+
+public class CreatePurchaseOrderRequest
+{
+    [Required][StringLength(200)]
+    public string Supplier { get; set; } = string.Empty;
+
+    [Required][StringLength(200)]
+    public string ItemName { get; set; } = string.Empty;
+
+    [StringLength(50)]
+    public string Sku { get; set; } = string.Empty;
+
+    [Required][Range(1, 999999)]
+    public decimal Quantity { get; set; }
+
+    [Required][Range(0.01, 9999999)]
+    public decimal UnitCost { get; set; }
+
+    [RegularExpression("^(Low|Medium|High|Urgent)$")]
+    public string Priority { get; set; } = "Medium";
+
+    [Required]
+    public DateTime OrderDate { get; set; }
+
+    [Required]
+    public DateTime ExpectedDate { get; set; }
+
+    [StringLength(500)]
+    public string? Notes { get; set; }
+}
+
+public class UpdatePurchaseOrderStatusRequest
+{
+    [Required]
+    [RegularExpression("^(Draft|Submitted|Approved|Ordered|Received|Cancelled)$",
+        ErrorMessage = "Status must be: Draft, Submitted, Approved, Ordered, Received, or Cancelled.")]
+    public string Status { get; set; } = string.Empty;
+}
+
+public class PurchaseOrderViewModel
+{
+    public int      PurchaseOrderID { get; set; }   // serializes to purchaseOrderID in JSON
+    public string   PONumber        { get; set; } = string.Empty;
+    public string   SupplierName { get; set; } = string.Empty;
+    public string   ItemName     { get; set; } = string.Empty;
+    public string   ItemSku      { get; set; } = string.Empty;
+    public decimal  Quantity     { get; set; }
+    public decimal  UnitCost     { get; set; }
+    public decimal  TotalCost    { get; set; }
+    public string   Priority     { get; set; } = string.Empty;
+    public string   Status       { get; set; } = string.Empty;
+    public DateTime  OrderDate    { get; set; }
+    public DateTime  ExpectedDate { get; set; }
+    public string?   Notes        { get; set; }
+    public DateTime  CreatedDate  { get; set; }
     public DateTime? ModifiedDate { get; set; }
 }

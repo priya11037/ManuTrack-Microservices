@@ -24,7 +24,7 @@ public class PurchaseOrderController(IPurchaseOrderService service) : Controller
     public async Task<ActionResult<ApiResponse<PurchaseOrderViewModel>>> Create([FromBody] CreatePurchaseOrderRequest request)
     {
         var result = await service.CreateAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = result.Data!.POID }, result);
+        return CreatedAtAction(nameof(GetById), new { id = result.Data!.PurchaseOrderID }, result);
     }
 
     [HttpPut("{id:int}/status")]

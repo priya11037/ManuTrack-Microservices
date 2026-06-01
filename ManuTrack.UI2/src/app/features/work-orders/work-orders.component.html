@@ -1,5 +1,27 @@
 <div class="wo-page">
 
+  <!-- ── Low-Stock Alert Banner (Inventory → Production Planner connection) ── -->
+  @if (lowStockItems().length > 0 && showStockBanner() && !isReadOnly()) {
+    <div class="stock-alert-banner">
+      <mat-icon class="sab-icon">warning</mat-icon>
+      <div class="sab-body">
+        <strong>{{ lowStockItems().length }} material{{ lowStockItems().length > 1 ? 's are' : ' is' }} low on stock</strong>
+        <span class="sab-items">
+          @for (item of lowStockItems().slice(0, 3); track item.id) {
+            <span class="sab-chip">{{ item.name }} ({{ item.currentStock }}/{{ item.minStock }} min)</span>
+          }
+          @if (lowStockItems().length > 3) {
+            <span class="sab-chip sab-more">+{{ lowStockItems().length - 3 }} more</span>
+          }
+        </span>
+        <span class="sab-hint">Contact Inventory Manager to raise purchase orders</span>
+      </div>
+      <button class="sab-close" (click)="showStockBanner.set(false)" title="Dismiss">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
   <!-- ── Page Header ──────────────────────────────────────────────────────── -->
   <div class="wo-header">
     <div>

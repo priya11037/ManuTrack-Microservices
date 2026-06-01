@@ -9,4 +9,5 @@ public interface IPurchaseOrderRepository
     Task<PurchaseOrder> CreateAsync(PurchaseOrder po);
     Task<PurchaseOrder> UpdateAsync(PurchaseOrder po);
     Task<bool> ExistsAsync(int id);
+    Task<int>  GetNextIdAsync();
 }

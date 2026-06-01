@@ -7,36 +7,25 @@ namespace InventoryService.Repositories;
 
 public class InventoryRepository(InventoryDbContext db) : IInventoryRepository
 {
-    public async Task<IEnumerable<InventoryItem>> GetAllAsync(
-        string? status = null, int? locationId = null)
+    public async Task<IEnumerable<InventoryItem>> GetAllAsync(string? status = null, int? locationId = null)
     {
-        var query = db.InventoryItems
-            .Include(i => i.Location)
-            .AsQueryable();
-
+        var query = db.InventoryItems.AsQueryable();
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(i => i.Status == status);
-        if (locationId.HasValue)
-            query = query.Where(i => i.LocationID == locationId.Value);
-
-        return await query.OrderBy(i => i.ProductName).ToListAsync();
+        return await query.OrderBy(i => i.Name).ToListAsync();
     }
 
     public async Task<InventoryItem?> GetByIdAsync(int id) =>
-        await db.InventoryItems
-            .Include(i => i.Location)
-            .FirstOrDefaultAsync(i => i.InventoryID == id);
+        await db.InventoryItems.FindAsync(id);
 
-    public async Task<InventoryItem?> GetByProductIdAsync(int productId) =>
-        await db.InventoryItems
-            .Include(i => i.Location)
-            .FirstOrDefaultAsync(i => i.ProductID == productId);
+    // GetByProductId is no longer meaningful — kept for interface compatibility, returns null
+    public Task<InventoryItem?> GetByProductIdAsync(int productId) =>
+        Task.FromResult<InventoryItem?>(null);
 
     public async Task<IEnumerable<InventoryItem>> GetLowStockAsync() =>
         await db.InventoryItems
-            .Include(i => i.Location)
-            .Where(i => i.QuantityOnHand <= i.MinimumQuantity)
-            .ToListAsync();
+                .Where(i => i.QuantityOnHand <= i.MinimumQuantity)
+                .ToListAsync();
 
     public async Task<InventoryItem> CreateAsync(InventoryItem item)
     {

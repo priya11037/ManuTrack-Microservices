@@ -62,12 +62,11 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll",
     p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient("ComplianceService", client =>
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:ComplianceService"]!));
-builder.Services.AddHttpClient("NotificationService", client =>
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:NotificationService"]!));
-builder.Services.AddHttpClient("QualityService", client =>
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:QualityService"]!));
+builder.Services.AddHttpClient("ComplianceService",   c => c.BaseAddress = new Uri(builder.Configuration["ServiceUrls:ComplianceService"]!));
+builder.Services.AddHttpClient("NotificationService", c => c.BaseAddress = new Uri(builder.Configuration["ServiceUrls:NotificationService"]!));
+builder.Services.AddHttpClient("QualityService",      c => c.BaseAddress = new Uri(builder.Configuration["ServiceUrls:QualityService"]!));
+builder.Services.AddHttpClient("ProductService",      c => c.BaseAddress = new Uri(builder.Configuration["ServiceUrls:ProductService"]!));
+builder.Services.AddHttpClient("InventoryService",    c => c.BaseAddress = new Uri(builder.Configuration["ServiceUrls:InventoryService"]!));
 
 builder.Services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
 builder.Services.AddScoped<IWorkOrderTaskRepository, WorkOrderTaskRepository>();

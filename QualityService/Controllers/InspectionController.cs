@@ -30,6 +30,6 @@ public class InspectionController(IInspectionService service) : ControllerBase
 
     [HttpPut("{id:int}/result")]
     [Authorize(Roles = "Admin,QualityInspector")]
-    public async Task<ActionResult<ApiResponse<InspectionViewModel>>> UpdateResult(int id, [FromBody] UpdateInspectionResultRequest request)
+    public async Task<ActionResult<ApiResponse<InspectionViewModel>>> UpdateResult(int id, [FromBody] UpdateInspectionStatusRequest request)
         => Ok(await service.UpdateResultAsync(id, request));
 }

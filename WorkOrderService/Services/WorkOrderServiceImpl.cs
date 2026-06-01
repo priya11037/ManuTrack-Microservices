@@ -206,9 +206,14 @@ public class WorkOrderServiceImpl(
         await LogAuditAsync("Updated WorkOrder Status", "WorkOrder", id.ToString(),
             $"New Status: {request.Status}");
 
-        // Change 3: notify on Completed (fire-and-forget)
+        // Notify on Completed (fire-and-forget)
         if (request.Status == WorkOrderStatus.Completed)
+        {
             await NotifyWorkOrderCompletedAsync(id);
+            // ── Option A: consume BOM materials from inventory, add finished goods ──
+            // Fire-and-forget: runs in background, never blocks or throws to caller
+            _ = Task.Run(() => ConsumeInventoryOnCompletionAsync(updated));
+        }
 
         // reload with tasks for accurate ProgressPercentage
         var withTasks = await repo.GetByIdWithTasksAsync(id);
@@ -267,11 +272,183 @@ public class WorkOrderServiceImpl(
     {
         public IEnumerable<InspectionSummaryDto>? Data { get; set; }
     }
-
     private sealed class InspectionSummaryDto
     {
         public string? Result { get; set; }
         public string? Status { get; set; }
+    }
+
+    // ── Option A: Consume BOM materials & add finished goods ──────────────────
+    // Called fire-and-forget from UpdateStatusAsync when WO → Completed.
+    // NEVER throws — logs warnings and skips gracefully on any failure.
+    private async Task ConsumeInventoryOnCompletionAsync(WorkOrder order)
+    {
+        try
+        {
+            var token   = GetBearerToken();
+            var produced = order.ProducedQty > 0 ? order.ProducedQty : order.Quantity;
+
+            // ── 1. Get all current inventory items ───────────────────────────
+            var invClient = httpClientFactory.CreateClient("InventoryService");
+            if (token != null)
+                invClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var invResp = await invClient.GetAsync("api/v1/inventory");
+            if (!invResp.IsSuccessStatusCode)
+            {
+                logger.LogWarning("InventoryService unavailable — skipping BOM consumption for WO {WoNumber}.", order.WoNumber);
+                return;
+            }
+
+            var invResult = await invResp.Content
+                .ReadFromJsonAsync<InventoryListDto>(
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var allInventory = invResult?.Data?.ToList() ?? [];
+
+            // ── 2. Get BOM for this product ──────────────────────────────────
+            var prodClient = httpClientFactory.CreateClient("ProductService");
+            if (token != null)
+                prodClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var bomResp = await prodClient.GetAsync($"api/v1/bom/product/{order.ProductID}");
+            var bomItems = new List<BomItemDto>();
+
+            if (bomResp.IsSuccessStatusCode)
+            {
+                var bomResult = await bomResp.Content
+                    .ReadFromJsonAsync<BomListDto>(
+                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                bomItems = bomResult?.Data?.ToList() ?? [];
+            }
+            else
+            {
+                logger.LogWarning("No BOM found for ProductID {ProductID} — skipping material deduction.", order.ProductID);
+            }
+
+            // ── 3. Deduct BOM materials from inventory (fire-and-forget each) ──
+            foreach (var bom in bomItems)
+            {
+                // Match BOM item to inventory item by name (case-insensitive)
+                var match = allInventory.FirstOrDefault(i =>
+                    string.Equals(i.Name, bom.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (match == null)
+                {
+                    logger.LogInformation(
+                        "BOM item '{BomName}' has no matching inventory item — skipping deduction.", bom.Name);
+                    continue;
+                }
+
+                var deductQty = (double)bom.Quantity * produced;
+                var adjustUrl = $"api/v1/inventory/{match.InventoryID}/adjust";
+                var adjustBody = new
+                {
+                    Adjustment = -deductQty,
+                    Reason = $"Consumed by {order.WoNumber} ({order.ProductName}, {produced} units produced)"
+                };
+
+                var adjustResp = await invClient.PutAsJsonAsync(adjustUrl, adjustBody);
+                if (adjustResp.IsSuccessStatusCode)
+                    logger.LogInformation(
+                        "Deducted {Qty} of '{Item}' from inventory for WO {WoNumber}.",
+                        deductQty, bom.Name, order.WoNumber);
+                else
+                    logger.LogWarning(
+                        "Failed to deduct '{Item}' from inventory (HTTP {Status}).",
+                        bom.Name, adjustResp.StatusCode);
+            }
+
+            // ── 4. Add finished goods to inventory ───────────────────────────
+            // Find an existing finished-good inventory item with the same product name
+            var finishedGood = allInventory.FirstOrDefault(i =>
+                string.Equals(i.Name, order.ProductName, StringComparison.OrdinalIgnoreCase));
+
+            if (finishedGood != null)
+            {
+                // Existing: increment qty
+                var fgUrl  = $"api/v1/inventory/{finishedGood.InventoryID}/adjust";
+                var fgBody = new
+                {
+                    Adjustment = (double)produced,
+                    Reason = $"Finished goods from {order.WoNumber}"
+                };
+                var fgResp = await invClient.PutAsJsonAsync(fgUrl, fgBody);
+                if (fgResp.IsSuccessStatusCode)
+                    logger.LogInformation(
+                        "Added {Qty} finished units of '{Product}' to inventory.", produced, order.ProductName);
+            }
+            else
+            {
+                // New product: create finished good entry
+                var createBody = new
+                {
+                    Sku          = order.Sku,
+                    Name         = order.ProductName,
+                    Category     = "Finished Good",
+                    Unit         = "pcs",
+                    Location     = string.Empty,
+                    CurrentStock = (double)produced,
+                    MinStock     = 0,
+                    MaxStock     = 99999,
+                    UnitCost     = 0,
+                    Supplier     = "Internal",
+                    Notes        = $"Auto-created on WO {order.WoNumber} completion"
+                };
+                var createResp = await invClient.PostAsJsonAsync("api/v1/inventory", createBody);
+                if (createResp.IsSuccessStatusCode)
+                    logger.LogInformation(
+                        "Created new finished good inventory entry for '{Product}'.", order.ProductName);
+            }
+
+            // ── 5. Notify Inventory Manager about the consumption ────────────
+            try
+            {
+                var (userId, _) = GetCurrentUser();
+                if (userId > 0)
+                {
+                    var notifyClient = httpClientFactory.CreateClient("NotificationService");
+                    if (token != null)
+                        notifyClient.DefaultRequestHeaders.Authorization =
+                            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                    await notifyClient.PostAsJsonAsync("api/v1/notifications", new
+                    {
+                        UserID   = userId,
+                        Title    = "Production Completed — Stock Updated",
+                        Message  = $"{order.WoNumber} completed: {produced} × {order.ProductName} added to finished goods. {bomItems.Count} material(s) deducted.",
+                        Category = "Inventory"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to send inventory notification for WO {WoNumber}.", order.WoNumber);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Never propagate — this is fire-and-forget
+            logger.LogError(ex, "ConsumeInventoryOnCompletionAsync failed for WO {WoNumber}. System unaffected.", order.WoNumber);
+        }
+    }
+
+    // ── Local DTOs for cross-service responses ────────────────────────────────
+    private sealed class InventoryListDto      { public IEnumerable<InventoryItemDto>? Data { get; set; } }
+    private sealed class InventoryItemDto
+    {
+        public int    InventoryID { get; set; }
+        public string Name        { get; set; } = string.Empty;
+        public decimal CurrentStock { get; set; }
+        public decimal MinStock     { get; set; }
+    }
+    private sealed class BomListDto           { public IEnumerable<BomItemDto>? Data { get; set; } }
+    private sealed class BomItemDto
+    {
+        public string  Name     { get; set; } = string.Empty;
+        public decimal Quantity { get; set; }  // qty per 1 unit of product
+        public string  Unit     { get; set; } = string.Empty;
     }
 
     // ── Mapper ───────────────────────────────────────────────────────────────

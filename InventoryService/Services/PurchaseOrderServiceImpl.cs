@@ -15,7 +15,6 @@ public class PurchaseOrderServiceImpl(
     IPurchaseOrderRepository repo,
     IInventoryRepository inventoryRepo,
     IStockMovementRepository movementRepo,
-    ISupplierRepository supplierRepo,
     IHttpClientFactory httpClientFactory,
     IHttpContextAccessor httpContextAccessor,
     ILogger<PurchaseOrderServiceImpl> logger) : IPurchaseOrderService
@@ -31,41 +30,32 @@ public class PurchaseOrderServiceImpl(
 
     private (int UserId, string UserName) GetCurrentUser()
     {
-        var user = httpContextAccessor.HttpContext?.User;
-        var idVal = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                 ?? user?.FindFirst("sub")?.Value;
-        var name = user?.FindFirst(ClaimTypes.Name)?.Value
-                ?? user?.FindFirst("name")?.Value
-                ?? "Unknown";
+        var user  = httpContextAccessor.HttpContext?.User;
+        var idVal = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("sub")?.Value;
+        var name  = user?.FindFirst(ClaimTypes.Name)?.Value ?? user?.FindFirst("name")?.Value ?? "Unknown";
         int.TryParse(idVal, out var id);
         return (id, name);
     }
 
-    private async Task LogAuditAsync(string action, string entityType, string entityId, string? details = null)
+    private async Task LogAuditAsync(string action, string entity, string entityId, string? details = null)
     {
         try
         {
             var (userId, userName) = GetCurrentUser();
             if (userId == 0) return;
-
             var client = httpClientFactory.CreateClient("ComplianceService");
-            var token = GetBearerToken();
+            var token  = GetBearerToken();
             if (token != null)
                 client.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
             await client.PostAsJsonAsync("api/v1/audit", new
             {
-                UserID = userId,
-                UserName = userName,
-                Action = action,
-                EntityType = entityType,
-                EntityID = entityId,
-                ServiceName = "InventoryService",
-                Details = details
+                UserID = userId, UserName = userName, Action = action,
+                EntityType = entity, EntityID = entityId,
+                ServiceName = "InventoryService", Details = details
             });
         }
-        catch (Exception ex) { logger.LogWarning(ex, "Audit log failed in PurchaseOrderService."); }
+        catch (Exception ex) { logger.LogWarning(ex, "Audit log failed in PO service."); }
     }
 
     // ── CRUD ──────────────────────────────────────────────────────────────────
@@ -85,56 +75,31 @@ public class PurchaseOrderServiceImpl(
 
     public async Task<ApiResponse<PurchaseOrderViewModel>> CreateAsync(CreatePurchaseOrderRequest request)
     {
-        string supplierName = request.SupplierName ?? string.Empty;
-        string supplierId = request.SupplierID ?? string.Empty;
-
-        // Validate SupplierRefID if provided
-        if (request.SupplierRefID.HasValue)
-        {
-            var supplier = await supplierRepo.GetByIdAsync(request.SupplierRefID.Value)
-                ?? throw new NotFoundException($"Supplier {request.SupplierRefID.Value} not found.");
-            if (!supplier.IsActive)
-                throw new ValidationException($"Supplier '{supplier.Name}' is not active.");
-            supplierName = supplier.Name;
-            supplierId = supplier.SupplierID.ToString();
-        }
-
-        // Validate all inventory items exist
-        foreach (var item in request.Items)
-        {
-            if (!await inventoryRepo.ExistsAsync(item.InventoryID))
-                throw new NotFoundException($"Inventory item {item.InventoryID} not found.");
-        }
-
-        var items = request.Items.Select(i => new PurchaseOrderItem
-        {
-            InventoryID = i.InventoryID,
-            ProductID = i.ProductID,
-            ProductName = i.ProductName,
-            Quantity = i.Quantity,
-            UnitPrice = i.UnitPrice,
-            TotalPrice = i.Quantity * i.UnitPrice,
-            ReceivedQty = 0
-        }).ToList();
+        // Auto-generate PO number from next ID
+        var nextId   = await repo.GetNextIdAsync();
+        var poNumber = $"PO-{nextId:D4}";
 
         var po = new PurchaseOrder
         {
-            SupplierRefID = request.SupplierRefID,
-            SupplierID = supplierId,
-            SupplierName = supplierName,
-            OrderDate = DateTime.UtcNow,
-            ExpectedDeliveryDate = request.ExpectedDeliveryDate,
-            Notes = request.Notes,
-            TotalAmount = items.Sum(i => i.TotalPrice),
-            Status = PurchaseOrderStatus.Pending,
-            CreatedDate = DateTime.UtcNow,
-            Items = items
+            PONumber     = poNumber,
+            SupplierName = request.Supplier,
+            ItemName     = request.ItemName,
+            ItemSku      = request.Sku,
+            Quantity     = request.Quantity,
+            UnitCost     = request.UnitCost,
+            TotalCost    = request.Quantity * request.UnitCost,
+            Priority     = request.Priority,
+            Status       = "Draft",
+            OrderDate    = request.OrderDate,
+            ExpectedDate = request.ExpectedDate,
+            Notes        = request.Notes,
+            CreatedDate  = DateTime.UtcNow,
         };
 
         var created = await repo.CreateAsync(po);
 
         await LogAuditAsync("Created Purchase Order", "PurchaseOrder", created.POID.ToString(),
-            $"Supplier: {supplierName}, Items: {items.Count}, Total: {po.TotalAmount}");
+            $"PO: {poNumber}, Supplier: {request.Supplier}, Item: {request.ItemName}, Qty: {request.Quantity}");
 
         return ApiResponse<PurchaseOrderViewModel>.Ok(Map(created), "Purchase order created.");
     }
@@ -144,80 +109,121 @@ public class PurchaseOrderServiceImpl(
         var po = await repo.GetByIdAsync(id)
             ?? throw new NotFoundException($"Purchase order {id} not found.");
 
-        // Change 3: auto-update inventory when PO is Received
-        if (request.Status == PurchaseOrderStatus.Received)
+        // When PO is marked Received → auto-update matching inventory item's stock
+        if (request.Status == "Received" && po.Status != "Received")
         {
-            var (userId, _) = GetCurrentUser();
-
-            foreach (var item in po.Items)
-            {
-                var invItem = await inventoryRepo.GetByIdAsync(item.InventoryID);
-                if (invItem == null) continue;
-
-                invItem.QuantityOnHand += item.Quantity;
-                invItem.Status = DetermineStatus(invItem.QuantityOnHand, invItem.MinimumQuantity);
-                invItem.ModifiedDate = DateTime.UtcNow;
-                item.ReceivedQty = item.Quantity;
-
-                await inventoryRepo.UpdateAsync(invItem);
-
-                // Create StockMovement record for each received item
-                await movementRepo.CreateAsync(new StockMovement
-                {
-                    InventoryID = item.InventoryID,
-                    MovementType = StockMovementType.StockIn,
-                    Quantity = item.Quantity,
-                    Reason = $"Received from Purchase Order PO-{po.POID}",
-                    ReferenceID = $"PO-{po.POID}",
-                    PerformedBy = userId,
-                    CreatedDate = DateTime.UtcNow
-                });
-            }
+            await ReceiveStockAsync(po);
         }
 
-        po.Status = request.Status;
+        po.Status       = request.Status;
         po.ModifiedDate = DateTime.UtcNow;
-        var updated = await repo.UpdateAsync(po);
+        var updated     = await repo.UpdateAsync(po);
 
         await LogAuditAsync("Updated PO Status", "PurchaseOrder", id.ToString(),
-            $"New Status: {request.Status}");
+            $"PO: {po.PONumber}, New Status: {request.Status}");
 
         return ApiResponse<PurchaseOrderViewModel>.Ok(Map(updated), "Purchase order status updated.");
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static string DetermineStatus(decimal qty, decimal minQty)
+    // ── Receive stock: find matching inventory item by SKU or name, add qty ───
+    private async Task ReceiveStockAsync(PurchaseOrder po)
     {
-        if (qty <= 0) return InventoryStatus.OutOfStock;
-        if (qty <= minQty) return InventoryStatus.LowStock;
-        return InventoryStatus.InStock;
+        try
+        {
+            var (userId, _) = GetCurrentUser();
+
+            // Try to find existing inventory item by SKU first, then by name
+            var allItems = await inventoryRepo.GetAllAsync(null, null);
+            InventoryItem? invItem = null;
+
+            if (!string.IsNullOrWhiteSpace(po.ItemSku))
+                invItem = allItems.FirstOrDefault(i =>
+                    string.Equals(i.Sku, po.ItemSku, StringComparison.OrdinalIgnoreCase));
+
+            invItem ??= allItems.FirstOrDefault(i =>
+                string.Equals(i.Name, po.ItemName, StringComparison.OrdinalIgnoreCase));
+
+            if (invItem != null)
+            {
+                // Found — increase quantity
+                invItem.QuantityOnHand += po.Quantity;
+                invItem.ModifiedDate    = DateTime.UtcNow;
+
+                var newStatus = invItem.QuantityOnHand <= 0       ? InventoryStatus.OutOfStock :
+                                invItem.QuantityOnHand <= invItem.MinimumQuantity ? InventoryStatus.LowStock :
+                                                                    InventoryStatus.InStock;
+                invItem.Status = newStatus;
+                await inventoryRepo.UpdateAsync(invItem);
+
+                await movementRepo.CreateAsync(new StockMovement
+                {
+                    InventoryID  = invItem.InventoryID,
+                    MovementType = StockMovementType.StockIn,
+                    Quantity     = po.Quantity,
+                    Reason       = $"Received from {po.PONumber}",
+                    ReferenceID  = po.PONumber,
+                    PerformedBy  = userId,
+                    CreatedDate  = DateTime.UtcNow,
+                });
+            }
+            else
+            {
+                // Not found — create a new inventory item automatically
+                var newItem = new InventoryItem
+                {
+                    Sku             = po.ItemSku,
+                    Name            = po.ItemName,
+                    Category        = "Component",   // default
+                    Unit            = "pcs",
+                    Location        = string.Empty,
+                    QuantityOnHand  = po.Quantity,
+                    MinimumQuantity = 0,
+                    MaximumQuantity = 9999,
+                    UnitCost        = po.UnitCost,
+                    Supplier        = po.SupplierName,
+                    Status          = InventoryStatus.InStock,
+                    Notes           = $"Auto-created from {po.PONumber}",
+                    CreatedDate     = DateTime.UtcNow,
+                };
+
+                var created = await inventoryRepo.CreateAsync(newItem);
+
+                await movementRepo.CreateAsync(new StockMovement
+                {
+                    InventoryID  = created.InventoryID,
+                    MovementType = StockMovementType.StockIn,
+                    Quantity     = po.Quantity,
+                    Reason       = $"Initial receipt from {po.PONumber}",
+                    ReferenceID  = po.PONumber,
+                    PerformedBy  = userId,
+                    CreatedDate  = DateTime.UtcNow,
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Stock update failed when receiving PO {POID}.", po.POID);
+        }
     }
+
+    // ── Mapper ────────────────────────────────────────────────────────────────
 
     private static PurchaseOrderViewModel Map(PurchaseOrder p) => new()
     {
-        POID = p.POID,
-        SupplierRefID = p.SupplierRefID,
-        SupplierID = p.SupplierID,
+        PurchaseOrderID = p.POID,
+        PONumber        = p.PONumber,
         SupplierName = p.SupplierName,
-        OrderDate = p.OrderDate,
-        ExpectedDeliveryDate = p.ExpectedDeliveryDate,
-        Status = p.Status,
-        TotalAmount = p.TotalAmount,
-        Notes = p.Notes,
-        CreatedDate = p.CreatedDate,
+        ItemName     = p.ItemName,
+        ItemSku      = p.ItemSku,
+        Quantity     = p.Quantity,
+        UnitCost     = p.UnitCost,
+        TotalCost    = p.TotalCost,
+        Priority     = p.Priority,
+        Status       = p.Status,
+        OrderDate    = p.OrderDate,
+        ExpectedDate = p.ExpectedDate,
+        Notes        = p.Notes,
+        CreatedDate  = p.CreatedDate,
         ModifiedDate = p.ModifiedDate,
-        Items = p.Items.Select(i => new PurchaseOrderItemViewModel
-        {
-            POItemID = i.POItemID,
-            InventoryID = i.InventoryID,
-            ProductID = i.ProductID,
-            ProductName = i.ProductName,
-            Quantity = i.Quantity,
-            UnitPrice = i.UnitPrice,
-            TotalPrice = i.TotalPrice,
-            ReceivedQty = i.ReceivedQty,
-            CreatedDate = i.CreatedDate
-        }).ToList()
     };
 }

@@ -14,7 +14,6 @@ namespace InventoryService.Services;
 public class InventoryServiceImpl(
     IInventoryRepository repo,
     IStockMovementRepository movementRepo,
-    ILocationRepository locationRepo,
     IHttpClientFactory httpClientFactory,
     IHttpContextAccessor httpContextAccessor,
     ILogger<InventoryServiceImpl> logger) : IInventoryService
@@ -40,102 +39,90 @@ public class InventoryServiceImpl(
         return (id, name);
     }
 
-    private HttpClient CreateAuthorizedClient(string clientName)
+    private HttpClient CreateAuthorizedClient(string name)
     {
-        var client = httpClientFactory.CreateClient(clientName);
-        var token = GetBearerToken();
+        var client = httpClientFactory.CreateClient(name);
+        var token  = GetBearerToken();
         if (token != null)
             client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         return client;
     }
 
-    // ── Change 2: Audit logging (fire-and-forget) ─────────────────────────────
-    private async Task LogAuditAsync(string action, string entityType, string entityId, string? details = null)
+    private async Task LogAuditAsync(string action, string entity, string entityId, string? details = null)
     {
         try
         {
             var (userId, userName) = GetCurrentUser();
             if (userId == 0) return;
-
             var client = CreateAuthorizedClient("ComplianceService");
             await client.PostAsJsonAsync("api/v1/audit", new
             {
-                UserID = userId,
-                UserName = userName,
-                Action = action,
-                EntityType = entityType,
-                EntityID = entityId,
-                ServiceName = "InventoryService",
-                Details = details
+                UserID = userId, UserName = userName, Action = action,
+                EntityType = entity, EntityID = entityId,
+                ServiceName = "InventoryService", Details = details
             });
         }
-        catch (Exception ex) { logger.LogWarning(ex, "Audit log failed in InventoryService."); }
+        catch (Exception ex) { logger.LogWarning(ex, "Audit log failed."); }
     }
 
-    // ── Change 1: RecalculateStatus + low-stock notification ──────────────────
-    private static string DetermineStatus(decimal qty, decimal minQty)
-    {
-        if (qty <= 0) return InventoryStatus.OutOfStock;
-        if (qty <= minQty) return InventoryStatus.LowStock;
-        return InventoryStatus.InStock;
-    }
+    private static string DetermineStatus(decimal qty, decimal minQty) =>
+        qty <= 0       ? InventoryStatus.OutOfStock :
+        qty <= minQty  ? InventoryStatus.LowStock   :
+                         InventoryStatus.InStock;
 
-    private async Task RecalculateStatusAsync(InventoryItem item)
+    private async Task UpdateStatusAndNotify(InventoryItem item)
     {
-        var newStatus = DetermineStatus(item.QuantityOnHand, item.MinimumQuantity);
-        var statusChanged = item.Status != newStatus;
-        item.Status = newStatus;
+        var newStatus   = DetermineStatus(item.QuantityOnHand, item.MinimumQuantity);
+        var changed     = item.Status != newStatus;
+        item.Status     = newStatus;
 
-        if (statusChanged && (newStatus == InventoryStatus.LowStock || newStatus == InventoryStatus.OutOfStock))
+        if (changed && newStatus != InventoryStatus.InStock)
         {
             try
             {
                 var (userId, _) = GetCurrentUser();
                 if (userId == 0) return;
-
-                var client = CreateAuthorizedClient("NotificationService");
-                var message = newStatus == InventoryStatus.OutOfStock
-                    ? $"ALERT: '{item.ProductName}' (ID: {item.InventoryID}) is OUT OF STOCK."
-                    : $"WARNING: '{item.ProductName}' (ID: {item.InventoryID}) is LOW on stock. Current: {item.QuantityOnHand}, Minimum: {item.MinimumQuantity}.";
-
+                var client  = CreateAuthorizedClient("NotificationService");
+                var msg     = newStatus == InventoryStatus.OutOfStock
+                    ? $"OUT OF STOCK: '{item.Name}' (SKU: {item.Sku}). Qty: {item.QuantityOnHand}"
+                    : $"LOW STOCK: '{item.Name}' (SKU: {item.Sku}). Current: {item.QuantityOnHand}, Min: {item.MinimumQuantity}";
                 await client.PostAsJsonAsync("api/v1/notifications", new
                 {
-                    UserID = userId,
-                    Title = newStatus == InventoryStatus.OutOfStock ? "Out of Stock Alert" : "Low Stock Warning",
-                    Message = message,
+                    UserID   = userId,
+                    Title    = newStatus == InventoryStatus.OutOfStock ? "Out of Stock Alert" : "Low Stock Warning",
+                    Message  = msg,
                     Category = "Inventory"
                 });
             }
-            catch (Exception ex) { logger.LogWarning(ex, "Low stock notification failed for item {ItemId}.", item.InventoryID); }
+            catch (Exception ex) { logger.LogWarning(ex, "Low-stock notification failed for {ItemId}.", item.InventoryID); }
         }
     }
 
-    // ── Change 4: Create stock movement record ─────────────────────────────────
-    private async Task RecordMovementAsync(int inventoryId, string movementType, decimal quantity, string reason, string? referenceId = null)
+    private async Task RecordMovementAsync(int inventoryId, string type, decimal qty, string reason, string? refId = null)
     {
         try
         {
             var (userId, _) = GetCurrentUser();
             await movementRepo.CreateAsync(new StockMovement
             {
-                InventoryID = inventoryId,
-                MovementType = movementType,
-                Quantity = quantity,
-                Reason = reason,
-                ReferenceID = referenceId,
-                PerformedBy = userId,
-                CreatedDate = DateTime.UtcNow
+                InventoryID  = inventoryId,
+                MovementType = type,
+                Quantity     = qty,
+                Reason       = reason,
+                ReferenceID  = refId,
+                PerformedBy  = userId,
+                CreatedDate  = DateTime.UtcNow
             });
         }
-        catch (Exception ex) { logger.LogWarning(ex, "Stock movement record failed for inventory item {InventoryId}.", inventoryId); }
+        catch (Exception ex) { logger.LogWarning(ex, "Stock movement record failed for {InventoryId}.", inventoryId); }
     }
 
     // ── CRUD ──────────────────────────────────────────────────────────────────
 
     public async Task<ApiResponse<IEnumerable<InventoryItemViewModel>>> GetAllAsync(string? status, int? locationId)
     {
-        var items = await repo.GetAllAsync(status, locationId);
+        var items = await repo.GetAllAsync(status, null);   // locationId no longer used
         return ApiResponse<IEnumerable<InventoryItemViewModel>>.Ok(items.Select(Map));
     }
 
@@ -156,40 +143,37 @@ public class InventoryServiceImpl(
     {
         if (!await repo.ExistsAsync(inventoryId))
             throw new NotFoundException($"Inventory item {inventoryId} not found.");
-
         var movements = await movementRepo.GetByInventoryIdAsync(inventoryId);
         return ApiResponse<IEnumerable<StockMovementViewModel>>.Ok(movements.Select(MapMovement));
     }
 
     public async Task<ApiResponse<InventoryItemViewModel>> CreateAsync(CreateInventoryItemRequest request)
     {
-        // Validate LocationID if provided
-        if (request.LocationID.HasValue)
-        {
-            var location = await locationRepo.GetByIdAsync(request.LocationID.Value)
-                ?? throw new NotFoundException($"Location {request.LocationID.Value} not found.");
-            if (!location.IsActive)
-                throw new ValidationException($"Location '{location.Name}' is inactive and cannot be assigned to an inventory item.");
-        }
-
         var item = new InventoryItem
         {
-            ProductID = request.ProductID,
-            ProductName = request.ProductName,
-            LocationID = request.LocationID,
-            QuantityOnHand = request.QuantityOnHand,
-            MinimumQuantity = request.MinimumQuantity,
-            Notes = request.Notes,
-            CreatedDate = DateTime.UtcNow
+            Sku             = request.Sku,
+            Name            = request.Name,
+            Category        = request.Category,
+            Unit            = request.Unit,
+            Location        = request.Location,
+            QuantityOnHand  = request.CurrentStock,
+            MinimumQuantity = request.MinStock,
+            MaximumQuantity = request.MaxStock,
+            UnitCost        = request.UnitCost,
+            Supplier        = request.Supplier,
+            Notes           = request.Notes,
+            CreatedDate     = DateTime.UtcNow,
         };
 
-        await RecalculateStatusAsync(item);
+        await UpdateStatusAndNotify(item);
         var created = await repo.CreateAsync(item);
 
-        await RecordMovementAsync(created.InventoryID, StockMovementType.StockIn,
-            request.QuantityOnHand, "Initial stock entry");
+        if (request.CurrentStock > 0)
+            await RecordMovementAsync(created.InventoryID, StockMovementType.StockIn,
+                request.CurrentStock, "Initial stock entry");
+
         await LogAuditAsync("Created Inventory Item", "InventoryItem", created.InventoryID.ToString(),
-            $"ProductName: {created.ProductName}, Qty: {created.QuantityOnHand}, LocationID: {created.LocationID}");
+            $"SKU: {created.Sku}, Name: {created.Name}, Qty: {created.QuantityOnHand}");
 
         return ApiResponse<InventoryItemViewModel>.Ok(Map(created), "Inventory item created.");
     }
@@ -199,24 +183,24 @@ public class InventoryServiceImpl(
         var item = await repo.GetByIdAsync(id)
             ?? throw new NotFoundException($"Inventory item {id} not found.");
 
-        if (request.LocationID.HasValue)
-        {
-            var location = await locationRepo.GetByIdAsync(request.LocationID.Value)
-                ?? throw new NotFoundException($"Location {request.LocationID.Value} not found.");
-            if (!location.IsActive)
-                throw new ValidationException($"Location '{location.Name}' is inactive and cannot be assigned to an inventory item.");
-            item.LocationID = request.LocationID.Value;
-        }
-        if (request.QuantityOnHand.HasValue) item.QuantityOnHand = request.QuantityOnHand.Value;
-        if (request.MinimumQuantity.HasValue) item.MinimumQuantity = request.MinimumQuantity.Value;
-        if (request.Notes != null) item.Notes = request.Notes;
+        if (request.Sku      != null) item.Sku             = request.Sku;
+        if (request.Name     != null) item.Name            = request.Name;
+        if (request.Category != null) item.Category        = request.Category;
+        if (request.Unit     != null) item.Unit            = request.Unit;
+        if (request.Location != null) item.Location        = request.Location;
+        if (request.Supplier != null) item.Supplier        = request.Supplier;
+        if (request.Notes    != null) item.Notes           = request.Notes;
+        if (request.CurrentStock.HasValue) item.QuantityOnHand  = request.CurrentStock.Value;
+        if (request.MinStock.HasValue)     item.MinimumQuantity = request.MinStock.Value;
+        if (request.MaxStock.HasValue)     item.MaximumQuantity = request.MaxStock.Value;
+        if (request.UnitCost.HasValue)     item.UnitCost        = request.UnitCost.Value;
         item.ModifiedDate = DateTime.UtcNow;
 
-        await RecalculateStatusAsync(item);
+        await UpdateStatusAndNotify(item);
         var updated = await repo.UpdateAsync(item);
 
         await LogAuditAsync("Updated Inventory Item", "InventoryItem", id.ToString(),
-            $"Qty: {updated.QuantityOnHand}, Status: {updated.Status}");
+            $"SKU: {updated.Sku}, Qty: {updated.QuantityOnHand}, Status: {updated.Status}");
 
         return ApiResponse<InventoryItemViewModel>.Ok(Map(updated), "Inventory item updated.");
     }
@@ -231,13 +215,13 @@ public class InventoryServiceImpl(
             throw new ValidationException("Adjustment would result in negative stock.");
 
         item.ModifiedDate = DateTime.UtcNow;
-        await RecalculateStatusAsync(item);
+        await UpdateStatusAndNotify(item);
         var updated = await repo.UpdateAsync(item);
 
-        var movementType = request.Adjustment >= 0 ? StockMovementType.StockIn : StockMovementType.StockOut;
-        await RecordMovementAsync(id, movementType, Math.Abs(request.Adjustment), request.Reason);
-        await LogAuditAsync("Adjusted Inventory Quantity", "InventoryItem", id.ToString(),
-            $"Adjustment: {request.Adjustment}, NewQty: {updated.QuantityOnHand}, Reason: {request.Reason}");
+        var mType = request.Adjustment >= 0 ? StockMovementType.StockIn : StockMovementType.StockOut;
+        await RecordMovementAsync(id, mType, Math.Abs(request.Adjustment), request.Reason);
+        await LogAuditAsync("Adjusted Inventory", "InventoryItem", id.ToString(),
+            $"Adjustment: {request.Adjustment}, NewQty: {updated.QuantityOnHand}");
 
         return ApiResponse<InventoryItemViewModel>.Ok(Map(updated), "Quantity adjusted.");
     }
@@ -248,41 +232,44 @@ public class InventoryServiceImpl(
             ?? throw new NotFoundException($"Inventory item {id} not found.");
 
         if (await movementRepo.HasMovementsAsync(id))
-            throw new ConflictException($"Cannot delete '{item.ProductName}' because it has stock movement history. Deactivate it instead.");
+            throw new ConflictException(
+                $"Cannot delete '{item.Name}' — it has stock movement history. Adjust qty to 0 instead.");
 
         await repo.DeleteAsync(item);
-        await LogAuditAsync("Deleted Inventory Item", "InventoryItem", id.ToString(),
-            $"ProductName: {item.ProductName}");
-
+        await LogAuditAsync("Deleted Inventory Item", "InventoryItem", id.ToString(), $"SKU: {item.Sku}");
         return ApiResponse.Ok("Inventory item deleted.");
     }
 
     // ── Mappers ───────────────────────────────────────────────────────────────
 
-    private static InventoryItemViewModel Map(InventoryItem i) => new()
+    public static InventoryItemViewModel Map(InventoryItem i) => new()
     {
-        InventoryID     = i.InventoryID,
-        ProductID       = i.ProductID,
-        ProductName     = i.ProductName,
-        LocationID      = i.LocationID,
-        LocationName    = i.Location?.Name,
-        QuantityOnHand  = i.QuantityOnHand,
-        MinimumQuantity = i.MinimumQuantity,
-        Status          = i.Status,
-        Notes           = i.Notes,
-        CreatedDate     = i.CreatedDate,
-        ModifiedDate    = i.ModifiedDate
+        InventoryID   = i.InventoryID,
+        Sku           = i.Sku,
+        Name          = i.Name,
+        Category      = i.Category,
+        Unit          = i.Unit,
+        Location      = i.Location,
+        CurrentStock  = i.QuantityOnHand,
+        MinStock      = i.MinimumQuantity,
+        MaxStock      = i.MaximumQuantity,
+        UnitCost      = i.UnitCost,
+        Supplier      = i.Supplier,
+        Status        = i.Status,
+        Notes         = i.Notes,
+        CreatedDate   = i.CreatedDate,
+        ModifiedDate  = i.ModifiedDate,
     };
 
     private static StockMovementViewModel MapMovement(StockMovement m) => new()
     {
-        MovementID = m.MovementID,
-        InventoryID = m.InventoryID,
+        MovementID   = m.MovementID,
+        InventoryID  = m.InventoryID,
         MovementType = m.MovementType,
-        Quantity = m.Quantity,
-        Reason = m.Reason,
-        ReferenceID = m.ReferenceID,
-        PerformedBy = m.PerformedBy,
-        CreatedDate = m.CreatedDate
+        Quantity     = m.Quantity,
+        Reason       = m.Reason,
+        ReferenceID  = m.ReferenceID,
+        PerformedBy  = m.PerformedBy,
+        CreatedDate  = m.CreatedDate,
     };
 }

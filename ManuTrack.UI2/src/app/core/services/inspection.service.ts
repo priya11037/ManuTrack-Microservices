@@ -147,8 +147,9 @@ export class InspectionService {
     ) as unknown as Observable<Inspection>;
   }
 
-  updateInspectionResult(id: number, result: Inspection['status']): Observable<Inspection> {
-    return this.http.put<InspectionDto>(`${this.inspectionUrl}/${id}`, { result }).pipe(
+  // Fixed URL: /{id}/result (not /{id}) and payload: { status } (not { result })
+  updateInspectionResult(id: number, status: Inspection['status']): Observable<Inspection> {
+    return this.http.put<InspectionDto>(`${this.inspectionUrl}/${id}/result`, { status }).pipe(
       tap(dto => {
         const updated = this.fromInspDto(dto);
         this._inspections.update(list => list.map(i => i.inspectionID === id ? updated : i));
@@ -196,25 +197,26 @@ export class InspectionService {
     const palette   = ['#8b5cf6','#ec4899','#14b8a6','#0ea5e9','#f59e0b','#2563eb'];
     const inspID    = dto.inspectionID ?? dto.InspectionID ?? 0;
     const woID      = dto.workOrderID  ?? dto.WorkOrderID  ?? 0;
-    const result    = dto.result ?? dto.status ?? dto.Result ?? 'Pending';
+    // New backend returns 'status' directly (Pending/In Review/Passed/Failed)
+    const status    = dto.status ?? dto.Status ?? dto.result ?? dto.Result ?? 'Pending';
     return {
       id:            inspID.toString(),
       inspectionID:  inspID,
       insNumber:     `INS-${inspID.toString().padStart(4,'0')}`,
       woRef:         `WO-${woID.toString().padStart(4,'0')}`,
-      product:       dto.productName ?? dto.ProductName ?? '',
-      sku:           dto.sku ?? '',
-      quantity:      dto.quantity ?? 0,
-      inspectedQty:  dto.inspectedQty ?? dto.inspectedQuantity ?? 0,
-      status:        result as Inspection['status'],
-      result:        result as Inspection['status'],
+      product:       dto.productName  ?? dto.ProductName  ?? '',
+      sku:           dto.sku          ?? dto.Sku          ?? '',
+      quantity:      dto.quantity     ?? dto.Quantity     ?? 0,
+      inspectedQty:  dto.defectsLogged ?? 0,
+      status:        status as Inspection['status'],
+      result:        status as Inspection['status'],
       priority:      (dto.priority ?? dto.Priority ?? 'Medium') as Inspection['priority'],
-      inspector:     dto.inspectorName ?? dto.inspectorID ?? '',
-      scheduledDate: dto.scheduledDate?.split('T')[0] ?? dto.inspectionDate?.split('T')[0] ?? '',
-      completedDate: dto.completedDate?.split('T')[0] ?? '',
-      notes:         dto.notes ?? '',
+      inspector:     dto.inspectorName ?? dto.InspectorName ?? '',
+      scheduledDate: (dto.scheduledDate ?? dto.ScheduledDate ?? '').split?.('T')[0] ?? '',
+      completedDate: (dto.completedDate ?? dto.CompletedDate ?? '').split?.('T')[0] ?? '',
+      notes:         dto.notes        ?? dto.Notes        ?? '',
       avatarColor:   palette[inspID % palette.length],
-      defectsLogged: 0,
+      defectsLogged: dto.defectsLogged ?? 0,
     };
   }
 

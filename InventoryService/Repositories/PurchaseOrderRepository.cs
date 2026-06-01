@@ -9,13 +9,14 @@ public class PurchaseOrderRepository(InventoryDbContext db) : IPurchaseOrderRepo
 {
     public async Task<IEnumerable<PurchaseOrder>> GetAllAsync(string? status = null)
     {
-        var query = db.PurchaseOrders.Include(p => p.Items).Include(p => p.Supplier).AsQueryable();
-        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(p => p.Status == status);
+        var query = db.PurchaseOrders.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(p => p.Status == status);
         return await query.OrderByDescending(p => p.OrderDate).ToListAsync();
     }
 
     public async Task<PurchaseOrder?> GetByIdAsync(int id) =>
-        await db.PurchaseOrders.Include(p => p.Items).Include(p => p.Supplier).FirstOrDefaultAsync(p => p.POID == id);
+        await db.PurchaseOrders.FindAsync(id);
 
     public async Task<PurchaseOrder> CreateAsync(PurchaseOrder po)
     {
@@ -31,5 +32,9 @@ public class PurchaseOrderRepository(InventoryDbContext db) : IPurchaseOrderRepo
         return po;
     }
 
-    public async Task<bool> ExistsAsync(int id) => await db.PurchaseOrders.AnyAsync(p => p.POID == id);
+    public async Task<bool> ExistsAsync(int id) =>
+        await db.PurchaseOrders.AnyAsync(p => p.POID == id);
+
+    public async Task<int> GetNextIdAsync() =>
+        (await db.PurchaseOrders.MaxAsync(p => (int?)p.POID) ?? 0) + 1;
 }
