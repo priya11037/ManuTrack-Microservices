@@ -140,6 +140,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'suppliers',
+            loadComponent: () =>
+              import('./features/admin/suppliers/suppliers.component').then(
+                (m) => m.SuppliersComponent
+              ),
+          },
+          {
             path: 'audit-logs',
             loadComponent: () =>
               import('./features/admin/audit-logs/audit-log-viewer.component').then(

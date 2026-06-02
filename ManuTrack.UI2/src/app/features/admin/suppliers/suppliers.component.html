@@ -1,0 +1,157 @@
+<div class="sup-page">
+
+  <!-- Header -->
+  <div class="sup-header">
+    <div>
+      <h2 class="sup-title">Supplier Management</h2>
+      <p class="sup-sub">Add and manage suppliers used across inventory and purchase orders</p>
+    </div>
+    <button class="add-btn" (click)="openAdd()">
+      <mat-icon>add</mat-icon> Add Supplier
+    </button>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-value">{{ suppliers().length }}</span>
+      <span class="stat-label">Total Suppliers</span>
+    </div>
+    <div class="stat-card green">
+      <span class="stat-value">{{ activeCount() }}</span>
+      <span class="stat-label">Active</span>
+    </div>
+    <div class="stat-card grey">
+      <span class="stat-value">{{ inactiveCount() }}</span>
+      <span class="stat-label">Inactive</span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <mat-icon>search</mat-icon>
+    <input type="text" placeholder="Search by name, contact, email..."
+           [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="loading">Loading suppliers...</div>
+  }
+
+  <!-- Table -->
+  @if (!isLoading()) {
+    <div class="table-card">
+      <table class="sup-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Contact Person</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of filtered(); track s.supplierID) {
+            <tr>
+              <td><strong>{{ s.name }}</strong></td>
+              <td>{{ s.contactPerson || '—' }}</td>
+              <td>{{ s.phone || '—' }}</td>
+              <td>{{ s.email || '—' }}</td>
+              <td>{{ s.address || '—' }}</td>
+              <td>
+                <span class="status-chip" [class.active]="s.isActive" [class.inactive]="!s.isActive">
+                  {{ s.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="actions">
+                @if (deleteConfirmId() === s.supplierID) {
+                  <span class="confirm-text">Delete?</span>
+                  <button class="icon-btn danger" (click)="doDelete(s.supplierID)" matTooltip="Confirm delete">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button class="icon-btn" (click)="cancelDelete()" matTooltip="Cancel">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                } @else {
+                  <button class="icon-btn" (click)="openEdit(s, $event)" matTooltip="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button class="icon-btn danger" (click)="confirmDelete(s.supplierID, $event)" matTooltip="Delete">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+          @if (filtered().length === 0) {
+            <tr>
+              <td colspan="7" class="empty-row">
+                <mat-icon>local_shipping</mat-icon>
+                <span>No suppliers found. Click <strong>Add Supplier</strong> to add one.</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</div>
+
+<!-- Drawer Overlay -->
+@if (drawerOpen()) {
+  <div class="overlay" (click)="closeDrawer()"></div>
+  <div class="drawer">
+    <div class="drawer-header">
+      <h3>{{ drawerMode() === 'add' ? 'Add Supplier' : 'Edit Supplier' }}</h3>
+      <button class="icon-btn" (click)="closeDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()" class="drawer-form">
+
+      <div class="field">
+        <label>Supplier Name <span class="req">*</span></label>
+        <input formControlName="name" placeholder="e.g. SteelCo Ltd" />
+        @if (form.get('name')?.invalid && form.get('name')?.touched) {
+          <span class="err">Name is required</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Contact Person</label>
+        <input formControlName="contactPerson" placeholder="e.g. John Smith" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Phone</label>
+          <input formControlName="phone" placeholder="+44 20 1234 5678" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input formControlName="email" type="email" placeholder="contact@supplier.com" />
+          @if (form.get('email')?.invalid && form.get('email')?.touched) {
+            <span class="err">Enter a valid email</span>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Address</label>
+        <input formControlName="address" placeholder="123 Industrial Way, City" />
+      </div>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-cancel" (click)="closeDrawer()">Cancel</button>
+        <button type="submit" class="btn-save">
+          {{ drawerMode() === 'add' ? 'Add Supplier' : 'Save Changes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}
