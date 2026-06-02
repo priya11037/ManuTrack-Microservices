@@ -112,10 +112,10 @@ app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Compliance 
 using (var scope = app.Services.CreateScope())
 {
     var reportDb = scope.ServiceProvider.GetRequiredService<ComplianceReportDbContext>();
-    reportDb.Database.EnsureCreated();
+    reportDb.Database.Migrate();
 
     var auditDb = scope.ServiceProvider.GetRequiredService<AuditDbContext>();
-    auditDb.Database.EnsureCreated();
+    auditDb.Database.Migrate();
 }
 
 app.Run();
