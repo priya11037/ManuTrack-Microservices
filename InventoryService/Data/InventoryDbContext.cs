@@ -8,6 +8,9 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();                    // Fix 1: register Suppliers
+    public DbSet<InventoryLocation> InventoryLocations => Set<InventoryLocation>(); // Fix 3: register Locations
+    public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>(); // Fix 2: register PO line items
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,7 +32,6 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
             e.Property(i => i.Status).IsRequired().HasMaxLength(50).HasDefaultValue("InStock");
             e.Property(i => i.Notes).HasMaxLength(500);
 
-            // StockMovements child collection
             e.HasMany(i => i.StockMovements)
              .WithOne(m => m.InventoryItem)
              .HasForeignKey(m => m.InventoryID)
@@ -68,6 +70,48 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
             e.Property(p => p.Notes).HasMaxLength(1000);
             e.HasIndex(p => p.Status);
             e.HasIndex(p => p.Priority);
+
+            e.HasMany(p => p.Items)
+             .WithOne(i => i.PurchaseOrder)
+             .HasForeignKey(i => i.POID)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── Supplier ───────────────────────────────────────────────────────────
+        modelBuilder.Entity<Supplier>(e =>
+        {
+            e.HasKey(s => s.SupplierID);
+            e.Property(s => s.SupplierID).ValueGeneratedOnAdd();
+            e.Property(s => s.Name).IsRequired().HasMaxLength(200);
+            e.Property(s => s.ContactPerson).HasMaxLength(200);
+            e.Property(s => s.Phone).HasMaxLength(50);
+            e.Property(s => s.Email).HasMaxLength(200);
+            e.Property(s => s.Address).HasMaxLength(500);
+            e.HasIndex(s => s.Name);
+        });
+
+        // ── InventoryLocation ──────────────────────────────────────────────────
+        modelBuilder.Entity<InventoryLocation>(e =>
+        {
+            e.HasKey(l => l.LocationID);
+            e.Property(l => l.LocationID).ValueGeneratedOnAdd();
+            e.Property(l => l.Name).IsRequired().HasMaxLength(200);
+            e.Property(l => l.Description).HasMaxLength(500);
+            e.HasIndex(l => l.Name);
+        });
+
+        // ── PurchaseOrderItem ──────────────────────────────────────────────────
+        modelBuilder.Entity<PurchaseOrderItem>(e =>
+        {
+            e.HasKey(i => i.POItemID);
+            e.Property(i => i.POItemID).ValueGeneratedOnAdd();
+            e.Property(i => i.ProductName).IsRequired().HasMaxLength(200);
+            e.Property(i => i.Quantity).HasColumnType("decimal(18,4)");
+            e.Property(i => i.UnitPrice).HasColumnType("decimal(18,4)");
+            e.Property(i => i.TotalPrice).HasColumnType("decimal(18,4)");
+            e.Property(i => i.ReceivedQty).HasColumnType("decimal(18,4)");
+            e.HasIndex(i => i.POID);
+            e.HasIndex(i => i.InventoryID);
         });
     }
 }

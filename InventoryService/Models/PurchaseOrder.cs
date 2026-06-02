@@ -21,4 +21,5 @@ public class PurchaseOrder
     public string?   Notes          { get; set; }
     public DateTime  CreatedDate    { get; set; } = DateTime.UtcNow;
     public DateTime? ModifiedDate   { get; set; }
+    public ICollection<PurchaseOrderItem> Items { get; set; } = new List<PurchaseOrderItem>();
 }

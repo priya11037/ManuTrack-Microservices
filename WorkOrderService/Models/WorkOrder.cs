@@ -24,5 +24,8 @@ public class WorkOrder
     public string? Notes { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime? ModifiedDate { get; set; }
+    public int? ProductionLineID { get; set; }                  // FK to ProductionLines table
     public ICollection<WorkOrderTask> Tasks { get; set; } = new List<WorkOrderTask>();
+    public ICollection<WorkOrderFlag> Flags { get; set; } = new List<WorkOrderFlag>();
+    public ICollection<WorkOrderStep> Steps { get; set; } = new List<WorkOrderStep>();
 }
