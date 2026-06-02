@@ -227,7 +227,7 @@ export class ScheduleComponent implements OnInit {
   ngOnInit(): void {
     this.buildForm();
     this.woSvc.loadAll();
-    this.usrSvc.loadAll();
+    this.usrSvc.loadByRole('ShopFloorOperator');
     this.prodSvc.loadProducts();
   }
 

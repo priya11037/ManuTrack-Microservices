@@ -143,7 +143,12 @@ export class WorkOrdersComponent implements OnInit {
     this.woSvc.loadAll();
     this.invSvc.loadStock();
     this.prodSvc.loadProducts();
-    this.usrSvc.loadAll(); // load all users so operator dropdown is populated
+    // Admin gets full list; others only need ShopFloorOperators for dropdown
+    if (this.auth.userRole() === 'Admin') {
+      this.usrSvc.loadAll();
+    } else {
+      this.usrSvc.loadByRole('ShopFloorOperator');
+    }
   }
 
   // â”€â”€ Kanban DnD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

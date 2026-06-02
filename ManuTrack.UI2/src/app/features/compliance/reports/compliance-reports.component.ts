@@ -205,6 +205,7 @@ export class ComplianceReportsComponent implements OnInit {
 
   ngOnInit(): void {
     this.compSvc.loadReports();
-    this.usrSvc.loadAll();
+    this.usrSvc.loadByRole('ComplianceOfficer');
+    this.usrSvc.loadByRole('Admin');
   }
 }

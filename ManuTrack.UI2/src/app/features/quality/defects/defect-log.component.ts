@@ -186,7 +186,7 @@ export class DefectLogComponent implements OnInit {
     this.inspSvc.loadDefects();
     this.inspSvc.loadInspections();
     this.woSvc.loadAll();
-    this.usrSvc.loadAll();
+    this.usrSvc.loadByRole('QualityInspector');
     this.prodSvc.loadProducts();
   }
 }

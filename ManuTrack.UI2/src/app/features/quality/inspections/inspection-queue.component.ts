@@ -186,7 +186,7 @@ export class InspectionQueueComponent implements OnInit {
   ngOnInit(): void {
     this.inspSvc.loadInspections();
     this.woSvc.loadAll();
-    this.usrSvc.loadAll();
+    this.usrSvc.loadByRole('QualityInspector');
     this.prodSvc.loadProducts();
   }
 }
