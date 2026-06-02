@@ -1,43 +1,119 @@
 {
   "Routes": [
-    { "DownstreamPathTemplate": "/api/v1/auth/login",           "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5100}], "UpstreamPathTemplate": "/api/v1/auth/login",           "UpstreamHttpMethod": ["POST"],                          "Priority": 3 },
-    { "DownstreamPathTemplate": "/api/v1/auth",                 "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5100}], "UpstreamPathTemplate": "/api/v1/auth",                 "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/auth/{everything}",    "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5100}], "UpstreamPathTemplate": "/api/v1/auth/{everything}",    "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 1 },
-
-    { "DownstreamPathTemplate": "/api/v1/products",             "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5101}], "UpstreamPathTemplate": "/api/v1/products",             "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/products/{everything}","DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5101}], "UpstreamPathTemplate": "/api/v1/products/{everything}", "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 1 },
-    { "DownstreamPathTemplate": "/api/v1/bom",                  "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5101}], "UpstreamPathTemplate": "/api/v1/bom",                  "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/bom/{everything}",     "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5101}], "UpstreamPathTemplate": "/api/v1/bom/{everything}",     "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 1 },
-
-    { "DownstreamPathTemplate": "/api/v1/workorders",           "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5102}], "UpstreamPathTemplate": "/api/v1/workorders",           "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/workorders/{everything}","DownstreamScheme": "http","DownstreamHostAndPorts":[{"Host":"localhost","Port":5102}], "UpstreamPathTemplate": "/api/v1/workorders/{everything}","UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],     "Priority": 1 },
-    { "DownstreamPathTemplate": "/api/v1/tasks",                "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5102}], "UpstreamPathTemplate": "/api/v1/tasks",                "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/tasks/{everything}",   "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5102}], "UpstreamPathTemplate": "/api/v1/tasks/{everything}",   "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 1 },
-
-    { "DownstreamPathTemplate": "/api/v1/inventory",            "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5103}], "UpstreamPathTemplate": "/api/v1/inventory",            "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/inventory/{everything}","DownstreamScheme": "http","DownstreamHostAndPorts": [{"Host":"localhost","Port":5103}], "UpstreamPathTemplate": "/api/v1/inventory/{everything}","UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],     "Priority": 1 },
-    { "DownstreamPathTemplate": "/api/v1/purchase-orders",      "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5103}], "UpstreamPathTemplate": "/api/v1/purchase-orders",      "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/purchase-orders/{everything}","DownstreamScheme":"http","DownstreamHostAndPorts":[{"Host":"localhost","Port":5103}],"UpstreamPathTemplate":"/api/v1/purchase-orders/{everything}","UpstreamHttpMethod":["GET","POST","PUT","DELETE"],"Priority":1 },
-    { "DownstreamPathTemplate": "/api/v1/suppliers",            "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5103}], "UpstreamPathTemplate": "/api/v1/suppliers",            "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/suppliers/{everything}","DownstreamScheme": "http","DownstreamHostAndPorts": [{"Host":"localhost","Port":5103}], "UpstreamPathTemplate": "/api/v1/suppliers/{everything}","UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],     "Priority": 1 },
-    { "DownstreamPathTemplate": "/api/v1/locations",            "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5103}], "UpstreamPathTemplate": "/api/v1/locations",            "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/locations/{everything}","DownstreamScheme": "http","DownstreamHostAndPorts": [{"Host":"localhost","Port":5103}], "UpstreamPathTemplate": "/api/v1/locations/{everything}","UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],     "Priority": 1 },
-
-    { "DownstreamPathTemplate": "/api/v1/inspections",          "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5104}], "UpstreamPathTemplate": "/api/v1/inspections",          "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/inspections/{everything}","DownstreamScheme":"http","DownstreamHostAndPorts":[{"Host":"localhost","Port":5104}], "UpstreamPathTemplate": "/api/v1/inspections/{everything}","UpstreamHttpMethod":["GET","POST","PUT","DELETE"],    "Priority": 1 },
-    { "DownstreamPathTemplate": "/api/v1/defects",              "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5104}], "UpstreamPathTemplate": "/api/v1/defects",              "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/defects/{everything}", "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5104}], "UpstreamPathTemplate": "/api/v1/defects/{everything}", "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 1 },
-
-    { "DownstreamPathTemplate": "/api/v1/compliance",           "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5105}], "UpstreamPathTemplate": "/api/v1/compliance",           "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/compliance/{everything}","DownstreamScheme":"http","DownstreamHostAndPorts":[{"Host":"localhost","Port":5105}],  "UpstreamPathTemplate": "/api/v1/compliance/{everything}","UpstreamHttpMethod":["GET","POST","PUT","DELETE"],     "Priority": 1 },
-    { "DownstreamPathTemplate": "/api/v1/audit",                "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5105}], "UpstreamPathTemplate": "/api/v1/audit-logs",           "UpstreamHttpMethod": ["GET","POST"],                     "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/audit/{everything}",   "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5105}], "UpstreamPathTemplate": "/api/v1/audit-logs/{everything}","UpstreamHttpMethod": ["GET","POST"],                   "Priority": 1 },
-
-    { "DownstreamPathTemplate": "/api/v1/analytics",            "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5106}], "UpstreamPathTemplate": "/api/v1/analytics",            "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/analytics/{everything}","DownstreamScheme":"http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5106}], "UpstreamPathTemplate": "/api/v1/analytics/{everything}","UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],     "Priority": 1 },
-
-    { "DownstreamPathTemplate": "/api/v1/notifications",        "DownstreamScheme": "http", "DownstreamHostAndPorts": [{"Host":"localhost","Port":5107}], "UpstreamPathTemplate": "/api/v1/notifications",        "UpstreamHttpMethod": ["GET","POST","PUT","DELETE"],      "Priority": 2 },
-    { "DownstreamPathTemplate": "/api/v1/notifications/{everything}","DownstreamScheme":"http","DownstreamHostAndPorts":[{"Host":"localhost","Port":5107}],"UpstreamPathTemplate":"/api/v1/notifications/{everything}","UpstreamHttpMethod":["GET","POST","PUT","DELETE"],  "Priority": 1 }
+    {
+      "DownstreamPathTemplate": "/api/v1/auth/login",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5100 } ],
+      "UpstreamPathTemplate": "/api/v1/auth/login",
+      "UpstreamHttpMethod": [ "POST" ],
+      "Priority": 2
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/auth/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5100 } ],
+      "UpstreamPathTemplate": "/api/v1/auth/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "Priority": 1
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/products/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5101 } ],
+      "UpstreamPathTemplate": "/api/v1/products/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/bom/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5101 } ],
+      "UpstreamPathTemplate": "/api/v1/bom/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/workorders/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5102 } ],
+      "UpstreamPathTemplate": "/api/v1/workorders/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/tasks/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5102 } ],
+      "UpstreamPathTemplate": "/api/v1/tasks/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/inventory/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5103 } ],
+      "UpstreamPathTemplate": "/api/v1/inventory/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/purchase-orders/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5103 } ],
+      "UpstreamPathTemplate": "/api/v1/purchase-orders/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/suppliers/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5103 } ],
+      "UpstreamPathTemplate": "/api/v1/suppliers/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/locations/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5103 } ],
+      "UpstreamPathTemplate": "/api/v1/locations/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/inspections/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5104 } ],
+      "UpstreamPathTemplate": "/api/v1/inspections/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/defects/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5104 } ],
+      "UpstreamPathTemplate": "/api/v1/defects/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/compliance/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5105 } ],
+      "UpstreamPathTemplate": "/api/v1/compliance/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/audit/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5105 } ],
+      "UpstreamPathTemplate": "/api/v1/audit-logs/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/analytics/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5106 } ],
+      "UpstreamPathTemplate": "/api/v1/analytics/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/notifications/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5107 } ],
+      "UpstreamPathTemplate": "/api/v1/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    }
   ],
   "GlobalConfiguration": {
     "BaseUrl": "http://localhost:5000",
