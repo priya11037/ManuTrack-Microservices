@@ -30,7 +30,7 @@
 
     <!-- KPIs -->
     <div class="kpi-row">
-      @for (k of ppKpis; track k.label) {
+      @for (k of ppKpis(); track k.label) {
         <ng-container *ngTemplateOutlet="kpiCard; context: { $implicit: k }"></ng-container>
       }
     </div>
@@ -45,16 +45,16 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="line" [data]="ppOutputData" [options]="ppOutputOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="line" [data]="ppOutputData()" [options]="ppOutputOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
       <div class="card side-card">
         <div class="card-header"><span class="card-title">WO Status Breakdown</span></div>
         <div class="donut-area">
-          <p-chart type="doughnut" [data]="ppWoStatusData" [options]="ppWoStatusOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="doughnut" [data]="ppWoStatusData()" [options]="ppWoStatusOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="legend-list">
-          @for (l of ppWoStatusLegend; track l.label) {
+          @for (l of ppWoStatusLegend(); track l.label) {
             <div class="leg-item">
               <span class="leg-dot" [style.background]="l.color"></span>
               <span class="leg-label">{{ l.label }}</span>
@@ -75,7 +75,7 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="ppOnTimeData" [options]="ppOnTimeOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="ppOnTimeData()" [options]="ppOnTimeOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
       <div class="chart-card card">
@@ -86,13 +86,13 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="ppLineData" [options]="ppLineOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="ppLineData()" [options]="ppLineOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
     </div>
 
     <!-- KPI Table -->
-    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: ppTableHeaders, rows: ppTableRows, keys: ['wo','product','line','planned','actual','onTime','cycle','status'] }"></ng-container>
+    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: ppTableHeaders, rows: ppTableRows(), keys: ['wo','product','line','planned','actual','status'] }"></ng-container>
   }
 
   <!-- ══════════════════════════════════════════════════════════════════════ -->
@@ -101,7 +101,7 @@
   @if (role() === 'QualityInspector') {
 
     <div class="kpi-row">
-      @for (k of qiKpis; track k.label) {
+      @for (k of qiKpis(); track k.label) {
         <ng-container *ngTemplateOutlet="kpiCard; context: { $implicit: k }"></ng-container>
       }
     </div>
@@ -115,16 +115,16 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="line" [data]="qiTrendData" [options]="qiTrendOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="line" [data]="qiTrendData()" [options]="qiTrendOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
       <div class="card side-card">
         <div class="card-header"><span class="card-title">Defect by Type</span></div>
         <div class="donut-area">
-          <p-chart type="doughnut" [data]="qiDefectTypeData" [options]="qiDefectTypeOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="doughnut" [data]="qiDefectTypeData()" [options]="qiDefectTypeOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="legend-list">
-          @for (l of qiDefectTypeLegend; track l.label) {
+          @for (l of qiDefectTypeLegend(); track l.label) {
             <div class="leg-item">
               <span class="leg-dot" [style.background]="l.color"></span>
               <span class="leg-label">{{ l.label }}</span>
@@ -144,7 +144,7 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="qiByProductData" [options]="qiByProductOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="qiByProductData()" [options]="qiByProductOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
       <div class="chart-card card">
@@ -155,12 +155,12 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="qiRootCauseData" [options]="qiRootCauseOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="qiRootCauseData()" [options]="qiRootCauseOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
     </div>
 
-    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: qiTableHeaders, rows: qiTableRows, keys: ['ins','product','wo','inspected','defective','rate','result','inspector'] }"></ng-container>
+    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: qiTableHeaders, rows: qiTableRows(), keys: ['ins','product','wo','inspected','inspector','status'] }"></ng-container>
   }
 
   <!-- ══════════════════════════════════════════════════════════════════════ -->
@@ -169,7 +169,7 @@
   @if (role() === 'InventoryManager') {
 
     <div class="kpi-row">
-      @for (k of imKpis; track k.label) {
+      @for (k of imKpis(); track k.label) {
         <ng-container *ngTemplateOutlet="kpiCard; context: { $implicit: k }"></ng-container>
       }
     </div>
@@ -183,16 +183,16 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="line" [data]="imStockTrendData" [options]="imStockTrendOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="line" [data]="imStockTrendData()" [options]="imStockTrendOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
       <div class="card side-card">
         <div class="card-header"><span class="card-title">Inventory by Category</span></div>
         <div class="donut-area">
-          <p-chart type="doughnut" [data]="imCategoryData" [options]="imCategoryOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="doughnut" [data]="imCategoryData()" [options]="imCategoryOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="legend-list">
-          @for (l of imCategoryLegend; track l.label) {
+          @for (l of imCategoryLegend(); track l.label) {
             <div class="leg-item">
               <span class="leg-dot" [style.background]="l.color"></span>
               <span class="leg-label">{{ l.label }}</span>
@@ -212,7 +212,7 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="imPoStatusData" [options]="imPoStatusOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="imPoStatusData()" [options]="imPoStatusOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
       <div class="chart-card card">
@@ -223,12 +223,12 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="imSupplierData" [options]="imSupplierOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="imSupplierData()" [options]="imSupplierOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
     </div>
 
-    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: imTableHeaders, rows: imTableRows, keys: ['sku','item','cat','current','min','pct','turnover','status'] }"></ng-container>
+    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: imTableHeaders, rows: imTableRows(), keys: ['sku','item','cat','current','min','pct','status'] }"></ng-container>
   }
 
   <!-- ══════════════════════════════════════════════════════════════════════ -->
@@ -237,7 +237,7 @@
   @if (role() === 'ComplianceOfficer') {
 
     <div class="kpi-row">
-      @for (k of coKpis; track k.label) {
+      @for (k of coKpis(); track k.label) {
         <ng-container *ngTemplateOutlet="kpiCard; context: { $implicit: k }"></ng-container>
       }
     </div>
@@ -251,16 +251,16 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="coEventTrendData" [options]="coEventTrendOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="coEventTrendData()" [options]="coEventTrendOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
       <div class="card side-card">
         <div class="card-header"><span class="card-title">Reports by Status</span></div>
         <div class="donut-area">
-          <p-chart type="doughnut" [data]="coReportStatusData" [options]="coReportStatusOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="doughnut" [data]="coReportStatusData()" [options]="coReportStatusOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="legend-list">
-          @for (l of coReportStatusLegend; track l.label) {
+          @for (l of coReportStatusLegend(); track l.label) {
             <div class="leg-item">
               <span class="leg-dot" [style.background]="l.color"></span>
               <span class="leg-label">{{ l.label }}</span>
@@ -280,7 +280,7 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="coFindingsData" [options]="coFindingsOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="coFindingsData()" [options]="coFindingsOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
       <div class="chart-card card">
@@ -291,12 +291,12 @@
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="coSubmissionData" [options]="coSubmissionOpts" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="coSubmissionData()" [options]="coSubmissionOpts" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
     </div>
 
-    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: coTableHeaders, rows: coTableRows, keys: ['num','title','type','period','findings','actions','deadline','status'] }"></ng-container>
+    <ng-container *ngTemplateOutlet="kpiTable; context: { headers: coTableHeaders, rows: coTableRows(), keys: ['num','title','type','period','findings','actions','status'] }"></ng-container>
   }
 
 </div>
