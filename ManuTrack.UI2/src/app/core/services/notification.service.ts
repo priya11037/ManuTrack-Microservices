@@ -31,8 +31,7 @@ export class NotificationService {
 
   // ── Load from backend ─────────────────────────────────────────────────────
   loadForUser(userId: number): void {
-    // Use /my endpoint — works for ALL roles (not Admin-only)
-    this.http.get<any[]>(`${environment.api.notifications}/my`)
+    this.http.get<any[]>(`${environment.api.notifications}?userId=${userId}`)
       .subscribe({
         next: (data) => this._notifications.set(data.map(n => this.fromDto(n))),
         error: () => {} // silent fail — notifications not critical
