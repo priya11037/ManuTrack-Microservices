@@ -110,7 +110,10 @@ export class SuppliersComponent implements OnInit {
           this.toast('Supplier added', 'success');
           this.closeDrawer();
         },
-        error: () => this.toast('Failed to add supplier', 'error')
+        error: (err) => {
+          const msg = err?.error?.message || err?.error?.errors?.[0] || 'Failed to add supplier';
+          this.toast(msg, 'error');
+        }
       });
     } else {
       const id = this.selectedSupplier()!.supplierID;
