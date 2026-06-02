@@ -1,8 +1,8 @@
-<div class="dashboard">
+﻿<div class="dashboard">
 
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  ADMIN DASHBOARD                                                        -->
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (role() === 'Admin') {
 
     <!-- Page Header -->
@@ -45,16 +45,16 @@
         <div class="card-header">
           <div>
             <span class="card-title">Login Activity</span>
-            <span class="card-sub">Successful logins vs failed attempts — last 14 days</span>
+            <span class="card-sub">Successful logins vs failed attempts â€” last 14 days</span>
           </div>
           <div class="metric-pill">
             <span class="metric-pill-label">Today</span>
             <span class="metric-pill-value">18</span>
-            <span class="metric-pill-trend up">▲ 20%</span>
+            <span class="metric-pill-trend up">â–² 20%</span>
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="line" [data]="loginChartData" [options]="loginChartOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="line" [data]="loginChartData()" [options]="loginChartOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
 
@@ -80,7 +80,7 @@
       <div class="card audit-card">
         <div class="card-header">
           <span class="card-title">Recent Audit Logs</span>
-          <a class="view-all-link" routerLink="/app/admin/audit-logs">View All →</a>
+          <a class="view-all-link" routerLink="/app/admin/audit-logs">View All â†’</a>
         </div>
         <table class="audit-table">
           <thead>
@@ -129,16 +129,16 @@
   }
 
 
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  PRODUCTION PLANNER DASHBOARD                                           -->
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (role() === 'ProductionPlanner') {
 
     <!-- Page Header -->
     <div class="page-header">
       <div>
         <h1 class="page-title">Production Overview</h1>
-        <p class="page-sub">Good morning, {{ userName() }} — here's your production snapshot</p>
+        <p class="page-sub">Good morning, {{ userName() }} â€” here's your production snapshot</p>
       </div>
       <div class="header-actions">
         <button class="date-btn" [matMenuTriggerFor]="plannerMenu">
@@ -184,11 +184,11 @@
           <div class="metric-pill">
             <span class="metric-pill-label">On-Time</span>
             <span class="metric-pill-value">73%</span>
-            <span class="metric-pill-trend down">▼ 7%</span>
+            <span class="metric-pill-trend down">â–¼ 7%</span>
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="productionChartData" [options]="productionChartOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="productionChartData()" [options]="productionChartOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
 
@@ -196,10 +196,10 @@
       <div class="card role-card">
         <div class="card-header"><span class="card-title">WO Status Breakdown</span></div>
         <div class="role-chart-area donut-wrap">
-          <p-chart type="doughnut" [data]="woStatusChartData" [options]="woStatusChartOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="doughnut" [data]="woStatusChartData()" [options]="woStatusChartOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="role-legend">
-          @for (item of woStatusLegend; track item.label) {
+          @for (item of woStatusLegend(); track item.label) {
             <div class="role-leg-item">
               <span class="role-dot" [style.background]="item.color"></span>
               <span class="role-name">{{ item.label }}</span>
@@ -218,7 +218,7 @@
       <div class="card audit-card">
         <div class="card-header">
           <span class="card-title">Upcoming Work Orders</span>
-          <a class="view-all-link" routerLink="/app/work-orders">View All →</a>
+          <a class="view-all-link" routerLink="/app/work-orders">View All â†’</a>
         </div>
         <table class="audit-table">
           <thead>
@@ -266,7 +266,7 @@
                   <span class="ls-name">{{ l.line }}</span>
                   <span class="ls-status-badge" [style.color]="l.utilColor" [style.background]="l.utilColor + '18'">{{ l.status }}</span>
                 </div>
-                <span class="ls-wo">{{ l.wo !== '—' ? l.wo + ' · ' : '' }}{{ l.product }}</span>
+                <span class="ls-wo">{{ l.wo !== 'â€”' ? l.wo + ' Â· ' : '' }}{{ l.product }}</span>
               </div>
             </div>
           }
@@ -278,16 +278,16 @@
   }
 
 
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  SHOP FLOOR OPERATOR DASHBOARD                                          -->
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (role() === 'ShopFloorOperator') {
 
     <!-- Page Header -->
     <div class="page-header">
       <div>
         <h1 class="page-title">My Workstation</h1>
-        <p class="page-sub">Good morning, {{ userName() }} — here's your task overview for today</p>
+        <p class="page-sub">Good morning, {{ userName() }} â€” here's your task overview for today</p>
       </div>
       <div class="header-actions">
         <button class="date-btn" [matMenuTriggerFor]="sfMenu">
@@ -331,7 +331,7 @@
           <div class="metric-pill">
             <span class="metric-pill-label">Today</span>
             <span class="metric-pill-value">2</span>
-            <span class="metric-pill-trend down">▼ 80%</span>
+            <span class="metric-pill-trend down">â–¼ 80%</span>
           </div>
         </div>
         <div class="chart-area">
@@ -361,7 +361,7 @@
       <div class="card audit-card">
         <div class="card-header">
           <span class="card-title">Today's Task List</span>
-          <a class="view-all-link" routerLink="/app/tasks">Open Console →</a>
+          <a class="view-all-link" routerLink="/app/tasks">Open Console â†’</a>
         </div>
         <table class="audit-table">
           <thead>
@@ -412,7 +412,7 @@
                 <span class="ls-name">Line A</span>
                 <span class="ls-status-badge" style="color:#059669;background:rgba(5,150,105,0.1)">Active</span>
               </div>
-              <span class="ls-wo">WO-0001 · Shaft Assembly</span>
+              <span class="ls-wo">WO-0001 Â· Shaft Assembly</span>
             </div>
           </div>
           <div class="line-status-card card">
@@ -429,7 +429,7 @@
             <div class="module-card card">
               <div class="module-icon" style="background:rgba(37,99,235,0.1);color:#2563eb"><mat-icon>speed</mat-icon></div>
               <div class="module-info">
-                <span class="module-value" style="color:#2563eb">64%</span>
+                <span class="module-value" style="color:#2563eb">{{ sfOnTimeRate() }}%</span>
                 <span class="module-label">On-Time Rate</span>
                 <span class="module-sub">This week</span>
               </div>
@@ -437,7 +437,7 @@
             <div class="module-card card">
               <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>inventory_2</mat-icon></div>
               <div class="module-info">
-                <span class="module-value" style="color:#059669">42</span>
+                <span class="module-value" style="color:#059669">{{ sfUnitsToday() }}</span>
                 <span class="module-label">Units Today</span>
                 <span class="module-sub">Across all tasks</span>
               </div>
@@ -450,15 +450,15 @@
   }
 
 
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  QUALITY INSPECTOR DASHBOARD                                            -->
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (role() === 'QualityInspector') {
 
     <div class="page-header">
       <div>
         <h1 class="page-title">Quality Overview</h1>
-        <p class="page-sub">Good morning, {{ userName() }} — inspection status and defect summary</p>
+        <p class="page-sub">Good morning, {{ userName() }} â€” inspection status and defect summary</p>
       </div>
       <div class="header-actions">
         <button class="date-btn" [matMenuTriggerFor]="qiMenu">
@@ -500,21 +500,21 @@
           <div class="metric-pill">
             <span class="metric-pill-label">Today</span>
             <span class="metric-pill-value">75%</span>
-            <span class="metric-pill-trend up">▲ 5%</span>
+            <span class="metric-pill-trend up">â–² 5%</span>
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="line" [data]="qiTrendData" [options]="qiTrendOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="line" [data]="qiTrendData()" [options]="qiTrendOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
 
       <div class="card role-card">
         <div class="card-header"><span class="card-title">Defects by Type</span></div>
         <div class="role-chart-area donut-wrap">
-          <p-chart type="doughnut" [data]="qiDefectData" [options]="qiDefectOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="doughnut" [data]="qiDefectData()" [options]="qiDefectOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="role-legend">
-          @for (item of qiDefectLegend; track item.label) {
+          @for (item of qiDefectLegend(); track item.label) {
             <div class="role-leg-item">
               <span class="role-dot" [style.background]="item.color"></span>
               <span class="role-name">{{ item.label }}</span>
@@ -529,7 +529,7 @@
       <div class="card audit-card">
         <div class="card-header">
           <span class="card-title">Inspections Needing Action</span>
-          <a class="view-all-link" routerLink="/app/quality/inspections">View All →</a>
+          <a class="view-all-link" routerLink="/app/quality/inspections">View All â†’</a>
         </div>
         <table class="audit-table">
           <thead>
@@ -620,15 +620,15 @@
   }
 
 
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  INVENTORY MANAGER DASHBOARD                                            -->
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (role() === 'InventoryManager') {
 
     <div class="page-header">
       <div>
         <h1 class="page-title">Inventory Overview</h1>
-        <p class="page-sub">Good morning, {{ userName() }} — stock levels and procurement summary</p>
+        <p class="page-sub">Good morning, {{ userName() }} â€” stock levels and procurement summary</p>
       </div>
       <div class="header-actions">
         <button class="date-btn" [matMenuTriggerFor]="imMenu">
@@ -669,18 +669,18 @@
         <div class="card-header">
           <div>
             <span class="card-title">Stock Levels</span>
-            <span class="card-sub">% of maximum capacity · Red = below minimum threshold</span>
+            <span class="card-sub">% of maximum capacity Â· Red = below minimum threshold</span>
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="imStockChartData" [options]="imStockChartOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="imStockChartData()" [options]="imStockChartOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
 
       <!-- Low stock alert panel -->
       <div class="card role-card">
         <div class="card-header">
-          <span class="card-title">⚠️ Low Stock Alerts</span>
+          <span class="card-title">âš ï¸ Low Stock Alerts</span>
         </div>
         <div class="role-legend" style="margin-top:0">
           @for (item of imLowStock(); track item.sku) {
@@ -698,7 +698,7 @@
           }
         </div>
         <a routerLink="/app/inventory/purchase-orders" class="view-all-link" style="display:block;margin-top:0.75rem;text-align:center">
-          Raise Purchase Orders →
+          Raise Purchase Orders â†’
         </a>
       </div>
     </div>
@@ -707,7 +707,7 @@
       <div class="card audit-card">
         <div class="card-header">
           <span class="card-title">Open Purchase Orders</span>
-          <a class="view-all-link" routerLink="/app/inventory/purchase-orders">View All →</a>
+          <a class="view-all-link" routerLink="/app/inventory/purchase-orders">View All â†’</a>
         </div>
         <table class="audit-table">
           <thead><tr><th>PO #</th><th>Item</th><th>Supplier</th><th>Priority</th><th>Status</th><th>Expected</th></tr></thead>
@@ -768,15 +768,15 @@
   }
 
 
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  COMPLIANCE OFFICER DASHBOARD                                           -->
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (role() === 'ComplianceOfficer') {
 
     <div class="page-header">
       <div>
         <h1 class="page-title">Compliance Overview</h1>
-        <p class="page-sub">Good morning, {{ userName() }} — report status and audit summary</p>
+        <p class="page-sub">Good morning, {{ userName() }} â€” report status and audit summary</p>
       </div>
       <div class="header-actions">
         <button class="date-btn" [matMenuTriggerFor]="coMenu">
@@ -816,21 +816,21 @@
         <div class="card-header">
           <div>
             <span class="card-title">Audit Events This Week</span>
-            <span class="card-sub">Stacked by severity — Info, Warnings, Errors</span>
+            <span class="card-sub">Stacked by severity â€” Info, Warnings, Errors</span>
           </div>
         </div>
         <div class="chart-area">
-          <p-chart type="bar" [data]="coAuditTrendData" [options]="coAuditTrendOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="bar" [data]="coAuditTrendData()" [options]="coAuditTrendOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
       </div>
 
       <div class="card role-card">
         <div class="card-header"><span class="card-title">Reports by Status</span></div>
         <div class="role-chart-area donut-wrap">
-          <p-chart type="doughnut" [data]="coStatusData" [options]="coStatusOptions" [style]="{'width':'100%','height':'100%'}" />
+          <p-chart type="doughnut" [data]="coStatusData()" [options]="coStatusOptions" [style]="{'width':'100%','height':'100%'}" />
         </div>
         <div class="role-legend">
-          @for (item of coStatusLegend; track item.label) {
+          @for (item of coStatusLegend(); track item.label) {
             <div class="role-leg-item">
               <span class="role-dot" [style.background]="item.color"></span>
               <span class="role-name">{{ item.label }}</span>
@@ -845,7 +845,7 @@
       <div class="card audit-card">
         <div class="card-header">
           <span class="card-title">Recent Compliance Reports</span>
-          <a class="view-all-link" routerLink="/app/compliance/reports">View All →</a>
+          <a class="view-all-link" routerLink="/app/compliance/reports">View All â†’</a>
         </div>
         <table class="audit-table">
           <thead><tr><th>CR #</th><th>Title</th><th>Type</th><th>Status</th><th>Deadline</th></tr></thead>
@@ -895,3 +895,4 @@
   }
 
 </div>
+
