@@ -568,15 +568,15 @@
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>verified</mat-icon></div>
             <div class="module-info">
-              <span class="module-value" style="color:#059669">75%</span>
+              <span class="module-value" style="color:#059669">{{ qiMetrics().passRate }}%</span>
               <span class="module-label">Pass Rate</span>
-              <span class="module-sub">6 of 8 inspections</span>
+              <span class="module-sub">{{ qiMetrics().passed }} of {{ qiMetrics().total }} inspections</span>
             </div>
           </div>
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(220,38,38,0.1);color:#dc2626"><mat-icon>cancel</mat-icon></div>
             <div class="module-info">
-              <span class="module-value" style="color:#dc2626">2</span>
+              <span class="module-value" style="color:#dc2626">{{ qiMetrics().failed }}</span>
               <span class="module-label">Failed</span>
               <span class="module-sub">Pending defect log</span>
             </div>
@@ -584,15 +584,15 @@
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(217,119,6,0.1);color:#d97706"><mat-icon>bug_report</mat-icon></div>
             <div class="module-info">
-              <span class="module-value" style="color:#d97706">5</span>
+              <span class="module-value" style="color:#d97706">{{ qiMetrics().totalDefects }}</span>
               <span class="module-label">Defects</span>
-              <span class="module-sub">11 units affected</span>
+              <span class="module-sub">{{ qiMetrics().defectiveUnits }} units affected</span>
             </div>
           </div>
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(37,99,235,0.1);color:#2563eb"><mat-icon>delete_forever</mat-icon></div>
             <div class="module-info">
-              <span class="module-value" style="color:#2563eb">4</span>
+              <span class="module-value" style="color:#2563eb">{{ qiMetrics().scrapped }}</span>
               <span class="module-label">Scrapped</span>
               <span class="module-sub">Units scrapped</span>
             </div>
@@ -600,7 +600,7 @@
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6"><mat-icon>build</mat-icon></div>
             <div class="module-info">
-              <span class="module-value" style="color:#8b5cf6">6</span>
+              <span class="module-value" style="color:#8b5cf6">{{ qiMetrics().reworked }}</span>
               <span class="module-label">Reworked</span>
               <span class="module-sub">Sent for rework</span>
             </div>
@@ -608,7 +608,7 @@
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>check_circle</mat-icon></div>
             <div class="module-info">
-              <span class="module-value" style="color:#059669">1</span>
+              <span class="module-value" style="color:#059669">{{ qiMetrics().resolved }}</span>
               <span class="module-label">Resolved</span>
               <span class="module-sub">Defects closed</span>
             </div>
@@ -747,19 +747,19 @@
         <div class="module-grid">
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(37,99,235,0.1);color:#2563eb"><mat-icon>warehouse</mat-icon></div>
-            <div class="module-info"><span class="module-value" style="color:#2563eb">3</span><span class="module-label">Warehouses</span><span class="module-sub">A, B, Hazmat</span></div>
+            <div class="module-info"><span class="module-value" style="color:#2563eb">{{ warehouseSummary().locations }}</span><span class="module-label">Warehouses</span><span class="module-sub">Active locations</span></div>
           </div>
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>local_shipping</mat-icon></div>
-            <div class="module-info"><span class="module-value" style="color:#059669">6</span><span class="module-label">Suppliers</span><span class="module-sub">Active</span></div>
+            <div class="module-info"><span class="module-value" style="color:#059669">{{ warehouseSummary().suppliers }}</span><span class="module-label">Suppliers</span><span class="module-sub">Active</span></div>
           </div>
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(220,38,38,0.1);color:#dc2626"><mat-icon>warning</mat-icon></div>
-            <div class="module-info"><span class="module-value" style="color:#dc2626">4</span><span class="module-label">Low Stock</span><span class="module-sub">Below minimum</span></div>
+            <div class="module-info"><span class="module-value" style="color:#dc2626">{{ warehouseSummary().lowStock }}</span><span class="module-label">Low Stock</span><span class="module-sub">Below minimum</span></div>
           </div>
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(217,119,6,0.1);color:#d97706"><mat-icon>moving</mat-icon></div>
-            <div class="module-info"><span class="module-value" style="color:#d97706">2</span><span class="module-label">Overstock</span><span class="module-sub">Above maximum</span></div>
+            <div class="module-info"><span class="module-value" style="color:#d97706">{{ warehouseSummary().overstock }}</span><span class="module-label">Overstock</span><span class="module-sub">Above maximum</span></div>
           </div>
         </div>
       </div>
@@ -874,19 +874,19 @@
         <div class="module-grid">
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(5,150,105,0.1);color:#059669"><mat-icon>verified</mat-icon></div>
-            <div class="module-info"><span class="module-value" style="color:#059669">2</span><span class="module-label">Submitted</span><span class="module-sub">Successfully filed</span></div>
+            <div class="module-info"><span class="module-value" style="color:#059669">{{ complianceHealth().submitted }}</span><span class="module-label">Submitted</span><span class="module-sub">Successfully filed</span></div>
           </div>
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(37,99,235,0.1);color:#2563eb"><mat-icon>thumb_up</mat-icon></div>
-            <div class="module-info"><span class="module-value" style="color:#2563eb">2</span><span class="module-label">Approved</span><span class="module-sub">Ready to submit</span></div>
+            <div class="module-info"><span class="module-value" style="color:#2563eb">{{ complianceHealth().approved }}</span><span class="module-label">Approved</span><span class="module-sub">Ready to submit</span></div>
           </div>
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(220,38,38,0.1);color:#dc2626"><mat-icon>cancel</mat-icon></div>
-            <div class="module-info"><span class="module-value" style="color:#dc2626">1</span><span class="module-label">Rejected</span><span class="module-sub">Needs resubmission</span></div>
+            <div class="module-info"><span class="module-value" style="color:#dc2626">{{ complianceHealth().rejected }}</span><span class="module-label">Rejected</span><span class="module-sub">Needs resubmission</span></div>
           </div>
           <div class="module-card card">
             <div class="module-icon" style="background:rgba(124,58,237,0.1);color:#7c3aed"><mat-icon>history</mat-icon></div>
-            <div class="module-info"><span class="module-value" style="color:#7c3aed">12</span><span class="module-label">Audit Events</span><span class="module-sub">Last 48 hours</span></div>
+            <div class="module-info"><span class="module-value" style="color:#7c3aed">{{ complianceHealth().auditEvents }}</span><span class="module-label">Audit Events</span><span class="module-sub">Last 48 hours</span></div>
           </div>
         </div>
       </div>

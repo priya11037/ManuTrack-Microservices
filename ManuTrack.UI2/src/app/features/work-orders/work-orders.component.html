@@ -1,6 +1,6 @@
-<div class="wo-page">
+﻿<div class="wo-page">
 
-  <!-- ── Low-Stock Alert Banner (Inventory → Production Planner connection) ── -->
+  <!-- â”€â”€ Low-Stock Alert Banner (Inventory â†’ Production Planner connection) â”€â”€ -->
   @if (lowStockItems().length > 0 && showStockBanner() && !isReadOnly()) {
     <div class="stock-alert-banner">
       <mat-icon class="sab-icon">warning</mat-icon>
@@ -22,12 +22,12 @@
     </div>
   }
 
-  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Page Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="wo-header">
     <div>
       <h2 class="wo-title">Work Orders</h2>
       <p class="wo-sub">
-        {{ isReadOnly() ? 'System-wide work order overview — read only' : 'Plan, track and manage production work orders' }}
+        {{ isReadOnly() ? 'System-wide work order overview â€” read only' : 'Plan, track and manage production work orders' }}
       </p>
     </div>
     <div class="header-actions">
@@ -55,7 +55,7 @@
     </div>
   </div>
 
-  <!-- ── KPI Stats ─────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ KPI Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="stats-row">
     <div class="stat-chip">
       <mat-icon>assignment</mat-icon>
@@ -85,11 +85,11 @@
     }
   </div>
 
-  <!-- ── Filters ───────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="filters-bar">
     <div class="search-box">
       <mat-icon class="si">search</mat-icon>
-      <input class="search-input" type="text" placeholder="Search by WO#, product, assignee…"
+      <input class="search-input" type="text" placeholder="Search by WO#, product, assigneeâ€¦"
              [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
       @if (searchTerm()) {
         <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
@@ -114,9 +114,9 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  TABLE VIEW                                                           -->
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (viewMode() === 'table') {
     <div class="table-card">
       <table class="wo-table">
@@ -199,7 +199,7 @@
                   <span class="av-name">{{ wo.assignedTo.split(' ')[0] }}</span>
                 </div>
               </td>
-              <!-- Actions — hidden for Admin (read-only) -->
+              <!-- Actions â€” hidden for Admin (read-only) -->
               <td>
                 @if (!isReadOnly()) {
                   @if (deleteConfirmId() === wo.id) {
@@ -243,7 +243,7 @@
                     </div>
                     <div class="dp-item dp-full">
                       <span class="dp-lbl">Notes</span>
-                      <span class="dp-val">{{ wo.notes || '—' }}</span>
+                      <span class="dp-val">{{ wo.notes || 'â€”' }}</span>
                     </div>
                   </div>
                 </td>
@@ -259,9 +259,9 @@
     </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  KANBAN VIEW  (CDK Drag & Drop)                                       -->
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (viewMode() === 'kanban') {
     <div class="kanban-hint">
       <mat-icon>drag_indicator</mat-icon>
@@ -362,9 +362,9 @@
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <!--  Slide-out Drawer                                                        -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 @if (drawerOpen()) {
   <div class="drawer-overlay" (click)="closeDrawer()"></div>
 
@@ -392,8 +392,8 @@
         <div class="ff-select-wrap" [class.ff-invalid]="woForm.get('product')?.invalid && woForm.get('product')?.touched">
           <mat-icon>category</mat-icon>
           <select formControlName="product" (change)="onProductChange($any($event.target).value)">
-            <option value="" disabled>Select product…</option>
-            @for (p of products; track p) { <option [value]="p">{{ p }}</option> }
+            <option value="" disabled>Select productâ€¦</option>
+            @for (p of products(); track p) { <option [value]="p">{{ p }}</option> }
           </select>
           <mat-icon class="sel-arrow">expand_more</mat-icon>
         </div>
@@ -475,7 +475,7 @@
         <div class="ff-select-wrap" [class.ff-invalid]="woForm.get('assignedTo')?.invalid && woForm.get('assignedTo')?.touched">
           <mat-icon>engineering</mat-icon>
           <select formControlName="assignedTo">
-            <option value="" disabled>Select operator…</option>
+            <option value="" disabled>Select operatorâ€¦</option>
             @for (op of operators(); track op) { <option [value]="op">{{ op }}</option> }
           </select>
           <mat-icon class="sel-arrow">expand_more</mat-icon>
@@ -502,7 +502,7 @@
       <div class="ff">
         <label class="ff-label">Notes / Instructions</label>
         <div class="ff-textarea-wrap">
-          <textarea formControlName="notes" rows="3" placeholder="Special instructions, materials needed…"></textarea>
+          <textarea formControlName="notes" rows="3" placeholder="Special instructions, materials neededâ€¦"></textarea>
         </div>
       </div>
 
@@ -518,3 +518,4 @@
     </form>
   </div>
 }
+

@@ -1,6 +1,6 @@
-<div class="po-page">
+﻿<div class="po-page">
 
-  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="po-header">
     <div>
       <h2 class="po-title">Purchase Orders</h2>
@@ -24,7 +24,7 @@
     </div>
   </div>
 
-  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="stats-row">
     <div class="stat-chip">
       <mat-icon>shopping_cart</mat-icon>
@@ -40,20 +40,20 @@
     </div>
     <div class="stat-chip teal">
       <mat-icon>payments</mat-icon>
-      <div><span class="stat-num">£{{ stats().totalSpend | number:'1.0-0' }}</span><span class="stat-lbl">Total Spend</span></div>
+      <div><span class="stat-num">Â£{{ stats().totalSpend | number:'1.0-0' }}</span><span class="stat-lbl">Total Spend</span></div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  LIST VIEW                                                             -->
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (viewMode() === 'list') {
 
     <!-- Filters -->
     <div class="filters-bar">
       <div class="search-box">
         <mat-icon class="si">search</mat-icon>
-        <input class="search-input" type="text" placeholder="Search PO#, item, supplier…"
+        <input class="search-input" type="text" placeholder="Search PO#, item, supplierâ€¦"
                [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
         @if (searchTerm()) {
           <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
@@ -104,7 +104,7 @@
                 </div>
               </td>
               <td class="td-muted">{{ po.quantity | number }}</td>
-              <td class="td-value">£{{ po.totalCost | number:'1.0-0' }}</td>
+              <td class="td-value">Â£{{ po.totalCost | number:'1.0-0' }}</td>
               <td>
                 <span class="pr-badge" [style.color]="priorityMeta(po.priority).color"
                       [style.background]="priorityMeta(po.priority).bg">
@@ -151,13 +151,13 @@
     </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  PRIORITY QUEUE VIEW  (Drag to reorder)                               -->
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (viewMode() === 'priority') {
     <div class="drag-hint">
       <mat-icon>drag_indicator</mat-icon>
-      Drag rows to reorder procurement priority · Top = highest priority for purchasing team
+      Drag rows to reorder procurement priority Â· Top = highest priority for purchasing team
     </div>
 
     <div class="priority-queue" cdkDropList [cdkDropListData]="priorityQueue()"
@@ -191,7 +191,7 @@
                 <span class="overdue-pill"><mat-icon>warning</mat-icon>Overdue</span>
               }
             </div>
-            <div class="pq-item">{{ po.item }} · <span class="pq-supplier">{{ po.supplier }}</span></div>
+            <div class="pq-item">{{ po.item }} Â· <span class="pq-supplier">{{ po.supplier }}</span></div>
           </div>
 
           <!-- PO details -->
@@ -202,7 +202,7 @@
             </div>
             <div class="pq-detail">
               <span class="pd-lbl">Cost</span>
-              <span class="pd-val">£{{ po.totalCost | number:'1.0-0' }}</span>
+              <span class="pd-val">Â£{{ po.totalCost | number:'1.0-0' }}</span>
             </div>
             <div class="pq-detail">
               <span class="pd-lbl">Expected</span>
@@ -224,7 +224,7 @@
 </div>
 
 
-<!-- ══ Drawer ══════════════════════════════════════════════════════════════ -->
+<!-- â•â• Drawer â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 @if (drawerOpen()) {
   <div class="drawer-overlay" (click)="closeDrawer()"></div>
   <div class="drawer">
@@ -248,8 +248,8 @@
         <div class="ff-select-wrap" [class.ff-invalid]="poForm.get('supplier')?.invalid && poForm.get('supplier')?.touched">
           <mat-icon>local_shipping</mat-icon>
           <select formControlName="supplier">
-            <option value="" disabled>Select supplier…</option>
-            @for (s of suppliers; track s) { <option [value]="s">{{ s }}</option> }
+            <option value="" disabled>Select supplierâ€¦</option>
+            @for (s of suppliers(); track s) { <option [value]="s">{{ s }}</option> }
           </select>
           <mat-icon class="sel-arrow">expand_more</mat-icon>
         </div>
@@ -264,8 +264,8 @@
           <div class="ff-select-wrap" [class.ff-invalid]="poForm.get('item')?.invalid && poForm.get('item')?.touched">
             <mat-icon>inventory_2</mat-icon>
             <select formControlName="item">
-              <option value="" disabled>Select item…</option>
-              @for (i of items; track i) { <option [value]="i">{{ i }}</option> }
+              <option value="" disabled>Select itemâ€¦</option>
+              @for (i of items(); track i) { <option [value]="i">{{ i }}</option> }
             </select>
             <mat-icon class="sel-arrow">expand_more</mat-icon>
           </div>
@@ -284,7 +284,7 @@
           </div>
         </div>
         <div class="ff">
-          <label class="ff-label">Unit Cost (£) <span class="req">*</span></label>
+          <label class="ff-label">Unit Cost (Â£) <span class="req">*</span></label>
           <div class="ff-input-wrap" [class.ff-invalid]="poForm.get('unitCost')?.invalid && poForm.get('unitCost')?.touched">
             <mat-icon>payments</mat-icon><input type="number" formControlName="unitCost" min="0.01" step="0.01" />
           </div>
@@ -333,7 +333,7 @@
       <div class="ff">
         <label class="ff-label">Notes</label>
         <div class="ff-textarea-wrap">
-          <textarea formControlName="notes" rows="3" placeholder="Reason for order, urgency details…"></textarea>
+          <textarea formControlName="notes" rows="3" placeholder="Reason for order, urgency detailsâ€¦"></textarea>
         </div>
       </div>
 
@@ -348,3 +348,4 @@
     </form>
   </div>
 }
+

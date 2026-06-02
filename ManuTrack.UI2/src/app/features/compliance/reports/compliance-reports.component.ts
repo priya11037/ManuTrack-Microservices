@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ComplianceService, ComplianceReport as SvcReport, CreateReportRequest } from '../../../core/services/compliance.service';
+import { UserService } from '../../../core/services/user.service';
 
 export interface ComplianceReport {
   id: string;
@@ -31,9 +32,10 @@ export interface ComplianceReport {
   styleUrl: './compliance-reports.component.scss',
 })
 export class ComplianceReportsComponent implements OnInit {
-  private snack = inject(MatSnackBar);
-  private fb    = inject(FormBuilder);
+  private snack    = inject(MatSnackBar);
+  private fb       = inject(FormBuilder);
   readonly compSvc = inject(ComplianceService);
+  private usrSvc   = inject(UserService);
 
   // ── UI State ─────────────────────────────────────────────────────────────
   drawerOpen      = signal(false);
@@ -47,8 +49,9 @@ export class ComplianceReportsComponent implements OnInit {
   types      = ['Quality', 'Safety', 'Environmental', 'Production', 'Supplier'] as ComplianceReport['type'][];
   statuses   = ['Draft', 'Under Review', 'Approved', 'Submitted', 'Rejected'] as ComplianceReport['status'][];
   priorities = ['Low', 'Medium', 'High', 'Critical'] as ComplianceReport['priority'][];
-  preparers  = ['Linda Brown', 'Robert Chen', 'Emily Clark', 'Amy Zhang'];
-  reviewers  = ['Robert Chen', 'Linda Brown', 'James Carter'];
+  // Loaded from real Users API - all active users can be preparers/reviewers
+  preparers  = computed(() => this.usrSvc.users().filter(u => u.status === 'Active').map(u => u.name));
+  reviewers  = computed(() => this.usrSvc.users().filter(u => u.status === 'Active' && (u.role === 'Admin' || u.role === 'ComplianceOfficer')).map(u => u.name));
 
   // ── Data ─────────────────────────────────────────────────────────────────
   get reports() { return this.compSvc.reports; }
@@ -200,5 +203,8 @@ export class ComplianceReportsComponent implements OnInit {
     this.snack.open(msg, '✕', { duration: 3000, panelClass: [`snack-${type}`] });
   }
 
-  ngOnInit(): void { this.compSvc.loadReports(); }
+  ngOnInit(): void {
+    this.compSvc.loadReports();
+    this.usrSvc.loadAll();
+  }
 }

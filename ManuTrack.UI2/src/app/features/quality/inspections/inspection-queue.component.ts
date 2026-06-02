@@ -1,4 +1,4 @@
-import { Component, signal, computed, effect, inject, OnInit } from '@angular/core';
+﻿import { Component, signal, computed, effect, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +6,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { InspectionService, Inspection, CreateInspectionRequest } from '../../../core/services/inspection.service';
+import { WorkOrderService } from '../../../core/services/work-order.service';
+import { UserService } from '../../../core/services/user.service';
+import { ProductService } from '../../../core/services/product.service';
 export type { Inspection } from '../../../core/services/inspection.service';
 
 @Component({
@@ -16,11 +19,14 @@ export type { Inspection } from '../../../core/services/inspection.service';
   styleUrl: './inspection-queue.component.scss',
 })
 export class InspectionQueueComponent implements OnInit {
-  private snack = inject(MatSnackBar);
-  private fb    = inject(FormBuilder);
+  private snack    = inject(MatSnackBar);
+  private fb       = inject(FormBuilder);
   readonly inspSvc = inject(InspectionService);
+  private woSvc    = inject(WorkOrderService);
+  private usrSvc   = inject(UserService);
+  private prodSvc  = inject(ProductService);
 
-  // ── UI state ──────────────────────────────────────────────────────────────
+  // â”€â”€ UI state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   drawerOpen   = signal(false);
   drawerMode   = signal<'add' | 'edit'>('add');
   selectedIns  = signal<Inspection | null>(null);
@@ -30,14 +36,15 @@ export class InspectionQueueComponent implements OnInit {
 
   priorities = ['Low', 'Medium', 'High', 'Critical'] as Inspection['priority'][];
   statuses   = ['Pending', 'In Review', 'Passed', 'Failed'] as Inspection['status'][];
-  inspectors = ['Emily Clark', 'Amy Zhang', 'Carlos Ramos', 'Linda Brown'];
-  products   = ['Shaft Assembly', 'Gear Box Unit', 'Hydraulic Pump', 'Control Valve', 'Motor Mount', 'Bracket Assembly'];
-  woRefs     = ['WO-0001', 'WO-0002', 'WO-0003', 'WO-0004', 'WO-0005', 'WO-0006', 'WO-0007', 'WO-0008'];
+  // Loaded from real APIs
+  inspectors = computed(() => this.usrSvc.users().filter(u => u.role === 'QualityInspector' && u.status === 'Active').map(u => u.name));
+  products   = computed(() => this.prodSvc.products().map(p => p.name));
+  woRefs     = computed(() => this.woSvc.workOrders().filter(w => w.status !== 'Completed' && w.status !== 'Cancelled').map(w => w.woNumber));
 
-  // ── Data ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   get inspections() { return this.inspSvc.inspections; }
 
-  // ── Kanban columns (mutable arrays synced from signal) ────────────────────
+  // â”€â”€ Kanban columns (mutable arrays synced from signal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   colPending:  Inspection[] = [];
   colInReview: Inspection[] = [];
   colPassed:   Inspection[] = [];
@@ -64,10 +71,10 @@ export class InspectionQueueComponent implements OnInit {
 
   connectedIds = ['Pending', 'In Review', 'Passed', 'Failed'];
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   get stats() { return this.inspSvc.inspectionStats; }
 
-  // ── Form ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   insForm = this.fb.group({
     woRef:         ['', Validators.required],
     product:       ['', Validators.required],
@@ -79,7 +86,7 @@ export class InspectionQueueComponent implements OnInit {
     notes:         [''],
   });
 
-  // ── Kanban DnD ────────────────────────────────────────────────────────────
+  // â”€â”€ Kanban DnD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   onDrop(event: CdkDragDrop<Inspection[]>): void {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -93,19 +100,19 @@ export class InspectionQueueComponent implements OnInit {
     this.inspSvc.updateInspectionResult(ins.inspectionID!, svcStatus).subscribe();
 
     if (newStatus === 'Failed') {
-      this.toast(`${ins.insNumber} marked Failed — log defects in Defect Log`, 'warn');
+      this.toast(`${ins.insNumber} marked Failed â€” log defects in Defect Log`, 'warn');
     } else {
-      this.toast(`${ins.insNumber} → ${newStatus}`, 'info');
+      this.toast(`${ins.insNumber} â†’ ${newStatus}`, 'info');
     }
   }
 
-  // ── Expand ───────────────────────────────────────────────────────────────
+  // â”€â”€ Expand â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   toggleExpand(id: string, ev: Event): void {
     ev.stopPropagation();
     this.expandedId.update(c => c === id ? null : id);
   }
 
-  // ── Drawer ───────────────────────────────────────────────────────────────
+  // â”€â”€ Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openAddDrawer(): void {
     this.drawerMode.set('add');
     this.selectedIns.set(null);
@@ -149,7 +156,7 @@ export class InspectionQueueComponent implements OnInit {
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
@@ -173,8 +180,14 @@ export class InspectionQueueComponent implements OnInit {
   }
 
   private toast(msg: string, type: 'success' | 'warn' | 'info'): void {
-    this.snack.open(msg, '✕', { duration: 3500, panelClass: [`snack-${type}`] });
+    this.snack.open(msg, 'âœ•', { duration: 3500, panelClass: [`snack-${type}`] });
   }
 
-  ngOnInit(): void { this.inspSvc.loadInspections(); }
+  ngOnInit(): void {
+    this.inspSvc.loadInspections();
+    this.woSvc.loadAll();
+    this.usrSvc.loadAll();
+    this.prodSvc.loadProducts();
+  }
 }
+

@@ -96,12 +96,18 @@ export interface CreatePurchaseOrderRequest {
 
 @Injectable({ providedIn: 'root' })
 export class InventoryService {
-  private http    = inject(HttpClient);
-  private invUrl  = environment.api.inventory;
-  private poUrl   = environment.api.purchaseOrders;
+  private http         = inject(HttpClient);
+  private invUrl       = environment.api.inventory;
+  private poUrl        = environment.api.purchaseOrders;
+  private supplierUrl  = (environment.api as any).suppliers ?? 'http://localhost:5000/api/v1/suppliers';
+  private locationUrl  = (environment.api as any).locations ?? 'http://localhost:5000/api/v1/locations';
 
   // ── State ──────────────────────────────────────────────────────────────────
   private _stockItems     = signal<StockItem[]>([]);
+  private _suppliers      = signal<string[]>([]);
+  private _locations      = signal<string[]>([]);
+  readonly suppliers      = this._suppliers.asReadonly();
+  readonly locations      = this._locations.asReadonly();
   private _purchaseOrders = signal<PurchaseOrder[]>([]);
   readonly stockItems     = this._stockItems.asReadonly();
   readonly purchaseOrders = this._purchaseOrders.asReadonly();
@@ -156,6 +162,22 @@ export class InventoryService {
     return this.http.delete<void>(`${this.invUrl}/${id}`).pipe(
       tap(() => this._stockItems.update(list => list.filter(i => i.itemID !== id)))
     );
+  }
+
+  // ── Suppliers API ─────────────────────────────────────────────────────────
+  loadSuppliers(): void {
+    this.http.get<any[]>(this.supplierUrl).subscribe({
+      next: dtos => this._suppliers.set(dtos.map(d => d.name ?? d.Name ?? '').filter(Boolean)),
+      error: () => {} // silently ignore — fallback keeps existing list
+    });
+  }
+
+  // ── Locations API ─────────────────────────────────────────────────────────
+  loadLocations(): void {
+    this.http.get<any[]>(this.locationUrl).subscribe({
+      next: dtos => this._locations.set(dtos.map(d => d.name ?? d.Name ?? '').filter(Boolean)),
+      error: () => {}
+    });
   }
 
   // ── Purchase Order API ─────────────────────────────────────────────────────

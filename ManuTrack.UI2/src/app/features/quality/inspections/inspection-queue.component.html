@@ -1,17 +1,17 @@
-<div class="iq-page">
+﻿<div class="iq-page">
 
-  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="iq-header">
     <div>
       <h2 class="iq-title">Inspection Queue</h2>
-      <p class="iq-sub">Drag cards to update status · Click to expand details</p>
+      <p class="iq-sub">Drag cards to update status Â· Click to expand details</p>
     </div>
     <button class="add-btn" (click)="openAddDrawer()">
       <mat-icon>add</mat-icon> New Inspection
     </button>
   </div>
 
-  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="stats-row">
     <div class="stat-chip">
       <mat-icon>hourglass_empty</mat-icon>
@@ -35,13 +35,13 @@
     </div>
   </div>
 
-  <!-- ── Drag hint ────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Drag hint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="drag-hint">
     <mat-icon>drag_indicator</mat-icon>
-    Drag cards across columns to progress an inspection · Failed cards should have defects logged
+    Drag cards across columns to progress an inspection Â· Failed cards should have defects logged
   </div>
 
-  <!-- ── Kanban Board ─────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Kanban Board â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="kanban-board" cdkDropListGroup>
     @for (col of columns; track col.id) {
       <div class="kanban-col">
@@ -103,7 +103,7 @@
               </div>
 
               <div class="ic-product" (click)="toggleExpand(ins.id, $event)">{{ ins.product }}</div>
-              <div class="ic-meta">{{ ins.woRef }} · {{ ins.sku }}</div>
+              <div class="ic-meta">{{ ins.woRef }} Â· {{ ins.sku }}</div>
 
               <!-- Progress bar -->
               <div class="ic-progress" (click)="toggleExpand(ins.id, $event)">
@@ -135,7 +135,7 @@
                 </div>
               </div>
 
-              <!-- ── Expanded Detail ────────────────────────────────────── -->
+              <!-- â”€â”€ Expanded Detail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
               @if (expandedId() === ins.id) {
                 <div class="ic-detail" (click)="$event.stopPropagation()">
                   <div class="id-divider"></div>
@@ -146,7 +146,7 @@
                     </div>
                     <div class="id-item">
                       <span class="id-lbl">Completed</span>
-                      <span class="id-val">{{ ins.completedDate || '—' }}</span>
+                      <span class="id-val">{{ ins.completedDate || 'â€”' }}</span>
                     </div>
                     <div class="id-item">
                       <span class="id-lbl">Inspector</span>
@@ -182,7 +182,7 @@
 </div>
 
 
-<!-- ══ Add / Edit Drawer ════════════════════════════════════════════════════ -->
+<!-- â•â• Add / Edit Drawer â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 @if (drawerOpen()) {
   <div class="drawer-overlay" (click)="closeDrawer()"></div>
   <div class="drawer">
@@ -208,8 +208,8 @@
         <div class="ff-select-wrap" [class.ff-invalid]="insForm.get('woRef')?.invalid && insForm.get('woRef')?.touched">
           <mat-icon>assignment</mat-icon>
           <select formControlName="woRef">
-            <option value="" disabled>Select work order…</option>
-            @for (w of woRefs; track w) { <option [value]="w">{{ w }}</option> }
+            <option value="" disabled>Select work orderâ€¦</option>
+            @for (w of woRefs(); track w) { <option [value]="w">{{ w }}</option> }
           </select>
           <mat-icon class="sel-arrow">expand_more</mat-icon>
         </div>
@@ -224,8 +224,8 @@
         <div class="ff-select-wrap" [class.ff-invalid]="insForm.get('product')?.invalid && insForm.get('product')?.touched">
           <mat-icon>category</mat-icon>
           <select formControlName="product">
-            <option value="" disabled>Select product…</option>
-            @for (p of products; track p) { <option [value]="p">{{ p }}</option> }
+            <option value="" disabled>Select productâ€¦</option>
+            @for (p of products(); track p) { <option [value]="p">{{ p }}</option> }
           </select>
           <mat-icon class="sel-arrow">expand_more</mat-icon>
         </div>
@@ -264,8 +264,8 @@
         <div class="ff-select-wrap" [class.ff-invalid]="insForm.get('inspector')?.invalid && insForm.get('inspector')?.touched">
           <mat-icon>person_search</mat-icon>
           <select formControlName="inspector">
-            <option value="" disabled>Select inspector…</option>
-            @for (i of inspectors; track i) { <option [value]="i">{{ i }}</option> }
+            <option value="" disabled>Select inspectorâ€¦</option>
+            @for (i of inspectors(); track i) { <option [value]="i">{{ i }}</option> }
           </select>
           <mat-icon class="sel-arrow">expand_more</mat-icon>
         </div>
@@ -290,7 +290,7 @@
       <div class="ff">
         <label class="ff-label">Notes</label>
         <div class="ff-textarea-wrap">
-          <textarea formControlName="notes" rows="3" placeholder="Inspection scope, criteria, special notes…"></textarea>
+          <textarea formControlName="notes" rows="3" placeholder="Inspection scope, criteria, special notesâ€¦"></textarea>
         </div>
       </div>
 
@@ -305,3 +305,4 @@
     </form>
   </div>
 }
+

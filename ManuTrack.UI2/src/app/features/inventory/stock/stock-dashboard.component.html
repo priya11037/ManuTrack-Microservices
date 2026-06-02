@@ -1,6 +1,6 @@
-<div class="sd-page">
+﻿<div class="sd-page">
 
-  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="sd-header">
     <div>
       <h2 class="sd-title">Stock Dashboard</h2>
@@ -11,7 +11,7 @@
     </button>
   </div>
 
-  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="stats-row">
     <div class="stat-chip">
       <mat-icon>inventory_2</mat-icon>
@@ -19,7 +19,7 @@
     </div>
     <div class="stat-chip red" (click)="stockFilter.set(stockFilter() === 'low' ? 'all' : 'low')" style="cursor:pointer">
       <mat-icon>warning</mat-icon>
-      <div><span class="stat-num">{{ stats().low }}</span><span class="stat-lbl">Low Stock ⚠️</span></div>
+      <div><span class="stat-num">{{ stats().low }}</span><span class="stat-lbl">Low Stock âš ï¸</span></div>
     </div>
     <div class="stat-chip green" (click)="stockFilter.set(stockFilter() === 'ok' ? 'all' : 'ok')" style="cursor:pointer">
       <mat-icon>check_circle</mat-icon>
@@ -32,17 +32,17 @@
     <div class="stat-chip teal">
       <mat-icon>payments</mat-icon>
       <div>
-        <span class="stat-num">£{{ stats().totalValue | number:'1.0-0' }}</span>
+        <span class="stat-num">Â£{{ stats().totalValue | number:'1.0-0' }}</span>
         <span class="stat-lbl">Total Value</span>
       </div>
     </div>
   </div>
 
-  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="filters-bar">
     <div class="search-box">
       <mat-icon class="si">search</mat-icon>
-      <input class="search-input" type="text" placeholder="Search by name, SKU, supplier…"
+      <input class="search-input" type="text" placeholder="Search by name, SKU, supplierâ€¦"
              [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
       @if (searchTerm()) {
         <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
@@ -56,13 +56,13 @@
     </div>
     <div class="filter-chips">
       <button class="fc" [class.fc-active]="stockFilter() === 'all'"      (click)="stockFilter.set('all')">All Levels</button>
-      <button class="fc fc-low"       [class.fc-active]="stockFilter() === 'low'"       (click)="stockFilter.set('low')">⚠️ Low</button>
-      <button class="fc fc-ok"        [class.fc-active]="stockFilter() === 'ok'"        (click)="stockFilter.set('ok')">✓ OK</button>
-      <button class="fc fc-overstock" [class.fc-active]="stockFilter() === 'overstock'" (click)="stockFilter.set('overstock')">↑ Overstock</button>
+      <button class="fc fc-low"       [class.fc-active]="stockFilter() === 'low'"       (click)="stockFilter.set('low')">âš ï¸ Low</button>
+      <button class="fc fc-ok"        [class.fc-active]="stockFilter() === 'ok'"        (click)="stockFilter.set('ok')">âœ“ OK</button>
+      <button class="fc fc-overstock" [class.fc-active]="stockFilter() === 'overstock'" (click)="stockFilter.set('overstock')">â†‘ Overstock</button>
     </div>
   </div>
 
-  <!-- ── Stock Table ──────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Stock Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="table-card">
     <table class="sd-table">
       <thead>
@@ -115,8 +115,8 @@
               </div>
             </td>
             <td class="td-muted">{{ item.minStock }} / {{ item.maxStock }}</td>
-            <td class="td-muted">£{{ item.unitCost | number:'1.2-2' }}</td>
-            <td class="td-value">£{{ (item.currentStock * item.unitCost) | number:'1.0-0' }}</td>
+            <td class="td-muted">Â£{{ item.unitCost | number:'1.2-2' }}</td>
+            <td class="td-value">Â£{{ (item.currentStock * item.unitCost) | number:'1.0-0' }}</td>
             <td class="td-muted">{{ item.supplier }}</td>
             <td><span class="loc-tag">{{ item.location }}</span></td>
             <td class="td-muted">{{ item.lastUpdated }}</td>
@@ -146,7 +146,7 @@
 </div>
 
 
-<!-- ══ Drawer ══════════════════════════════════════════════════════════════ -->
+<!-- â•â• Drawer â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 @if (drawerOpen()) {
   <div class="drawer-overlay" (click)="closeDrawer()"></div>
   <div class="drawer">
@@ -205,7 +205,7 @@
           <div class="ff-select-wrap" [class.ff-invalid]="itemForm.get('category')?.invalid && itemForm.get('category')?.touched">
             <mat-icon>category</mat-icon>
             <select formControlName="category">
-              <option value="" disabled>Select…</option>
+              <option value="" disabled>Selectâ€¦</option>
               @for (c of categories; track c) { <option [value]="c">{{ c }}</option> }
             </select>
             <mat-icon class="sel-arrow">expand_more</mat-icon>
@@ -216,8 +216,8 @@
           <div class="ff-select-wrap" [class.ff-invalid]="itemForm.get('location')?.invalid && itemForm.get('location')?.touched">
             <mat-icon>warehouse</mat-icon>
             <select formControlName="location">
-              <option value="" disabled>Select…</option>
-              @for (l of locations; track l) { <option [value]="l">{{ l }}</option> }
+              <option value="" disabled>Selectâ€¦</option>
+              @for (l of locations(); track l) { <option [value]="l">{{ l }}</option> }
             </select>
             <mat-icon class="sel-arrow">expand_more</mat-icon>
           </div>
@@ -241,7 +241,7 @@
 
       <div class="ff-row">
         <div class="ff">
-          <label class="ff-label">Unit Cost (£) <span class="req">*</span></label>
+          <label class="ff-label">Unit Cost (Â£) <span class="req">*</span></label>
           <div class="ff-input-wrap"><mat-icon>payments</mat-icon><input type="number" formControlName="unitCost" min="0" step="0.01" /></div>
         </div>
         <div class="ff">
@@ -249,8 +249,8 @@
           <div class="ff-select-wrap" [class.ff-invalid]="itemForm.get('supplier')?.invalid && itemForm.get('supplier')?.touched">
             <mat-icon>local_shipping</mat-icon>
             <select formControlName="supplier">
-              <option value="" disabled>Select…</option>
-              @for (s of suppliers; track s) { <option [value]="s">{{ s }}</option> }
+              <option value="" disabled>Selectâ€¦</option>
+              @for (s of suppliers(); track s) { <option [value]="s">{{ s }}</option> }
             </select>
             <mat-icon class="sel-arrow">expand_more</mat-icon>
           </div>
@@ -268,3 +268,4 @@
     </form>
   </div>
 }
+

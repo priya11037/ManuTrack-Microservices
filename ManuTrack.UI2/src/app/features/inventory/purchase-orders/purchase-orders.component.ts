@@ -29,10 +29,11 @@ export class PurchaseOrdersComponent implements OnInit {
   statusFilter    = signal('all');
   viewMode        = signal<'list' | 'priority'>('list');
 
-  suppliers = ['SteelCo Ltd', 'PrecisionParts Inc', 'GlobalSupply Co', 'FastenerWorld', 'ChemSupply Ltd', 'PackagePro'];
-  items     = ['Steel Rod 12mm', 'Steel Plate 6mm', 'Bearing Unit 6205', 'O-Ring 25mm', 'Hydraulic Seal Kit', 'Control Valve Body', 'Cutting Oil 5L', 'Welding Wire 0.8mm', 'Cardboard Box (Large)', 'Bubble Wrap Roll', 'Circlip 30mm', 'Aluminium Sheet 3mm'];
-  statuses  = ['Draft', 'Submitted', 'Approved', 'Ordered', 'Received', 'Cancelled'] as PurchaseOrder['status'][];
+  statuses   = ['Draft', 'Submitted', 'Approved', 'Ordered', 'Received', 'Cancelled'] as PurchaseOrder['status'][];
   priorities = ['Low', 'Medium', 'High', 'Urgent'] as PurchaseOrder['priority'][];
+  // Loaded from API
+  suppliers  = computed(() => this.invSvc.suppliers());
+  items      = computed(() => this.invSvc.stockItems().map(i => i.name).filter(Boolean));
 
   // ── Data ─────────────────────────────────────────────────────────────────
   get orders() { return this.invSvc.purchaseOrders; }
@@ -171,5 +172,10 @@ export class PurchaseOrdersComponent implements OnInit {
     this.snack.open(msg, '✕', { duration: 3000, panelClass: [`snack-${type}`] });
   }
 
-  ngOnInit(): void { this.invSvc.loadPurchaseOrders(); this.syncPriorityQueue(); }
+  ngOnInit(): void {
+    this.invSvc.loadPurchaseOrders();
+    this.invSvc.loadStock();
+    this.invSvc.loadSuppliers();
+    this.syncPriorityQueue();
+  }
 }

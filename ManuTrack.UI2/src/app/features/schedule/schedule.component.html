@@ -1,10 +1,10 @@
-<div class="schedule-page">
+﻿<div class="schedule-page">
 
-  <!-- ── Header ─────────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="sch-header">
     <div class="sch-header-left">
       <h2 class="sch-title">Production Schedule</h2>
-      <p class="sch-sub">Weekly Gantt — drag work orders between days to reschedule</p>
+      <p class="sch-sub">Weekly Gantt â€” drag work orders between days to reschedule</p>
     </div>
     <div class="sch-header-right">
       <!-- Week Nav -->
@@ -23,7 +23,7 @@
     </div>
   </div>
 
-  <!-- ── KPI Strip ──────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ KPI Strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="kpi-strip">
     <div class="kpi-item">
       <span class="kpi-num">{{ statsThisWeek().total }}</span>
@@ -55,7 +55,7 @@
     </div>
   </div>
 
-  <!-- ── Gantt Grid ─────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Gantt Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="gantt-wrap">
 
     <!-- Day header -->
@@ -103,7 +103,7 @@
                    [class.wo-inprogress]="wo.status === 'In Progress'"
                    [class.wo-onhold]="wo.status === 'On Hold'"
                    [class.wo-completed]="wo.status === 'Completed'"
-                   [matTooltip]="wo.woNumber + ' · ' + wo.product + ' · ' + wo.status"
+                   [matTooltip]="wo.woNumber + ' Â· ' + wo.product + ' Â· ' + wo.status"
                    matTooltipPosition="above">
 
                 <!-- Drag preview -->
@@ -150,7 +150,7 @@
 
   </div>
 
-  <!-- ── Unscheduled WOs Panel ──────────────────────────────────────────────── -->
+  <!-- â”€â”€ Unscheduled WOs Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   @if (unscheduledWOs().length > 0) {
     <div class="unscheduled-panel">
       <div class="unscheduled-title">
@@ -172,7 +172,7 @@
 
 </div>
 
-<!-- ── Schedule WO Drawer ─────────────────────────────────────────────────── -->
+<!-- â”€â”€ Schedule WO Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 @if (drawerOpen()) {
   <div class="drawer-backdrop" (click)="closeDrawer()"></div>
   <aside class="drawer">
@@ -189,8 +189,8 @@
         <div class="ff">
           <label class="ff-label">Product <span class="req">*</span></label>
           <select class="ff-select" formControlName="product">
-            <option value="" disabled>Select product…</option>
-            @for (p of products; track p) { <option [value]="p">{{ p }}</option> }
+            <option value="" disabled>Select productâ€¦</option>
+            @for (p of products(); track p) { <option [value]="p">{{ p }}</option> }
           </select>
         </div>
 
@@ -218,8 +218,8 @@
         <div class="ff">
           <label class="ff-label">Assigned Operator <span class="req">*</span></label>
           <select class="ff-select" formControlName="assignedTo">
-            <option value="" disabled>Select operator…</option>
-            @for (op of operators; track op) { <option [value]="op">{{ op }}</option> }
+            <option value="" disabled>Select operatorâ€¦</option>
+            @for (op of operators(); track op) { <option [value]="op">{{ op }}</option> }
           </select>
         </div>
 
@@ -239,7 +239,7 @@
 
         <div class="ff">
           <label class="ff-label">Notes</label>
-          <textarea class="ff-textarea" formControlName="notes" rows="2" placeholder="Optional instructions…"></textarea>
+          <textarea class="ff-textarea" formControlName="notes" rows="2" placeholder="Optional instructionsâ€¦"></textarea>
         </div>
 
         <div class="drawer-actions">
@@ -253,3 +253,4 @@
     </div>
   </aside>
 }
+

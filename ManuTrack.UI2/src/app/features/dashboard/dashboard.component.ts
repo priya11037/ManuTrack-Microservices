@@ -811,6 +811,51 @@ export class DashboardComponent implements OnInit {
     return { Draft: '#6b7280', 'Under Review': '#d97706', Approved: '#2563eb', Submitted: '#059669', Rejected: '#dc2626' }[s] ?? '#6b7280';
   }
 
+  // ── Quality Metrics panel — computed from InspectionService ──────────────────
+  qiMetrics = computed(() => {
+    const ins  = this.inspSvc.inspections();
+    const defs = this.inspSvc.defects();
+    const passed  = ins.filter(i => i.status === 'Passed').length;
+    const failed  = ins.filter(i => i.status === 'Failed').length;
+    const total   = ins.length;
+    const passRate = (passed + failed) > 0 ? Math.round((passed / (passed + failed)) * 100) : 0;
+    return {
+      passRate,
+      passed,
+      failed,
+      total,
+      totalDefects:   defs.length,
+      defectiveUnits: defs.reduce((s, d) => s + (d.defectiveUnits ?? 1), 0),
+      scrapped:       defs.filter(d => d.action === 'Scrap').length,
+      reworked:       defs.filter(d => d.action === 'Rework').length,
+      resolved:       defs.filter(d => d.status === 'Resolved').length,
+    };
+  });
+
+  // ── Warehouse Summary panel — computed from InventoryService ──────────────────
+  warehouseSummary = computed(() => {
+    const s = this.invSvc.stockStats();
+    return {
+      locations: this.invSvc.locations().length,
+      suppliers: this.invSvc.suppliers().length,
+      lowStock:  s.low      ?? 0,
+      overstock: s.overstock ?? 0,
+    };
+  });
+
+  // ── Compliance Health panel — computed from ComplianceService ─────────────────
+  complianceHealth = computed(() => {
+    const reports  = this.compSvc.reports();
+    const logs     = this.compSvc.auditLogs();
+    const cutoff   = new Date(); cutoff.setHours(cutoff.getHours() - 48);
+    return {
+      submitted:   reports.filter(r => r.status === 'Submitted').length,
+      approved:    reports.filter(r => r.status === 'Approved').length,
+      rejected:    reports.filter(r => r.status === 'Rejected').length,
+      auditEvents: logs.filter(l => new Date(l.timestamp) >= cutoff).length,
+    };
+  });
+
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
@@ -837,7 +882,7 @@ export class DashboardComponent implements OnInit {
     if (r === 'ProductionPlanner') { this.woSvc.loadAll(); }
     if (r === 'ShopFloorOperator') { this.woSvc.loadAll(); }
     if (r === 'QualityInspector')  { this.inspSvc.loadInspections(); this.inspSvc.loadDefects(); }
-    if (r === 'InventoryManager')  { this.invSvc.loadStock(); this.invSvc.loadPurchaseOrders(); }
+    if (r === 'InventoryManager')  { this.invSvc.loadStock(); this.invSvc.loadPurchaseOrders(); this.invSvc.loadSuppliers(); this.invSvc.loadLocations(); }
     if (r === 'ComplianceOfficer') { this.compSvc.loadReports(); this.compSvc.loadAuditLogs(); }
   }
 }

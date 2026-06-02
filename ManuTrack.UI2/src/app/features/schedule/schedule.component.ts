@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   signal,
   computed,
@@ -22,8 +22,10 @@ import {
 } from '@angular/cdk/drag-drop';
 import { WorkOrderService, WorkOrder } from '../../core/services/work-order.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserService } from '../../core/services/user.service';
+import { ProductService } from '../../core/services/product.service';
 
-// ── Domain Model ──────────────────────────────────────────────────────────────
+// â”€â”€ Domain Model â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 export type WOStatus = 'Planned' | 'In Progress' | 'On Hold' | 'Completed';
@@ -49,7 +51,7 @@ interface DayColumn {
   dayNum: number;     // 2
 }
 
-// ── Utility helpers ───────────────────────────────────────────────────────────
+// â”€â”€ Utility helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function getMonday(d: Date): Date {
   const copy = new Date(d);
@@ -74,7 +76,7 @@ function formatMonthRange(start: Date, end: Date): string {
   const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
   const s = start.toLocaleDateString('en-US', opts);
   const e = end.toLocaleDateString('en-US', { ...opts, year: 'numeric' });
-  return `${s} – ${e}`;
+  return `${s} â€“ ${e}`;
 }
 
 const DAY_ABBR  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -87,7 +89,7 @@ const AVATAR_COLORS = [
 
 const PROD_LINES = ['Line A', 'Line B', 'Line C', 'Line D'];
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Component({
   selector: 'app-schedule',
@@ -111,8 +113,10 @@ export class ScheduleComponent implements OnInit {
   private readonly cdr      = inject(ChangeDetectorRef);
   private readonly woSvc    = inject(WorkOrderService);
   private readonly authSvc  = inject(AuthService);
+  private readonly usrSvc   = inject(UserService);
+  private readonly prodSvc  = inject(ProductService);
 
-  // ── Week navigation signals ──────────────────────────────────────────────
+  // â”€â”€ Week navigation signals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   currentWeekStart = signal<Date>(getMonday(new Date()));
 
   weekDays = computed<DayColumn[]>(() => {
@@ -135,11 +139,11 @@ export class ScheduleComponent implements OnInit {
     return formatMonthRange(start, end);
   });
 
-  // ── Line × Day map for new Gantt layout ──────────────────────────────────
+  // â”€â”€ Line Ã— Day map for new Gantt layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Key: `${line}-${date}`, Value: ScheduledWO[]
   linedayMap: Record<string, ScheduledWO[]> = {};
 
-  /** All possible CDK drop list IDs (line × day combinations) */
+  /** All possible CDK drop list IDs (line Ã— day combinations) */
   allDropIds = computed<string[]>(() => {
     const ids: string[] = [];
     for (const line of PROD_LINES) {
@@ -150,7 +154,7 @@ export class ScheduleComponent implements OnInit {
     return ids;
   });
 
-  /** WOs that have no scheduledDay in the current week — shown in unscheduled panel */
+  /** WOs that have no scheduledDay in the current week â€” shown in unscheduled panel */
   unscheduledWOs = computed<ScheduledWO[]>(() => {
     const weekDates = new Set(this.weekDays().map(d => d.date));
     return this.woSvc.workOrders()
@@ -158,10 +162,10 @@ export class ScheduleComponent implements OnInit {
       .filter(w => !weekDates.has(w.scheduledDay) && w.status !== 'Completed');
   });
 
-  /** Mutable map used by CDK DnD (date → WO array) */
+  /** Mutable map used by CDK DnD (date â†’ WO array) */
   dayMap: Record<string, ScheduledWO[]> = {};
 
-  // ── Stats — computed directly from service, no local signal ─────────────
+  // â”€â”€ Stats â€” computed directly from service, no local signal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   statsThisWeek = computed(() => {
     const days = new Set(this.weekDays().map(d => d.date));
     const week = this.woSvc.workOrders()
@@ -176,17 +180,17 @@ export class ScheduleComponent implements OnInit {
     };
   });
 
-  // ── Drawer state ─────────────────────────────────────────────────────────
+  // â”€â”€ Drawer state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   drawerOpen = signal(false);
   scheduleForm!: FormGroup;
 
   readonly prodLines  = PROD_LINES;
   readonly priorities: Priority[] = ['Low', 'Medium', 'High', 'Critical'];
-  // Form dropdowns — loaded from services where available, fallback otherwise
-  readonly products  = ['Shaft Assembly','Gear Box Unit','Hydraulic Pump','Control Valve','Motor Mount','Bracket Assembly','PCB Controller'];
-  readonly operators = ['Mike Johnson','Tom Wilson','Carlos Ramos','Amy Zhang','Linda Brown'];
+  // Form dropdowns â€” loaded from services where available, fallback otherwise
+  readonly products  = computed(() => this.prodSvc.products().map(p => p.name));
+  readonly operators = computed(() => this.usrSvc.users().filter(u => u.role === 'ShopFloorOperator' && u.status === 'Active').map(u => u.name));
 
-  // ── Priority / Status colour maps ────────────────────────────────────────
+  // â”€â”€ Priority / Status colour maps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   readonly priorityColor: Record<Priority, string> = {
     Low:      '#6b7280',
     Medium:   '#2563eb',
@@ -208,10 +212,10 @@ export class ScheduleComponent implements OnInit {
     'Completed':   'rgba(5,150,105,0.10)',
   };
 
-  // ── Lifecycle ────────────────────────────────────────────────────────────
+  // â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   constructor() {
     // Rebuild dayMap whenever service data or week changes
-    // ⚠️ Does NOT write any signal — reads only. This prevents infinite loops.
+    // âš ï¸ Does NOT write any signal â€” reads only. This prevents infinite loops.
     effect(() => {
       const days = this.weekDays();
       const wos  = this.woSvc.workOrders().map((wo: WorkOrder) => this.fromWorkOrder(wo));
@@ -223,13 +227,15 @@ export class ScheduleComponent implements OnInit {
   ngOnInit(): void {
     this.buildForm();
     this.woSvc.loadAll();
+    this.usrSvc.loadAll();
+    this.prodSvc.loadProducts();
   }
 
-  // ── Week nav — just change the week signal; effect re-rebuilds dayMap ────
+  // â”€â”€ Week nav â€” just change the week signal; effect re-rebuilds dayMap â”€â”€â”€â”€
   prevWeek(): void { this.currentWeekStart.update(d => addDays(d, -7)); }
   nextWeek(): void { this.currentWeekStart.update(d => addDays(d,  7)); }
 
-  // ── DnD — Line × Day based ───────────────────────────────────────────────
+  // â”€â”€ DnD â€” Line Ã— Day based â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   /** Get WOs for a specific line AND day */
   getLineWOs(line: string, date: string): ScheduledWO[] {
     const key = `${line}-${date}`;
@@ -253,11 +259,11 @@ export class ScheduleComponent implements OnInit {
     this.woSvc.updateLocal(movedWO.id, { startDate: targetDay, line: targetLine });
 
     const dayLabel = this.weekDays().find(d => d.date === targetDay)?.fullLabel ?? targetDay;
-    this.snackBar.open(`${movedWO.woNumber} → ${targetLine}, ${dayLabel}`, 'Dismiss',
+    this.snackBar.open(`${movedWO.woNumber} â†’ ${targetLine}, ${dayLabel}`, 'Dismiss',
       { duration: 3000 });
   }
 
-  // ── Drawer ───────────────────────────────────────────────────────────────
+  // â”€â”€ Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openDrawer(): void {
     this.buildForm();
     this.drawerOpen.set(true);
@@ -297,7 +303,7 @@ export class ScheduleComponent implements OnInit {
     });
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   getInitials(name: string): string {
     return name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
   }
@@ -314,7 +320,7 @@ export class ScheduleComponent implements OnInit {
     return day.date;
   }
 
-  // ── WorkOrder → ScheduledWO mapping ─────────────────────────────────────
+  // â”€â”€ WorkOrder â†’ ScheduledWO mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   private fromWorkOrder(wo: WorkOrder): ScheduledWO {
     return {
       id:           wo.id,
@@ -337,12 +343,12 @@ export class ScheduleComponent implements OnInit {
     return 'Planned';
   }
 
-  // ── Private ──────────────────────────────────────────────────────────────
+  // â”€â”€ Private â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   private rebuildDayMap(days: DayColumn[], wos: ScheduledWO[]): void {
     // Simple day map (legacy)
     const next: Record<string, ScheduledWO[]> = {};
     for (const day of days) next[day.date] = [];
-    // Line × Day map for Gantt
+    // Line Ã— Day map for Gantt
     const lineday: Record<string, ScheduledWO[]> = {};
     for (const line of PROD_LINES) {
       for (const day of days) lineday[`${line}-${day.date}`] = [];
@@ -369,8 +375,9 @@ export class ScheduleComponent implements OnInit {
   }
 }
 
-// ── Module-level helper (no this context needed) ──────────────────────────────
+// â”€â”€ Module-level helper (no this context needed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function rebuildWeekDays(wos: ScheduledWO[], newStart: Date, _offset: number): ScheduledWO[] {
   // Keep all WOs as-is; the dayMap effect will handle filtering by visible week
   return wos;
 }
+
