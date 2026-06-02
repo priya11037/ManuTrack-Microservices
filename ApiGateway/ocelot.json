@@ -59,6 +59,38 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
     {
+      "DownstreamPathTemplate": "/api/v1/suppliers",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5103 } ],
+      "UpstreamPathTemplate": "/api/v1/suppliers",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "Priority": 2
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/suppliers/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5103 } ],
+      "UpstreamPathTemplate": "/api/v1/suppliers/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "Priority": 1
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/locations",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5103 } ],
+      "UpstreamPathTemplate": "/api/v1/locations",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "Priority": 2
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/locations/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5103 } ],
+      "UpstreamPathTemplate": "/api/v1/locations/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "Priority": 1
+    },
+    {
       "DownstreamPathTemplate": "/api/v1/inspections/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5104 } ],
