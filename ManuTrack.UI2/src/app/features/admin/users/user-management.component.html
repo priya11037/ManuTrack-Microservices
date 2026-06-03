@@ -335,3 +335,51 @@
     </form>
   </div>
 }
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  Reassign Modal                                                           -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+
+@if (reassignModalOpen()) {
+  <div class="modal-backdrop" (click)="cancelReassign()"></div>
+  <div class="reassign-modal">
+    <div class="rm-header">
+      <mat-icon class="rm-icon">swap_horiz</mat-icon>
+      <div>
+        <h3>Reassign Open Tasks</h3>
+        <p>{{ reassignUser()?.name }} has {{ reassignOpenTasks().length }} open task{{ reassignOpenTasks().length > 1 ? 's' : '' }} that need reassigning before deactivation.</p>
+      </div>
+    </div>
+
+    <div class="rm-tasks">
+      @for (t of reassignOpenTasks(); track t.taskID) {
+        <div class="rm-task-row">
+          <mat-icon>assignment</mat-icon>
+          <span>{{ t.description }}</span>
+          <span class="rm-wo">WO #{{ t.workOrderID }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="rm-field">
+      <label>Reassign all tasks to</label>
+      @if (replacementCandidates().length === 0) {
+        <p class="rm-no-candidates">No other active {{ reassignUser()?.role }} users available. Add one before deactivating.</p>
+      } @else {
+        <select [value]="reassignTo()" (change)="reassignTo.set($any($event.target).value)">
+          <option value="" disabled>Select replacement…</option>
+          @for (u of replacementCandidates(); track u.id) {
+            <option [value]="u.name">{{ u.name }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    <div class="rm-actions">
+      <button class="btn-cancel" (click)="cancelReassign()">Cancel</button>
+      <button class="btn-confirm" [disabled]="!reassignTo() || reassignLoading()" (click)="confirmReassign()">
+        @if (reassignLoading()) { Reassigning… } @else { Reassign &amp; Deactivate }
+      </button>
+    </div>
+  </div>
+}

@@ -59,6 +59,9 @@ export class WorkOrdersComponent implements OnInit {
   );
   showStockBanner = signal(true);   // user can dismiss the banner
 
+  // -- BOM stock warnings for WO creation drawer
+  bomStockWarnings = signal<{ name: string; needed: number; available: number }[]>([]);
+
   // â”€â”€ Read-only mode for Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   isReadOnly = computed(() => this.auth.userRole() === 'Admin');
 
@@ -277,10 +280,42 @@ export class WorkOrdersComponent implements OnInit {
     this.drawerOpen.set(true);
   }
 
-  closeDrawer(): void { this.drawerOpen.set(false); this.selectedWO.set(null); }
+  closeDrawer(): void { this.drawerOpen.set(false); this.selectedWO.set(null); this.bomStockWarnings.set([]); }
 
   onProductChange(name: string): void {
     this.woForm.get('sku')?.setValue(this.skuMap()[name] ?? '');
+    this.bomStockWarnings.set([]);
+
+    const product = this.prodSvc.products().find(p => p.name === name);
+    if (!product?.productID) return;
+
+    this.http.get<any[]>(`${environment.api.bom}/product/${product.productID}`).subscribe({
+      next: items => {
+        const flat = this.flattenBomItems(items);
+        const stock = this.invSvc.stockItems();
+        const warnings = flat
+          .map(item => {
+            const inv = stock.find(s =>
+              s.name.toLowerCase() === item.name?.toLowerCase() ||
+              s.sku?.toLowerCase() === item.name?.toLowerCase()
+            );
+            const available = inv?.currentStock ?? 0;
+            const needed = item.quantity ?? 1;
+            return available < needed ? { name: item.name, needed, available } : null;
+          })
+          .filter((w): w is { name: string; needed: number; available: number } => w !== null);
+        this.bomStockWarnings.set(warnings);
+      },
+    });
+  }
+
+  private flattenBomItems(items: any[]): any[] {
+    const result: any[] = [];
+    const walk = (list: any[]) => {
+      for (const i of list) { result.push(i); if (i.children?.length) walk(i.children); }
+    };
+    walk(items ?? []);
+    return result;
   }
 
   saveWO(): void {
@@ -365,4 +400,5 @@ export class WorkOrdersComponent implements OnInit {
     this.snack.open(msg, 'âœ•', { duration: 3000, panelClass: [`snack-${type}`] });
   }
 }
+
 

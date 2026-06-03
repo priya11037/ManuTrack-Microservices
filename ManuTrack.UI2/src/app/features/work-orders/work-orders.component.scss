@@ -558,6 +558,20 @@
 
 .ff-err { font-size: 0.72rem; color: #ef4444; }
 
+.bom-stock-warning {
+  display: flex; gap: 0.6rem; align-items: flex-start;
+  background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  mat-icon { color: #f97316; font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+  .bsw-body { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem;
+    strong { color: #9a3412; font-size: 0.82rem; }
+  }
+  .bsw-row { display: flex; justify-content: space-between; gap: 1rem; color: #7c2d12; }
+  .bsw-name { font-weight: 500; }
+  .bsw-qty { color: #c2410c; font-size: 0.75rem; white-space: nowrap; }
+  .bsw-hint { color: #9a3412; font-size: 0.72rem; margin-top: 0.15rem; }
+}
+
 // Priority selector
 .priority-select { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .ps-opt {
@@ -616,8 +630,8 @@
 }
 .tasks-title {
   display: flex; align-items: center; gap: 0.4rem;
-  font-size: 0.85rem; font-weight: 700; color: #374151;
-  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; color: #6b7280; }
+  font-size: 0.85rem; font-weight: 700; color: #374151; line-height: 1;
+  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; color: #6b7280; line-height: 1; vertical-align: middle; }
 }
 .tasks-count {
   background: #e5e7eb; color: #374151; border-radius: 999px;

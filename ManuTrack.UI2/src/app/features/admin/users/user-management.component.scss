@@ -830,3 +830,56 @@
 
   &:hover { background: #16a34a; color: white; border-color: #16a34a; }
 }
+
+
+// ── Reassign Modal ─────────────────────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000;
+}
+.reassign-modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 1001; background: white; border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2); width: 480px; max-width: 95vw;
+  padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;
+}
+.rm-header {
+  display: flex; gap: 0.85rem; align-items: flex-start;
+  .rm-icon { font-size: 28px; width: 28px; height: 28px; color: #f97316; flex-shrink: 0; margin-top: 2px; }
+  h3 { margin: 0 0 0.25rem; font-size: 1rem; font-weight: 700; color: #111827; }
+  p  { margin: 0; font-size: 0.82rem; color: #6b7280; }
+}
+.rm-tasks {
+  display: flex; flex-direction: column; gap: 0.4rem;
+  max-height: 180px; overflow-y: auto;
+  background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.6rem 0.75rem;
+}
+.rm-task-row {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #374151;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; color: #9ca3af; flex-shrink: 0; }
+  span { flex: 1; }
+}
+.rm-wo { font-size: 0.72rem; color: #9ca3af; white-space: nowrap; }
+.rm-field {
+  display: flex; flex-direction: column; gap: 0.4rem;
+  label { font-size: 0.82rem; font-weight: 600; color: #374151; }
+  select {
+    border: 1px solid #d1d5db; border-radius: 8px; padding: 0.5rem 0.75rem;
+    font-size: 0.83rem; color: #374151; outline: none; width: 100%;
+    &:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+  }
+}
+.rm-no-candidates { font-size: 0.8rem; color: #ef4444; margin: 0; }
+.rm-actions {
+  display: flex; justify-content: flex-end; gap: 0.6rem;
+  .btn-cancel {
+    padding: 0.45rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px;
+    background: white; font-size: 0.83rem; color: #6b7280; cursor: pointer;
+    &:hover { background: #f9fafb; }
+  }
+  .btn-confirm {
+    padding: 0.45rem 1.1rem; border: none; border-radius: 8px;
+    background: #dc2626; color: white; font-size: 0.83rem; font-weight: 600; cursor: pointer;
+    &:hover:not(:disabled) { background: #b91c1c; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+}

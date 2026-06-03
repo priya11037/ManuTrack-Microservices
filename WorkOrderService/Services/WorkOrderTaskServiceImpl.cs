@@ -76,6 +76,12 @@ public class WorkOrderTaskServiceImpl(
         return ApiResponse<IEnumerable<WorkOrderTaskViewModel>>.Ok(tasks.Select(Map));
     }
 
+    public async Task<ApiResponse<IEnumerable<WorkOrderTaskViewModel>>> GetOpenByAssigneeAsync(string assignedTo)
+    {
+        var tasks = await taskRepo.GetOpenByAssigneeAsync(assignedTo);
+        return ApiResponse<IEnumerable<WorkOrderTaskViewModel>>.Ok(tasks.Select(Map));
+    }
+
     public async Task<ApiResponse<WorkOrderTaskViewModel>> GetByIdAsync(int id)
     {
         var task = await taskRepo.GetByIdAsync(id)
@@ -99,6 +105,16 @@ public class WorkOrderTaskServiceImpl(
         };
 
         var created = await taskRepo.CreateAsync(task);
+
+        // Auto-advance WO from Planned → InProgress when first task is assigned
+        var order = await workOrderRepo.GetByIdAsync(request.WorkOrderID);
+        if (order != null && order.Status == WorkOrderStatus.Planned)
+        {
+            order.Status = WorkOrderStatus.InProgress;
+            order.ActualStartDate ??= DateTime.UtcNow;
+            order.ModifiedDate = DateTime.UtcNow;
+            await workOrderRepo.UpdateAsync(order);
+        }
 
         await LogAuditAsync("Created Task", "WorkOrderTask", created.TaskID.ToString(),
             $"WorkOrderID: {created.WorkOrderID}, AssignedTo: {created.AssignedTo}");

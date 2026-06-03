@@ -40,6 +40,19 @@
 }
 .clear-x { border: none; background: transparent; cursor: pointer; color: #9ca3af; padding: 0; display: flex;
   mat-icon { font-size: 15px; width: 15px; height: 15px; } }
+.filter-select-wrap {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: white; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 0.35rem 0.6rem 0.35rem 0.75rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  &:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+  .filter-icon { font-size: 16px; width: 16px; height: 16px; color: #9ca3af; flex-shrink: 0; }
+}
+.filter-select {
+  border: none; outline: none; background: transparent;
+  font-size: 0.8rem; color: #374151; font-weight: 500; cursor: pointer;
+  padding-right: 0.25rem;
+}
 .filter-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .fc {
   padding: 0.3rem 0.7rem; border: 1px solid #e5e7eb; border-radius: 6px;

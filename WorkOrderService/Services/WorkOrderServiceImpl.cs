@@ -176,9 +176,6 @@ public class WorkOrderServiceImpl(
         var order = await repo.GetByIdAsync(id)
             ?? throw new NotFoundException($"WorkOrder {id} not found.");
 
-        // Only block Completed if backend tasks exist and are incomplete.
-        // (WOs from the schedule UI have no backend tasks, so incompleteTasks will be 0.)
-        // Inspection validation is NOT required — QI does inspections independently.
         if (request.Status == WorkOrderStatus.Completed)
         {
             var tasks = await taskRepo.GetByWorkOrderIdAsync(id);
@@ -189,6 +186,8 @@ public class WorkOrderServiceImpl(
             if (incompleteTasks > 0)
                 throw new ValidationException(
                     $"Cannot complete work order — {incompleteTasks} task(s) are still incomplete.");
+
+            await ValidatePassedInspectionAsync(id);
         }
 
         // auto-set ActualStartDate / ActualEndDate on status transition
