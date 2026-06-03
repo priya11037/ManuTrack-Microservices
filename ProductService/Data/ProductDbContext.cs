@@ -7,7 +7,6 @@ public class ProductDbContext(DbContextOptions<ProductDbContext> options) : DbCo
 {
     public DbSet<Product> Products  => Set<Product>();
     public DbSet<BomItem> BomItems  => Set<BomItem>();
-    public DbSet<Bom> Boms          => Set<Bom>();              // Fix 9: register proper BOM relationship table
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,28 +52,5 @@ public class ProductDbContext(DbContextOptions<ProductDbContext> options) : DbCo
             e.HasIndex(b => b.ParentID);
         });
 
-        // ── Bom (spec-compliant ProductID → ComponentID relationship table) ────
-        modelBuilder.Entity<Bom>(e =>
-        {
-            e.HasKey(b => b.BOMID);
-            e.Property(b => b.BOMID).ValueGeneratedOnAdd();
-            e.Property(b => b.Quantity).HasColumnType("decimal(18,4)");
-            e.Property(b => b.Version).IsRequired().HasMaxLength(20).HasDefaultValue("1.0");
-            e.Property(b => b.Status).IsRequired().HasMaxLength(50).HasDefaultValue("Active");
-            e.Property(b => b.Notes).HasMaxLength(500);
-
-            e.HasOne(b => b.Product)
-             .WithMany()
-             .HasForeignKey(b => b.ProductID)
-             .OnDelete(DeleteBehavior.Cascade);
-
-            e.HasOne(b => b.Component)
-             .WithMany()
-             .HasForeignKey(b => b.ComponentID)
-             .OnDelete(DeleteBehavior.Restrict);
-
-            e.HasIndex(b => b.ProductID);
-            e.HasIndex(b => b.ComponentID);
-        });
     }
 }
