@@ -173,10 +173,17 @@ export class InventoryService {
   }
 
   // ── Locations API ─────────────────────────────────────────────────────────
+  private readonly defaultLocations = [
+    'Warehouse A', 'Warehouse B', 'Shop Floor', 'Receiving Bay', 'Cold Storage'
+  ];
+
   loadLocations(): void {
     this.http.get<any[]>(this.locationUrl).subscribe({
-      next: dtos => this._locations.set(dtos.map(d => d.name ?? d.Name ?? '').filter(Boolean)),
-      error: () => {}
+      next: dtos => {
+        const names = dtos.map(d => d.name ?? d.Name ?? '').filter(Boolean);
+        this._locations.set(names.length > 0 ? names : this.defaultLocations);
+      },
+      error: () => this._locations.set(this.defaultLocations),
     });
   }
 
