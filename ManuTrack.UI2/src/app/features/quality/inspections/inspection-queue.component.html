@@ -6,9 +6,11 @@
       <h2 class="iq-title">Inspection Queue</h2>
       <p class="iq-sub">Drag cards to update status Â· Click to expand details</p>
     </div>
-    <button class="add-btn" (click)="openAddDrawer()">
-      <mat-icon>add</mat-icon> New Inspection
-    </button>
+    @if (canSchedule()) {
+      <button class="add-btn" (click)="openAddDrawer()">
+        <mat-icon>add</mat-icon> New Inspection
+      </button>
+    }
   </div>
 
   <!-- â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->

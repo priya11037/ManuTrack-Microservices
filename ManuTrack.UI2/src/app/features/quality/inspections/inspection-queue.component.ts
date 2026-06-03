@@ -9,6 +9,7 @@ import { InspectionService, Inspection, CreateInspectionRequest } from '../../..
 import { WorkOrderService } from '../../../core/services/work-order.service';
 import { UserService } from '../../../core/services/user.service';
 import { ProductService } from '../../../core/services/product.service';
+import { AuthService } from '../../../core/auth/auth.service';
 export type { Inspection } from '../../../core/services/inspection.service';
 
 @Component({
@@ -25,6 +26,12 @@ export class InspectionQueueComponent implements OnInit {
   private woSvc    = inject(WorkOrderService);
   private usrSvc   = inject(UserService);
   private prodSvc  = inject(ProductService);
+  private auth     = inject(AuthService);
+
+  canSchedule = computed(() => {
+    const role = this.auth.userRole();
+    return role === 'Admin' || role === 'ProductionPlanner';
+  });
 
   // â”€â”€ UI state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   drawerOpen   = signal(false);

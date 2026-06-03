@@ -21,7 +21,7 @@ public class InspectionController(IInspectionService service) : ControllerBase
         => Ok(await service.GetByIdAsync(id));
 
     [HttpPost]
-    [Authorize(Roles = "Admin,QualityInspector")]
+    [Authorize(Roles = "Admin,ProductionPlanner")]
     public async Task<ActionResult<ApiResponse<InspectionViewModel>>> Create([FromBody] CreateInspectionRequest request)
     {
         var result = await service.CreateAsync(request);
