@@ -598,4 +598,70 @@
   box-shadow: 0 2px 6px rgba(37,99,235,0.3);
   mat-icon { font-size: 16px; width: 16px; height: 16px; }
   &:hover { background: #1d4ed8; box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 }
+
+// ── Tasks Section (expanded row) ─────────────────────────────────────────────
+.tasks-section {
+  border-top: 1px solid #e5e7eb; margin-top: 1rem; padding-top: 1rem;
+}
+.tasks-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;
+}
+.tasks-title {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.85rem; font-weight: 700; color: #374151;
+  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; color: #6b7280; }
+}
+.tasks-count {
+  background: #e5e7eb; color: #374151; border-radius: 999px;
+  padding: 0.1rem 0.5rem; font-size: 0.75rem; font-weight: 600; margin-left: 0.25rem;
+}
+.add-task-btn {
+  display: flex; align-items: center; gap: 0.3rem;
+  background: #2563eb; color: white; border: none; border-radius: 6px;
+  padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  mat-icon { font-size: 0.9rem; width: 0.9rem; height: 0.9rem; }
+  &:hover { background: #1d4ed8; }
+}
+.tasks-loading { font-size: 0.82rem; color: #9ca3af; padding: 0.5rem 0; }
+.tasks-empty {
+  font-size: 0.82rem; color: #9ca3af; padding: 0.5rem 0;
+  strong { color: #374151; }
+}
+.tasks-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.task-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+.task-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.task-info { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
+.task-desc { font-size: 0.85rem; font-weight: 600; color: #111827; }
+.task-meta {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.78rem; color: #6b7280;
+  mat-icon { font-size: 0.9rem; width: 0.9rem; height: 0.9rem; }
+}
+.task-status-chip { font-weight: 600; }
+.task-del-btn {
+  background: none; border: none; cursor: pointer; padding: 0.2rem;
+  color: #9ca3af; border-radius: 4px; display: flex; align-items: center;
+  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+  &:hover { background: #fee2e2; color: #dc2626; }
+}
+
+// ── Existing tasks summary in task drawer ─────────────────────────────────────
+.existing-tasks-summary {
+  background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 0.75rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.4rem;
+}
+.ets-label { font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
+.ets-row {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem;
+}
+.ets-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.ets-desc { flex: 1; color: #374151; }
+.ets-who { color: #6b7280; font-style: italic; }

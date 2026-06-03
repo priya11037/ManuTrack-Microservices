@@ -573,8 +573,10 @@
 
       <div class="ff">
         <label class="ff-label">Task Description <span class="req">*</span></label>
-        <textarea formControlName="description" rows="3"
-          class="ff-textarea" placeholder="e.g. Machine setup and calibration for Line A"></textarea>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="description" rows="3"
+            placeholder="e.g. Machine setup and calibration for Line A"></textarea>
+        </div>
         @if (taskForm.get('description')?.invalid && taskForm.get('description')?.touched) {
           <span class="ff-err">Description must be at least 5 characters</span>
         }
@@ -599,13 +601,15 @@
 
       <div class="ff">
         <label class="ff-label">Notes (optional)</label>
-        <textarea formControlName="notes" rows="2"
-          class="ff-textarea" placeholder="Any additional instructions…"></textarea>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="notes" rows="2"
+            placeholder="Any additional instructions…"></textarea>
+        </div>
       </div>
 
-      <div class="drawer-footer">
+      <div class="drawer-actions">
         <button type="button" class="btn-cancel" (click)="closeTaskDrawer()">Cancel</button>
-        <button type="submit" class="btn-primary" [disabled]="taskForm.invalid">
+        <button type="submit" class="btn-save" [disabled]="taskForm.invalid">
           <mat-icon>add</mat-icon> Add Task
         </button>
       </div>
