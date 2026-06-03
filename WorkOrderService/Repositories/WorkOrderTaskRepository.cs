@@ -13,11 +13,11 @@ public class WorkOrderTaskRepository(WorkOrderDbContext db) : IWorkOrderTaskRepo
                                .OrderBy(t => t.CreatedDate)
                                .ToListAsync();
 
-    public async Task<IEnumerable<WorkOrderTask>> GetOpenByAssigneeAsync(string assignedTo) =>
+    public async Task<IEnumerable<WorkOrderTask>> GetOpenByAssigneeAsync(string assignedTo, bool openOnly = false) =>
         await db.WorkOrderTasks
                 .Where(t => t.AssignedTo == assignedTo &&
-                            t.Status != WorkOrderTaskStatus.Completed &&
-                            t.Status != WorkOrderTaskStatus.Cancelled)
+                            t.Status != WorkOrderTaskStatus.Cancelled &&
+                            (!openOnly || t.Status == WorkOrderTaskStatus.Pending || t.Status == WorkOrderTaskStatus.InProgress))
                 .OrderBy(t => t.CreatedDate)
                 .ToListAsync();
 

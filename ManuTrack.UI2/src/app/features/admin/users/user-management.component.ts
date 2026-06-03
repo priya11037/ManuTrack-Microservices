@@ -199,7 +199,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   private checkAndDeactivate(user: AppUser): void {
-    this.http.get<any>(`${environment.api.tasks}/assignee?assignedTo=${encodeURIComponent(user.name)}`)
+    this.http.get<any>(`${environment.api.tasks}/assignee?openOnly=true&assignedTo=${encodeURIComponent(user.name)}`)
       .pipe(catchError(() => of({ data: [] })))
       .subscribe(res => {
         const tasks: OpenTask[] = (res?.data ?? []).map((t: any) => ({
