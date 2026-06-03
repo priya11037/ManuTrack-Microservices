@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WorkOrderService.Data;
+using WorkOrderService.Enums;
 using WorkOrderService.Models;
 using WorkOrderService.Repositories.Interfaces;
 
@@ -11,6 +12,14 @@ public class WorkOrderTaskRepository(WorkOrderDbContext db) : IWorkOrderTaskRepo
         await db.WorkOrderTasks.Where(t => t.WorkOrderID == workOrderId)
                                .OrderBy(t => t.CreatedDate)
                                .ToListAsync();
+
+    public async Task<IEnumerable<WorkOrderTask>> GetOpenByAssigneeAsync(string assignedTo) =>
+        await db.WorkOrderTasks
+                .Where(t => t.AssignedTo == assignedTo &&
+                            t.Status != WorkOrderTaskStatus.Completed &&
+                            t.Status != WorkOrderTaskStatus.Cancelled)
+                .OrderBy(t => t.CreatedDate)
+                .ToListAsync();
 
     public async Task<WorkOrderTask?> GetByIdAsync(int id) =>
         await db.WorkOrderTasks.Include(t => t.WorkOrder)

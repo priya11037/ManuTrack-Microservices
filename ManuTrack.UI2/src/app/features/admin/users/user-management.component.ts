@@ -5,7 +5,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { HttpClient } from '@angular/common/http';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { UserService } from '../../../core/services/user.service';
+import { environment } from '../../../../environments/environment';
+
+interface OpenTask { taskID: number; description: string; workOrderID: number; }
 
 // ── Model ─────────────────────────────────────────────────────────────────────
 export interface AppUser {
@@ -38,7 +44,15 @@ export interface AppUser {
 export class UserManagementComponent implements OnInit {
   private fb      = inject(FormBuilder);
   private snack   = inject(MatSnackBar);
+  private http    = inject(HttpClient);
   readonly usrSvc = inject(UserService);
+
+  // ── Reassign modal state ───────────────────────────────────────────────────
+  reassignModalOpen  = signal(false);
+  reassignUser       = signal<AppUser | null>(null);
+  reassignOpenTasks  = signal<OpenTask[]>([]);
+  reassignTo         = signal('');
+  reassignLoading    = signal(false);
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -72,6 +86,14 @@ export class UserManagementComponent implements OnInit {
       const matchRole = role === 'all' || u.role === role;
       return matchQ && matchRole;
     });
+  });
+
+  replacementCandidates = computed(() => {
+    const user = this.reassignUser();
+    if (!user) return [];
+    return this.usrSvc.users().filter(u =>
+      u.status === 'Active' && u.id !== user.id && u.role === user.role
+    );
   });
 
   stats = computed(() => {
@@ -152,10 +174,10 @@ export class UserManagementComponent implements OnInit {
         next: () => {
           // 2. Also update active status if it changed
           const newStatus = v.status as 'Active' | 'Inactive';
-          if (newStatus === 'Active'   && user.status !== 'Active')
+          if (newStatus === 'Active' && user.status !== 'Active')
             this.usrSvc.activate(uid).subscribe();
           if (newStatus === 'Inactive' && user.status === 'Active')
-            this.usrSvc.deactivate(uid).subscribe();
+            this.checkAndDeactivate(user);
 
           this.toast('User updated successfully', 'success');
           this.closeDrawer();
@@ -168,14 +190,60 @@ export class UserManagementComponent implements OnInit {
   // ── Actions ────────────────────────────────────────────────────────────────
   toggleStatus(user: AppUser): void {
     if (user.status === 'Active') {
-      this.usrSvc.deactivate(+user.id).subscribe({
-        next: () => this.toast('User deactivated', 'info'),
-      });
+      this.checkAndDeactivate(user);
     } else {
       this.usrSvc.activate(+user.id).subscribe({
         next: () => this.toast('User activated', 'info'),
       });
     }
+  }
+
+  private checkAndDeactivate(user: AppUser): void {
+    this.http.get<any>(`${environment.api.tasks}/assignee?assignedTo=${encodeURIComponent(user.name)}`)
+      .pipe(catchError(() => of({ data: [] })))
+      .subscribe(res => {
+        const tasks: OpenTask[] = (res?.data ?? []).map((t: any) => ({
+          taskID: t.taskID, description: t.description, workOrderID: t.workOrderID,
+        }));
+        if (tasks.length > 0) {
+          this.reassignUser.set(user);
+          this.reassignOpenTasks.set(tasks);
+          this.reassignTo.set('');
+          this.reassignModalOpen.set(true);
+        } else {
+          this.usrSvc.deactivate(+user.id).subscribe({
+            next: () => this.toast('User deactivated', 'info'),
+          });
+        }
+      });
+  }
+
+  confirmReassign(): void {
+    const user = this.reassignUser();
+    const to   = this.reassignTo();
+    if (!user || !to) return;
+
+    this.reassignLoading.set(true);
+    const updates = this.reassignOpenTasks().map(t =>
+      this.http.put<any>(`${environment.api.tasks}/${t.taskID}`, { assignedTo: to })
+        .pipe(catchError(() => of(null)))
+    );
+
+    forkJoin(updates).subscribe(() => {
+      this.usrSvc.deactivate(+user.id).subscribe({
+        next: () => {
+          this.toast(`Tasks reassigned to ${to} and user deactivated`, 'info');
+          this.reassignModalOpen.set(false);
+          this.reassignLoading.set(false);
+        },
+      });
+    });
+  }
+
+  cancelReassign(): void {
+    this.reassignModalOpen.set(false);
+    this.reassignUser.set(null);
+    this.reassignOpenTasks.set([]);
   }
 
   resendInvite(user: AppUser): void {

@@ -59,11 +59,14 @@
           <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
         }
       </div>
-      <div class="filter-chips">
-        <button class="fc" [class.fc-active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">All</button>
-        @for (s of statuses; track s) {
-          <button class="fc" [class.fc-active]="statusFilter() === s" (click)="statusFilter.set(s)">{{ s }}</button>
-        }
+      <div class="filter-select-wrap">
+        <mat-icon class="filter-icon">tune</mat-icon>
+        <select class="filter-select" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+          <option value="all">All Status</option>
+          @for (s of statuses; track s) {
+            <option [value]="s">{{ s }}</option>
+          }
+        </select>
       </div>
     </div>
 
@@ -348,4 +351,5 @@
     </form>
   </div>
 }
+
 

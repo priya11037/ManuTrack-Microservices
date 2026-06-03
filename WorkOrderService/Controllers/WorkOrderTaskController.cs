@@ -18,6 +18,14 @@ public class WorkOrderTaskController(IWorkOrderTaskService service) : Controller
         return Ok(result);
     }
 
+    [HttpGet("assignee")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ApiResponse<IEnumerable<WorkOrderTaskViewModel>>>> GetOpenByAssignee([FromQuery] string assignedTo)
+    {
+        var result = await service.GetOpenByAssigneeAsync(assignedTo);
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ApiResponse<WorkOrderTaskViewModel>>> GetById(int id)
     {

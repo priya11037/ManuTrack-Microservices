@@ -52,7 +52,7 @@ public class ProductController(IProductService service) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,ProductionPlanner")]
     public async Task<ActionResult<ApiResponse>> Delete(int id)
     {
         var result = await service.DeleteProductAsync(id);

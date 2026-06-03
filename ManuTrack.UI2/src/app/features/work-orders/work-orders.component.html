@@ -130,7 +130,7 @@
             <th>Status</th>
             <th>Line</th>
             <th>Due Date</th>
-            <th>Assigned To</th>
+            <th>Tasks</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -192,12 +192,11 @@
               <td><span class="line-tag">{{ wo.line }}</span></td>
               <!-- Due Date -->
               <td class="td-date" [class.date-overdue]="isOverdue(wo)">{{ wo.dueDate }}</td>
-              <!-- Assigned To -->
+              <!-- Tasks -->
               <td>
-                <div class="assignee-cell">
-                  <div class="av-circle" [style.background]="wo.avatarColor">{{ getInitials(wo.assignedTo) }}</div>
-                  <span class="av-name">{{ wo.assignedTo.split(' ')[0] }}</span>
-                </div>
+                <span class="tasks-count-badge">
+                  {{ tasksFor(wo.id).length > 0 ? tasksFor(wo.id).length + ' task' + (tasksFor(wo.id).length > 1 ? 's' : '') : '—' }}
+                </span>
               </td>
               <!-- Actions â€” hidden for Admin (read-only) -->
               <td>
@@ -243,7 +242,7 @@
                     </div>
                     <div class="dp-item dp-full">
                       <span class="dp-lbl">Notes</span>
-                      <span class="dp-val">{{ wo.notes || 'â€”' }}</span>
+                      <span class=”dp-val”>{{ wo.notes || '—' }}</span>
                     </div>
                   </div>
                   <!-- Tasks Section -->
@@ -441,6 +440,23 @@
           <span class="ff-err">Product is required</span>
         }
       </div>
+
+      <!-- BOM stock warnings -->
+      @if (bomStockWarnings().length > 0) {
+        <div class="bom-stock-warning">
+          <mat-icon>warning</mat-icon>
+          <div class="bsw-body">
+            <strong>{{ bomStockWarnings().length }} BOM component{{ bomStockWarnings().length > 1 ? 's are' : ' is' }} short on stock</strong>
+            @for (w of bomStockWarnings(); track w.name) {
+              <div class="bsw-row">
+                <span class="bsw-name">{{ w.name }}</span>
+                <span class="bsw-qty">Need {{ w.needed }}, have {{ w.available }}</span>
+              </div>
+            }
+            <span class="bsw-hint">Raise a purchase order before starting this work order.</span>
+          </div>
+        </div>
+      }
 
       <!-- SKU (auto-filled) -->
       <div class="ff">

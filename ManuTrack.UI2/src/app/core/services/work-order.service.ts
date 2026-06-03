@@ -189,7 +189,7 @@ export class WorkOrderService {
       quantity:    dto.quantity ?? 0,
       produced:    dto.producedQty ?? dto.ProducedQty ?? 0,
       priority:    (dto.priority ?? dto.Priority ?? 'Medium') as WorkOrder['priority'],
-      status:      (dto.status ?? dto.Status ?? 'Planned') as WorkOrder['status'],
+      status:      ((dto.status ?? dto.Status ?? 'Planned') === 'Pending' ? 'Planned' : (dto.status ?? dto.Status ?? 'Planned')) as WorkOrder['status'],
       startDate:   dto.startDate?.split('T')[0] ?? dto.StartDate?.split('T')[0] ?? '',
       dueDate:     dto.endDate?.split('T')[0] ?? dto.EndDate?.split('T')[0] ?? '',
       assignedTo:  dto.assignedTo ?? dto.AssignedTo ?? '',

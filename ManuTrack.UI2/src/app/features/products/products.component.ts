@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ProductService, Product, BomItem } from '../../core/services/product.service';
+import { InventoryService } from '../../core/services/inventory.service';
 export type { Product, BomItem } from '../../core/services/product.service';
 
 
@@ -38,8 +39,11 @@ export type { Product, BomItem } from '../../core/services/product.service';
 })
 export class ProductsComponent implements OnInit {
   private readonly prodSvc = inject(ProductService);
+  private readonly invSvc  = inject(InventoryService);
   private readonly fb      = inject(FormBuilder);
   private readonly snack   = inject(MatSnackBar);
+
+  inventoryItems = computed(() => this.invSvc.stockItems().map(i => i.name).sort());
 
   // ── Tab state ──────────────────────────────────────────────────────────────
   activeTab = signal<'catalog' | 'bom'>('catalog');
@@ -114,6 +118,7 @@ export class ProductsComponent implements OnInit {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.prodSvc.loadProducts();
+    this.invSvc.loadStock();
   }
 
   // ── Lifecycle helpers ──────────────────────────────────────────────────────

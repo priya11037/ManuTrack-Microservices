@@ -347,15 +347,19 @@
               <form [formGroup]="bomItemForm" class="add-bom-fields" (ngSubmit)="saveAddBomItem()">
                 <div class="form-row">
                   <div class="field-group">
-                    <label class="field-label">Component Name <span class="req">*</span></label>
-                    <input
-                      class="field-input"
+                    <label class="field-label">Component <span class="req">*</span></label>
+                    <select
+                      class="field-input field-select"
                       formControlName="name"
-                      placeholder="e.g. Steel Rod"
                       [class.error]="bomItemForm.get('name')?.invalid && bomItemForm.get('name')?.touched"
-                    />
+                    >
+                      <option value="" disabled>Select from inventory…</option>
+                      @for (item of inventoryItems(); track item) {
+                        <option [value]="item">{{ item }}</option>
+                      }
+                    </select>
                     @if (bomItemForm.get('name')?.invalid && bomItemForm.get('name')?.touched) {
-                      <span class="field-error">Name is required (min 2 chars)</span>
+                      <span class="field-error">Component is required</span>
                     }
                   </div>
 

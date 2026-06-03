@@ -48,17 +48,20 @@
         <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
       }
     </div>
-    <div class="filter-chips">
-      <button class="fc" [class.fc-active]="categoryFilter() === 'all'" (click)="categoryFilter.set('all')">All</button>
-      @for (c of categories; track c) {
-        <button class="fc" [class.fc-active]="categoryFilter() === c" (click)="categoryFilter.set(c)">{{ c }}</button>
-      }
+    <div class="filter-select-wrap">
+      <mat-icon class="filter-icon">category</mat-icon>
+      <select class="filter-select" [value]="categoryFilter()" (change)="categoryFilter.set($any($event.target).value)">
+        <option value="all">All Categories</option>
+        @for (c of categories; track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select>
     </div>
     <div class="filter-chips">
-      <button class="fc" [class.fc-active]="stockFilter() === 'all'"      (click)="stockFilter.set('all')">All Levels</button>
-      <button class="fc fc-low"       [class.fc-active]="stockFilter() === 'low'"       (click)="stockFilter.set('low')">âš ï¸ Low</button>
-      <button class="fc fc-ok"        [class.fc-active]="stockFilter() === 'ok'"        (click)="stockFilter.set('ok')">âœ“ OK</button>
-      <button class="fc fc-overstock" [class.fc-active]="stockFilter() === 'overstock'" (click)="stockFilter.set('overstock')">â†‘ Overstock</button>
+      <button class="fc" [class.fc-active]="stockFilter() === 'all'" (click)="stockFilter.set('all')">All Levels</button>
+      <button class="fc fc-low" [class.fc-active]="stockFilter() === 'low'" (click)="stockFilter.set('low')">⚠ Low</button>
+      <button class="fc fc-ok" [class.fc-active]="stockFilter() === 'ok'" (click)="stockFilter.set('ok')">✔ OK</button>
+      <button class="fc fc-overstock" [class.fc-active]="stockFilter() === 'overstock'" (click)="stockFilter.set('overstock')">↑ Overstock</button>
     </div>
   </div>
 
@@ -268,4 +271,5 @@
     </form>
   </div>
 }
+
 
