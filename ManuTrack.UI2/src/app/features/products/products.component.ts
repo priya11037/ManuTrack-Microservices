@@ -71,7 +71,7 @@ export class ProductsComponent implements OnInit {
 
   // ── Computed stats ─────────────────────────────────────────────────────────
   totalProducts   = computed(() => this.prodSvc.products().length);
-  activeProducts  = computed(() => this.prodSvc.products().filter(p => p.stock > 0).length);
+  activeProducts  = computed(() => this.prodSvc.products().filter(p => p.hasBom).length);
   withBom         = computed(() => this.prodSvc.products().filter(p => p.hasBom).length);
   missingBom      = computed(() => this.prodSvc.products().filter(p => !p.hasBom).length);
 
@@ -124,8 +124,6 @@ export class ProductsComponent implements OnInit {
       sku:         [product?.sku         ?? '', [Validators.required, Validators.pattern(/^[A-Z]{2}-\d{4}$/)]],
       category:    [product?.category    ?? 'Mechanical', Validators.required],
       uom:         [product?.uom         ?? 'pcs',        Validators.required],
-      stock:       [product?.stock       ?? 0,            [Validators.required, Validators.min(0)]],
-      unitCost:    [product?.unitCost    ?? 0,            [Validators.required, Validators.min(0)]],
       description: [product?.description ?? ''],
     });
   }
@@ -285,8 +283,8 @@ export class ProductsComponent implements OnInit {
       name:        p.name,
       sku:         p.sku,
       category:    p.category as Product['category'],
-      stock:       p.stock,
-      unitCost:    p.unitCost,
+      stock:       0,
+      unitCost:    0,
       uom:         p.uom as Product['uom'],
       hasBom:      p.hasBom,
       description: p.description,

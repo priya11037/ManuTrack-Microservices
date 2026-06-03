@@ -52,7 +52,7 @@
     <div class="stat-chip green">
       <mat-icon class="chip-icon">check_circle</mat-icon>
       <span class="chip-value">{{ activeProducts() }}</span>
-      <span class="chip-label">Active (In Stock)</span>
+      <span class="chip-label">Active</span>
     </div>
     <div class="stat-chip blue">
       <mat-icon class="chip-icon">account_tree</mat-icon>
@@ -78,8 +78,6 @@
             <th>Product Name</th>
             <th>SKU</th>
             <th>Category</th>
-            <th class="col-num">Stock</th>
-            <th>Unit Cost</th>
             <th>BOM Status</th>
             <th class="col-actions">Actions</th>
           </tr>
@@ -102,11 +100,6 @@
                   {{ product.category }}
                 </span>
               </td>
-              <td class="col-num">
-                <span [class.stock-low]="product.stock < 50">{{ product.stock }}</span>
-                <span class="text-muted"> {{ product.uom }}</span>
-              </td>
-              <td class="cost-cell">{{ formatCurrency(product.unitCost) }}</td>
               <td>
                 @if (product.hasBom) {
                   <span class="bom-badge defined">
@@ -485,19 +478,6 @@
                 <option [value]="u">{{ u }}</option>
               }
             </select>
-          </div>
-        </div>
-
-        <!-- Stock + Unit Cost -->
-        <div class="form-row">
-          <div class="field-group">
-            <label class="field-label">Stock Quantity</label>
-            <input class="field-input" type="number" formControlName="stock" min="0" placeholder="0" />
-          </div>
-
-          <div class="field-group">
-            <label class="field-label">Unit Cost (USD)</label>
-            <input class="field-input" type="number" formControlName="unitCost" min="0" step="0.01" placeholder="0.00" />
           </div>
         </div>
 
