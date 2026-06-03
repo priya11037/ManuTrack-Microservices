@@ -41,7 +41,7 @@ export class SidebarComponent {
     { icon: 'task_alt',              label: 'My Tasks',    route: '/app/tasks',          roles: ['ShopFloorOperator'] },
 
     // ── Quality Inspector ─────────────────────────────────────────────────
-    { icon: 'verified',              label: 'Quality',     route: '/app/quality',        roles: ['QualityInspector'] },
+    { icon: 'verified',              label: 'Quality',     route: '/app/quality',        roles: ['QualityInspector', 'ProductionPlanner', 'Admin'] },
 
     // ── Inventory Manager ─────────────────────────────────────────────────
     { icon: 'inventory_2',           label: 'Inventory',   route: '/app/inventory',      roles: ['InventoryManager'] },
