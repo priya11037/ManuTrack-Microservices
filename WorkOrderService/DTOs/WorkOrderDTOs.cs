@@ -82,6 +82,17 @@ public class UpdateWorkOrderRequest
     public string? Notes { get; set; }
 }
 
+public class ReassignWorkOrderRequest
+{
+    [Required][StringLength(200, MinimumLength = 2)]
+    public string AssignedTo { get; set; } = string.Empty;
+
+    public int? AssignedOperatorID { get; set; }
+
+    [StringLength(500)]
+    public string? Reason { get; set; }
+}
+
 public class UpdateWorkOrderStatusRequest
 {
     [Required(ErrorMessage = "Status is required.")]

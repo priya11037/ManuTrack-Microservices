@@ -157,6 +157,24 @@ public class InspectionServiceImpl(
         return ApiResponse<InspectionViewModel>.Ok(Map(updated), "Inspection status updated.");
     }
 
+    public async Task<ApiResponse<InspectionViewModel>> ReassignAsync(int id, ReassignInspectionRequest request)
+    {
+        var inspection = await repo.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Inspection {id} not found.");
+
+        var previousInspector = inspection.InspectorName;
+        inspection.InspectorName = request.InspectorName;
+        inspection.UpdatedDate   = DateTime.UtcNow;
+
+        var updated = await repo.UpdateAsync(inspection);
+
+        await LogAuditAsync("Reassigned Inspection", "Inspection", id.ToString(),
+            $"Inspector changed from '{previousInspector}' to '{request.InspectorName}'" +
+            (string.IsNullOrEmpty(request.Reason) ? "" : $". Reason: {request.Reason}"));
+
+        return ApiResponse<InspectionViewModel>.Ok(Map(updated), "Inspection reassigned successfully.");
+    }
+
     // ── Mapper ────────────────────────────────────────────────────────────────
 
     private static InspectionViewModel Map(Inspection i) => new()

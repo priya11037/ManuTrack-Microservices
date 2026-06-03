@@ -1,21 +1,25 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ChartModule } from 'primeng/chart';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
 import { WorkOrderService } from '../../core/services/work-order.service';
 import { UserService } from '../../core/services/user.service';
 import { InspectionService } from '../../core/services/inspection.service';
 import { InventoryService } from '../../core/services/inventory.service';
 import { ComplianceService } from '../../core/services/compliance.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, ChartModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule, MatButtonModule, MatMenuModule, MatSnackBarModule, ChartModule, RouterModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -26,6 +30,9 @@ export class DashboardComponent implements OnInit {
   private inspSvc = inject(InspectionService);
   private invSvc  = inject(InventoryService);
   private compSvc = inject(ComplianceService);
+  private http    = inject(HttpClient);
+  private snack   = inject(MatSnackBar);
+  private fb      = inject(FormBuilder);
 
   // Current role drives the entire view
   role     = computed(() => this.auth.userRole());
@@ -866,6 +873,83 @@ export class DashboardComponent implements OnInit {
 
   statusCls(s: string): string {
     return { Planned:'st-planned', 'In Progress':'st-inprogress', 'On Hold':'st-onhold', Completed:'st-completed' }[s] ?? '';
+  }
+
+  // ── Reassign feature ─────────────────────────────────────────────────────────
+  // Items assigned to inactive users — Admin only
+  pendingReassignments = computed(() => {
+    const inactiveNames = new Set(
+      this.usrSvc.users().filter(u => u.status === 'Inactive').map(u => u.name)
+    );
+    const woItems = this.woSvc.workOrders()
+      .filter(w => w.assignedTo && inactiveNames.has(w.assignedTo) && w.status !== 'Completed' && w.status !== 'Cancelled')
+      .map(w => ({ type: 'WorkOrder' as const, id: w.id, label: `${w.woNumber} — ${w.product}`, assignedTo: w.assignedTo, role: 'ShopFloorOperator' }));
+    const insItems = this.inspSvc.inspections()
+      .filter(i => i.inspector && inactiveNames.has(i.inspector) && i.status !== 'Passed' && i.status !== 'Failed')
+      .map(i => ({ type: 'Inspection' as const, id: i.id, label: `${i.insNumber} — ${i.product}`, assignedTo: i.inspector, role: 'QualityInspector' }));
+    return [...woItems, ...insItems];
+  });
+
+  reassignDrawerOpen   = signal(false);
+  reassignItem        = signal<{ type: 'WorkOrder' | 'Inspection'; id: string; label: string; assignedTo: string; role: string } | null>(null);
+
+  reassignForm = this.fb.group({
+    newAssignee:        ['', Validators.required],
+    newAssigneeId:      [null as number | null],
+    reason:             [''],
+  });
+
+  // All users of the relevant role (active + inactive) for the dropdown
+  reassignCandidates = computed(() => {
+    const role = this.reassignItem()?.role ?? '';
+    return this.usrSvc.users().filter(u => u.role === role);
+  });
+
+  openReassign(item: { type: 'WorkOrder' | 'Inspection'; id: string; label: string; assignedTo: string; role: string }): void {
+    this.reassignItem.set(item);
+    this.reassignForm.reset();
+    this.reassignDrawerOpen.set(true);
+  }
+
+  closeReassignDrawer(): void {
+    this.reassignDrawerOpen.set(false);
+    this.reassignItem.set(null);
+  }
+
+  onReassigneeChange(name: string): void {
+    const user = this.usrSvc.users().find(u => u.name === name);
+    this.reassignForm.patchValue({ newAssigneeId: user?.userID ?? null });
+  }
+
+  submitReassign(): void {
+    if (this.reassignForm.invalid) return;
+    const item   = this.reassignItem()!;
+    const v      = this.reassignForm.value;
+    const reason = v.reason || undefined;
+
+    if (item.type === 'WorkOrder') {
+      this.http.put(`${environment.api.workOrders}/${item.id}/reassign`, {
+        assignedTo: v.newAssignee, assignedOperatorID: v.newAssigneeId, reason
+      }).subscribe({
+        next: () => {
+          this.woSvc.loadAll();
+          this.snack.open(`Work order reassigned to ${v.newAssignee}`, 'Dismiss', { duration: 3000 });
+          this.closeReassignDrawer();
+        },
+        error: () => this.snack.open('Failed to reassign', 'Dismiss', { duration: 3000, panelClass: ['snack-error'] })
+      });
+    } else {
+      this.http.put(`${environment.api.inspections}/${item.id}/reassign`, {
+        inspectorName: v.newAssignee, reason
+      }).subscribe({
+        next: () => {
+          this.inspSvc.loadInspections();
+          this.snack.open(`Inspection reassigned to ${v.newAssignee}`, 'Dismiss', { duration: 3000 });
+          this.closeReassignDrawer();
+        },
+        error: () => this.snack.open('Failed to reassign', 'Dismiss', { duration: 3000, panelClass: ['snack-error'] })
+      });
+    }
   }
 
   ngOnInit(): void {

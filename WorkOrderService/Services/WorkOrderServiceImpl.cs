@@ -233,6 +233,25 @@ public class WorkOrderServiceImpl(
         return ApiResponse.Ok("Work order deleted successfully.");
     }
 
+    public async Task<ApiResponse<WorkOrderViewModel>> ReassignAsync(int id, ReassignWorkOrderRequest request)
+    {
+        var order = await repo.GetByIdWithTasksAsync(id)
+            ?? throw new NotFoundException($"WorkOrder {id} not found.");
+
+        var previousAssignee = order.AssignedTo ?? "Unassigned";
+        order.AssignedTo         = request.AssignedTo;
+        order.AssignedOperatorID = request.AssignedOperatorID;
+        order.ModifiedDate       = DateTime.UtcNow;
+
+        var updated = await repo.UpdateAsync(order);
+
+        await LogAuditAsync("Reassigned WorkOrder", "WorkOrder", id.ToString(),
+            $"WO {order.WoNumber} reassigned from '{previousAssignee}' to '{request.AssignedTo}'" +
+            (string.IsNullOrEmpty(request.Reason) ? "" : $". Reason: {request.Reason}"));
+
+        return ApiResponse<WorkOrderViewModel>.Ok(Map(updated), "Work order reassigned successfully.");
+    }
+
     // ── Change 7: Validate passed inspection before Completed ────────────────
     private async Task ValidatePassedInspectionAsync(int workOrderId)
     {

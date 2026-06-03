@@ -10,5 +10,6 @@ public interface IWorkOrderService
     Task<ApiResponse<WorkOrderViewModel>> CreateAsync(CreateWorkOrderRequest request);
     Task<ApiResponse<WorkOrderViewModel>> UpdateAsync(int id, UpdateWorkOrderRequest request);
     Task<ApiResponse<WorkOrderViewModel>> UpdateStatusAsync(int id, UpdateWorkOrderStatusRequest request);
+    Task<ApiResponse<WorkOrderViewModel>> ReassignAsync(int id, ReassignWorkOrderRequest request);
     Task<ApiResponse> DeleteAsync(int id);
 }

@@ -126,12 +126,81 @@
       </div>
     </div>
 
+    <!-- Pending Reassignments Panel (shown when inactive users have assignments) -->
+    @if (pendingReassignments().length > 0) {
+      <div class="reassign-panel card">
+        <div class="reassign-header">
+          <div class="reassign-title-row">
+            <mat-icon class="reassign-icon">swap_horiz</mat-icon>
+            <div>
+              <span class="card-title">Pending Reassignments</span>
+              <span class="card-sub" style="display:block;font-size:0.8rem;color:#6b7280">Assigned to inactive users</span>
+            </div>
+          </div>
+          <span class="reassign-badge">{{ pendingReassignments().length }}</span>
+        </div>
+        <div class="reassign-list">
+          @for (item of pendingReassignments(); track item.id) {
+            <div class="reassign-item">
+              <div class="reassign-item-info">
+                <span class="reassign-type-chip" [class.wo]="item.type === 'WorkOrder'" [class.ins]="item.type === 'Inspection'">
+                  {{ item.type === 'WorkOrder' ? 'Work Order' : 'Inspection' }}
+                </span>
+                <span class="reassign-label">{{ item.label }}</span>
+                <span class="reassign-assignee">
+                  <mat-icon style="font-size:0.9rem;vertical-align:middle">person_off</mat-icon>
+                  {{ item.assignedTo }} (inactive)
+                </span>
+              </div>
+              <button class="reassign-btn" (click)="openReassign(item)">
+                <mat-icon>swap_horiz</mat-icon> Reassign
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
   }
 
-
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-  <!--  PRODUCTION PLANNER DASHBOARD                                           -->
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- Reassign Drawer -->
+  @if (reassignDrawerOpen()) {
+    <div class="overlay" (click)="closeReassignDrawer()"></div>
+    <div class="reassign-drawer">
+      <div class="drawer-header">
+        <div>
+          <h3>Reassign {{ reassignItem()?.type === 'WorkOrder' ? 'Work Order' : 'Inspection' }}</h3>
+          <p style="font-size:0.85rem;color:#6b7280;margin:0.2rem 0 0">{{ reassignItem()?.label }}</p>
+        </div>
+        <button class="icon-close" (click)="closeReassignDrawer()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="current-assignee">
+        <mat-icon>person_off</mat-icon>
+        <span>Currently assigned to <strong>{{ reassignItem()?.assignedTo }}</strong> (inactive)</span>
+      </div>
+      <form [formGroup]="reassignForm" (ngSubmit)="submitReassign()" class="reassign-form">
+        <div class="field">
+          <label>Reassign To <span style="color:#dc2626">*</span></label>
+          <select formControlName="newAssignee" (change)="onReassigneeChange($any($event.target).value)">
+            <option value="">Select a user</option>
+            @for (u of reassignCandidates(); track u.id) {
+              <option [value]="u.name" [disabled]="u.status === 'Inactive'">
+                {{ u.name }}{{ u.status === 'Inactive' ? ' (inactive)' : '' }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Reason (optional)</label>
+          <input formControlName="reason" placeholder="e.g. Original assignee on leave" />
+        </div>
+        <div class="drawer-actions">
+          <button type="button" class="btn-cancel" (click)="closeReassignDrawer()">Cancel</button>
+          <button type="submit" class="btn-save" [disabled]="reassignForm.invalid">Confirm Reassign</button>
+        </div>
+      </form>
+    </div>
+  }
   @if (role() === 'ProductionPlanner') {
 
     <!-- Page Header -->
@@ -895,4 +964,5 @@
   }
 
 </div>
+
 

@@ -23,6 +23,15 @@ public class CreateInspectionRequest
     public string? Notes { get; set; }
 }
 
+public class ReassignInspectionRequest
+{
+    [Required][StringLength(200, MinimumLength = 2)]
+    public string InspectorName { get; set; } = string.Empty;
+
+    [StringLength(500)]
+    public string? Reason { get; set; }
+}
+
 public class UpdateInspectionStatusRequest
 {
     [Required]
