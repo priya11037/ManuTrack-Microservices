@@ -108,7 +108,7 @@ public class WorkOrderTaskServiceImpl(
 
         // Auto-advance WO from Planned → InProgress when first task is assigned
         var order = await workOrderRepo.GetByIdAsync(request.WorkOrderID);
-        if (order != null && order.Status == WorkOrderStatus.Planned)
+        if (order != null && order.Status == WorkOrderStatus.Pending)
         {
             order.Status = WorkOrderStatus.InProgress;
             order.ActualStartDate ??= DateTime.UtcNow;
