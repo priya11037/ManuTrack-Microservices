@@ -296,12 +296,10 @@ export class TaskConsoleComponent implements OnInit {
       list.map(t => t.id !== taskId ? t : { ...t, steps, produced, status: newStatus })
     );
 
-    // Persist produced qty to backend via SFO-allowed /progress endpoint
-    this.woSvc.updateProgress(taskId, produced).subscribe();
-
     // Persist status change if it changed
     if (newStatus !== original.status) {
-      this.woSvc.updateStatus(taskId, taskStatusToWO(newStatus)).subscribe();
+      const s = newStatus === 'Done' ? 'Completed' : newStatus === 'In Progress' ? 'InProgress' : 'Pending';
+      this.http.put<any>(`${environment.api.tasks}/${taskId}/status`, { status: s }).subscribe();
     }
   }
 
@@ -340,14 +338,11 @@ export class TaskConsoleComponent implements OnInit {
     this.progressEditId.set(null);
     this.isSaving.set(true);
 
-    // Persist via SFO-allowed /progress endpoint (not the full PUT which requires Planner)
-    this.woSvc.updateProgress(task.id, val).subscribe({
+    const s = autoStatus === 'Done' ? 'Completed' : autoStatus === 'In Progress' ? 'InProgress' : 'Pending';
+    this.http.put<any>(`${environment.api.tasks}/${task.id}/status`, { status: s }).subscribe({
       next: () => {
         this.isSaving.set(false);
         this.toast(`Progress saved: ${val} / ${task.quantity} units`, 'success');
-        if (autoStatus !== task.status) {
-          this.woSvc.updateStatus(task.id, taskStatusToWO(autoStatus)).subscribe();
-        }
       },
       error: () => {
         this.isSaving.set(false);
@@ -370,8 +365,8 @@ export class TaskConsoleComponent implements OnInit {
     this.tasks.update(list =>
       list.map(t => t.id === task.id ? { ...t, flagged: true, flagReason: reason, status: 'To Do' } : t)
     );
-    // Persist: flag → WO goes On Hold so Production Planner sees it
-    this.woSvc.updateStatus(task.id, 'On Hold').subscribe();
+    // Persist: flag → task goes back to Pending so it's visible as open
+    this.http.put<any>(`${environment.api.tasks}/${task.id}/status`, { status: 'Pending' }).subscribe();
     this.closeFlagDrawer();
     this.toast(`${task.woNumber} flagged — WO set to On Hold`, 'warn');
   }
