@@ -62,6 +62,14 @@ public class WorkOrderController(IWorkOrderService service) : ControllerBase
         return Ok(result);
     }
 
+    [HttpPut("{id:int}/reassign")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ApiResponse<WorkOrderViewModel>>> Reassign(int id, [FromBody] ReassignWorkOrderRequest request)
+    {
+        var result = await service.ReassignAsync(id, request);
+        return Ok(result);
+    }
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse>> Delete(int id)

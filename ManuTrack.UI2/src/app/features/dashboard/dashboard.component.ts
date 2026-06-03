@@ -1,21 +1,25 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ChartModule } from 'primeng/chart';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
 import { WorkOrderService } from '../../core/services/work-order.service';
 import { UserService } from '../../core/services/user.service';
 import { InspectionService } from '../../core/services/inspection.service';
 import { InventoryService } from '../../core/services/inventory.service';
 import { ComplianceService } from '../../core/services/compliance.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, ChartModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule, MatButtonModule, MatMenuModule, MatSnackBarModule, ChartModule, RouterModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -26,6 +30,9 @@ export class DashboardComponent implements OnInit {
   private inspSvc = inject(InspectionService);
   private invSvc  = inject(InventoryService);
   private compSvc = inject(ComplianceService);
+  private http    = inject(HttpClient);
+  private snack   = inject(MatSnackBar);
+  private fb      = inject(FormBuilder);
 
   // Current role drives the entire view
   role     = computed(() => this.auth.userRole());
@@ -104,14 +111,30 @@ export class DashboardComponent implements OnInit {
     },
   };
 
-  // ── Login Activity Chart (Line) ──────────────────────────────────────────────
-  loginChartData = {
-    labels: ['May 15', 'May 16', 'May 17', 'May 18', 'May 19', 'May 20', 'May 21',
-             'May 22', 'May 23', 'May 24', 'May 25', 'May 26', 'May 27', 'May 28'],
+  // ── Login Activity Chart — computed from real audit logs ─────────────────────
+  loginChartData = computed(() => {
+    const logs   = this.compSvc.auditLogs();
+    const labels = Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (13 - i));
+      return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+    });
+    const today = new Date();
+    const success = labels.map((_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() - (13 - i));
+      return logs.filter(l => l.action === 'Login' && l.severity === 'info' &&
+        new Date(l.timestamp).toDateString() === d.toDateString()).length;
+    });
+    const failed = labels.map((_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() - (13 - i));
+      return logs.filter(l => (l.action === 'Unauthorized Access' || l.action === 'Access Denied') &&
+        new Date(l.timestamp).toDateString() === d.toDateString()).length;
+    });
+    return {
+    labels,
     datasets: [
       {
         label: 'Successful Logins',
-        data: [12, 15, 9, 18, 14, 6, 4, 16, 19, 13, 17, 20, 15, 18],
+        data: success,
         borderColor: '#3b82f6',
         backgroundColor: (ctx: any) => {
           const chart = ctx.chart;
@@ -134,7 +157,7 @@ export class DashboardComponent implements OnInit {
       },
       {
         label: 'Failed Attempts',
-        data: [1, 0, 2, 0, 1, 0, 0, 3, 1, 0, 2, 1, 0, 2],
+        data: failed,
         borderColor: '#ef4444',
         backgroundColor: 'transparent',
         fill: false,
@@ -147,7 +170,8 @@ export class DashboardComponent implements OnInit {
         borderDash: [4, 4],
       },
     ],
-  };
+    };
+  });
 
   loginChartOptions = {
     responsive: true,
@@ -235,17 +259,20 @@ export class DashboardComponent implements OnInit {
     ];
   });
 
-  // ── WO Status Doughnut ───────────────────────────────────────────────────────
-  woStatusChartData = {
-    labels: ['Planned', 'In Progress', 'On Hold', 'Completed'],
-    datasets: [{
-      data: [5, 2, 2, 1],
-      backgroundColor: ['#6b7280', '#2563eb', '#d97706', '#059669'],
-      borderColor: ['#fff', '#fff', '#fff', '#fff'],
-      borderWidth: 3,
-      hoverOffset: 6,
-    }],
-  };
+  // ── WO Status Doughnut — computed from real WorkOrderService ─────────────────
+  woStatusChartData = computed(() => {
+    const s = this.woSvc.stats();
+    return {
+      labels: ['Planned', 'In Progress', 'On Hold', 'Completed'],
+      datasets: [{
+        data: [s.planned ?? 0, s.inProgress ?? 0, s.onHold ?? 0, s.completed ?? 0],
+        backgroundColor: ['#6b7280', '#2563eb', '#d97706', '#059669'],
+        borderColor: ['#fff', '#fff', '#fff', '#fff'],
+        borderWidth: 3,
+        hoverOffset: 6,
+      }],
+    };
+  });
 
   woStatusChartOptions = {
     responsive: true,
@@ -260,20 +287,37 @@ export class DashboardComponent implements OnInit {
     },
   };
 
-  woStatusLegend = [
-    { label: 'Planned',     count: 5,  color: '#6b7280' },
-    { label: 'In Progress', count: 2,  color: '#2563eb' },
-    { label: 'On Hold',     count: 2,  color: '#d97706' },
-    { label: 'Completed',   count: 1,  color: '#059669' },
-  ];
+  woStatusLegend = computed(() => {
+    const s = this.woSvc.stats();
+    return [
+      { label: 'Planned',     count: s.planned    ?? 0, color: '#6b7280' },
+      { label: 'In Progress', count: s.inProgress ?? 0, color: '#2563eb' },
+      { label: 'On Hold',     count: s.onHold     ?? 0, color: '#d97706' },
+      { label: 'Completed',   count: s.completed  ?? 0, color: '#059669' },
+    ];
+  });
 
-  // ── Production This Week Bar Chart ───────────────────────────────────────────
-  productionChartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  // ── Production This Week Bar Chart — computed from WorkOrderService ──────────
+  productionChartData = computed(() => {
+    const wos   = this.woSvc.workOrders();
+    const today = new Date();
+    const days  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay() + 1); // Monday
+    const planned   = days.map((_, i) => {
+      const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+      return wos.filter(w => w.startDate && new Date(w.startDate).toDateString() === d.toDateString()).length;
+    });
+    const completed = days.map((_, i) => {
+      const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+      return wos.filter(w => w.status === 'Completed' && w.dueDate && new Date(w.dueDate).toDateString() === d.toDateString()).length;
+    });
+    return {
+    labels: days,
     datasets: [
       {
         label: 'Planned',
-        data: [3, 2, 4, 2, 3],
+        data: planned,
         backgroundColor: 'rgba(37,99,235,0.15)',
         borderColor: '#2563eb',
         borderWidth: 1.5,
@@ -281,14 +325,15 @@ export class DashboardComponent implements OnInit {
       },
       {
         label: 'Completed',
-        data: [2, 2, 3, 1, 0],
+        data: completed,
         backgroundColor: 'rgba(5,150,105,0.75)',
         borderColor: '#059669',
         borderWidth: 0,
         borderRadius: 5,
       },
     ],
-  };
+    };
+  });
 
   productionChartOptions = {
     responsive: true,
@@ -389,6 +434,22 @@ export class DashboardComponent implements OnInit {
     }));
   });
 
+  // ── On-time rate and units today — computed from real data ───────────────────
+  sfOnTimeRate = computed(() => {
+    const all   = this.myWOs();
+    const today = new Date().toISOString().split('T')[0];
+    const done  = all.filter(w => w.status === 'Completed');
+    const onTime = done.filter(w => w.dueDate >= today || w.status === 'Completed');
+    return done.length > 0 ? Math.round((onTime.length / done.length) * 100) : 0;
+  });
+
+  sfUnitsToday = computed(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return this.myWOs()
+      .filter(w => w.dueDate === today || w.status === 'In Progress')
+      .reduce((sum, w) => sum + (w.produced ?? 0), 0);
+  });
+
   sfStatusColor(s: string): string {
     return { 'To Do': '#6b7280', 'In Progress': '#2563eb', Done: '#059669' }[s] ?? '#6b7280';
   }
@@ -474,25 +535,41 @@ export class DashboardComponent implements OnInit {
     ];
   });
 
-  // ── Pass/Fail trend (line chart) ─────────────────────────────────────────────
-  qiTrendData = {
-    labels: ['May 19','May 20','May 21','May 22','May 23','May 24','May 25','May 26','May 27','May 28','May 29','May 30'],
-    datasets: [
-      {
-        label: 'Passed',
-        data: [3, 2, 4, 3, 2, 5, 3, 4, 2, 3, 1, 2],
-        borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.08)', fill: true,
-        tension: 0.4, pointRadius: 3, borderWidth: 2.5,
-      },
-      {
-        label: 'Failed',
-        data: [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 2, 1],
-        borderColor: '#dc2626', backgroundColor: 'transparent', fill: false,
-        tension: 0.4, pointRadius: 4, pointBackgroundColor: '#dc2626', borderWidth: 2,
-        borderDash: [4, 4],
-      },
-    ],
-  };
+  // ── Pass/Fail trend (line chart) — computed from InspectionService ───────────
+  qiTrendData = computed(() => {
+    const ins   = this.inspSvc.inspections();
+    const today = new Date();
+    const labels = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() - (11 - i));
+      return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+    });
+    const passed = labels.map((_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() - (11 - i));
+      return ins.filter(insp => insp.completedDate && new Date(insp.completedDate).toDateString() === d.toDateString() && insp.status === 'Passed').length;
+    });
+    const failed = labels.map((_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() - (11 - i));
+      return ins.filter(insp => insp.completedDate && new Date(insp.completedDate).toDateString() === d.toDateString() && insp.status === 'Failed').length;
+    });
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Passed',
+          data: passed,
+          borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.08)', fill: true,
+          tension: 0.4, pointRadius: 3, borderWidth: 2.5,
+        },
+        {
+          label: 'Failed',
+          data: failed,
+          borderColor: '#dc2626', backgroundColor: 'transparent', fill: false,
+          tension: 0.4, pointRadius: 4, pointBackgroundColor: '#dc2626', borderWidth: 2,
+          borderDash: [4, 4],
+        },
+      ],
+    };
+  });
 
   qiTrendOptions = {
     responsive: true, maintainAspectRatio: false,
@@ -508,13 +585,20 @@ export class DashboardComponent implements OnInit {
     },
   };
 
-  // ── Defect by type donut ─────────────────────────────────────────────────────
-  qiDefectData = {
-    labels: ['Dimensional', 'Surface', 'Seal Failure', 'Assembly', 'Welding'],
-    datasets: [{ data: [2, 1, 1, 1, 1],
-      backgroundColor: ['#2563eb','#d97706','#dc2626','#8b5cf6','#0ea5e9'],
-      borderColor: ['#fff','#fff','#fff','#fff','#fff'], borderWidth: 3, hoverOffset: 6 }],
-  };
+  // ── Defect by type donut — computed from InspectionService ───────────────────
+  qiDefectData = computed(() => {
+    const defects = this.inspSvc.defects();
+    const types   = ['Dimensional', 'Surface', 'Seal', 'Assembly', 'Welding'];
+    const colors  = ['#2563eb','#d97706','#dc2626','#8b5cf6','#0ea5e9'];
+    const counts  = types.map(t => defects.filter(d => d.defectType?.toLowerCase().includes(t.toLowerCase())).length);
+    const other   = Math.max(0, defects.length - counts.reduce((a,b) => a+b, 0));
+    return {
+      labels: [...types, 'Other'],
+      datasets: [{ data: [...counts, other],
+        backgroundColor: [...colors, '#9ca3af'],
+        borderColor: Array(6).fill('#fff'), borderWidth: 3, hoverOffset: 6 }],
+    };
+  });
   qiDefectOptions = {
     responsive: true, maintainAspectRatio: false, cutout: '65%',
     plugins: {
@@ -522,12 +606,20 @@ export class DashboardComponent implements OnInit {
       tooltip: { backgroundColor: '#1e2a3b', titleColor: '#e5e7eb', bodyColor: '#94a3b8', padding: 10, cornerRadius: 8 },
     },
   };
-  qiDefectLegend = [
-    { label: 'Dimensional Error', count: 2, color: '#2563eb' },
-    { label: 'Surface Defect',    count: 1, color: '#d97706' },
-    { label: 'Seal/Gasket',       count: 1, color: '#dc2626' },
-    { label: 'Assembly Error',    count: 1, color: '#8b5cf6' },
-  ];
+  qiDefectLegend = computed(() => {
+    const defects = this.inspSvc.defects();
+    const types   = [
+      { label: 'Dimensional Error', key: 'Dimensional', color: '#2563eb' },
+      { label: 'Surface Defect',    key: 'Surface',     color: '#d97706' },
+      { label: 'Seal/Gasket',       key: 'Seal',        color: '#dc2626' },
+      { label: 'Assembly Error',    key: 'Assembly',    color: '#8b5cf6' },
+      { label: 'Welding Defect',    key: 'Welding',     color: '#0ea5e9' },
+    ];
+    return types.map(t => ({
+      label: t.label, color: t.color,
+      count: defects.filter(d => d.defectType?.toLowerCase().includes(t.key.toLowerCase())).length,
+    }));
+  });
 
   // ── Recent inspections needing action ────────────────────────────────────────
   // ── QI pending inspections — from InspectionService ─────────────────────────
@@ -571,21 +663,25 @@ export class DashboardComponent implements OnInit {
     ];
   });
 
-  // ── Stock level bar chart ────────────────────────────────────────────────────
-  imStockChartData = {
-    labels: ['Steel Rod', 'Steel Plate', 'Bearing', 'O-Ring', 'Seal Kit', 'Valve Body', 'Cutting Oil', 'Weld Wire'],
-    datasets: [
-      {
-        label: 'Current Stock %',
-        data: [84, 9, 80, 60, 19, 19, 60, 16],
-        backgroundColor: (ctx: any) => {
-          const v = ctx.raw as number;
-          return v <= 20 ? 'rgba(220,38,38,0.75)' : v >= 90 ? 'rgba(217,119,6,0.75)' : 'rgba(5,150,105,0.75)';
+  // ── Stock level bar chart — computed from InventoryService ───────────────────
+  imStockChartData = computed(() => {
+    const items = this.invSvc.stockItems().slice(0, 8);
+    const pcts  = items.map(i => i.minStock > 0 ? Math.min(100, Math.round((i.currentStock / i.minStock) * 100)) : 100);
+    return {
+      labels: items.map(i => i.name.length > 12 ? i.name.slice(0, 12) + '…' : i.name),
+      datasets: [
+        {
+          label: 'Current Stock %',
+          data: pcts,
+          backgroundColor: (ctx: any) => {
+            const v = ctx.raw as number;
+            return v <= 20 ? 'rgba(220,38,38,0.75)' : v >= 90 ? 'rgba(217,119,6,0.75)' : 'rgba(5,150,105,0.75)';
+          },
+          borderRadius: 5,
         },
-        borderRadius: 5,
-      },
-    ],
-  };
+      ],
+    };
+  });
 
   imStockChartOptions = {
     responsive: true, maintainAspectRatio: false, indexAxis: 'y' as const,
@@ -635,15 +731,20 @@ export class DashboardComponent implements OnInit {
     ];
   });
 
-  // ── Report status donut ───────────────────────────────────────────────────────
-  coStatusData = {
-    labels: ['Draft', 'Under Review', 'Approved', 'Submitted', 'Rejected'],
-    datasets: [{
-      data: [1, 1, 2, 2, 1],
-      backgroundColor: ['#9ca3af', '#d97706', '#2563eb', '#059669', '#dc2626'],
-      borderColor: ['#fff','#fff','#fff','#fff','#fff'], borderWidth: 3, hoverOffset: 6,
-    }],
-  };
+  // ── Report status donut — computed from ComplianceService ────────────────────
+  coStatusData = computed(() => {
+    const reports  = this.compSvc.reports();
+    const statuses = ['Draft', 'Under Review', 'Approved', 'Submitted', 'Rejected'];
+    const counts   = statuses.map(s => reports.filter(r => r.status === s).length);
+    return {
+      labels: statuses,
+      datasets: [{
+        data: counts,
+        backgroundColor: ['#9ca3af', '#d97706', '#2563eb', '#059669', '#dc2626'],
+        borderColor: ['#fff','#fff','#fff','#fff','#fff'], borderWidth: 3, hoverOffset: 6,
+      }],
+    };
+  });
   coStatusOptions = {
     responsive: true, maintainAspectRatio: false, cutout: '65%',
     plugins: {
@@ -651,23 +752,38 @@ export class DashboardComponent implements OnInit {
       tooltip: { backgroundColor: '#1e2a3b', titleColor: '#e5e7eb', bodyColor: '#94a3b8', padding: 10, cornerRadius: 8 },
     },
   };
-  coStatusLegend = [
-    { label: 'Draft',        count: 1, color: '#9ca3af' },
-    { label: 'Under Review', count: 1, color: '#d97706' },
-    { label: 'Approved',     count: 2, color: '#2563eb' },
-    { label: 'Submitted',    count: 2, color: '#059669' },
-    { label: 'Rejected',     count: 1, color: '#dc2626' },
-  ];
+  coStatusLegend = computed(() => {
+    const reports  = this.compSvc.reports();
+    const statuses = [
+      { label: 'Draft',        color: '#9ca3af' },
+      { label: 'Under Review', color: '#d97706' },
+      { label: 'Approved',     color: '#2563eb' },
+      { label: 'Submitted',    color: '#059669' },
+      { label: 'Rejected',     color: '#dc2626' },
+    ];
+    return statuses.map(s => ({ ...s, count: reports.filter(r => r.status === s.label).length }));
+  });
 
-  // ── Audit events trend ────────────────────────────────────────────────────────
-  coAuditTrendData = {
-    labels: ['May 24','May 25','May 26','May 27','May 28','May 29','May 30'],
-    datasets: [
-      { label: 'Info',    data: [8,6,10,7,9,5,4], backgroundColor: 'rgba(37,99,235,0.7)',   borderRadius: 4 },
-      { label: 'Warning', data: [1,2,1,0,1,2,1],  backgroundColor: 'rgba(217,119,6,0.7)',   borderRadius: 4 },
-      { label: 'Error',   data: [0,0,1,0,0,1,1],  backgroundColor: 'rgba(220,38,38,0.75)',  borderRadius: 4 },
-    ],
-  };
+  // ── Audit events trend — computed from ComplianceService ─────────────────────
+  coAuditTrendData = computed(() => {
+    const logs  = this.compSvc.auditLogs();
+    const today = new Date();
+    const labels = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() - (6 - i));
+      return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+    });
+    const info    = labels.map((_, i) => { const d = new Date(today); d.setDate(today.getDate() - (6-i)); return logs.filter(l => l.severity === 'info'    && new Date(l.timestamp).toDateString() === d.toDateString()).length; });
+    const warning = labels.map((_, i) => { const d = new Date(today); d.setDate(today.getDate() - (6-i)); return logs.filter(l => l.severity === 'warning' && new Date(l.timestamp).toDateString() === d.toDateString()).length; });
+    const error   = labels.map((_, i) => { const d = new Date(today); d.setDate(today.getDate() - (6-i)); return logs.filter(l => l.severity === 'error'   && new Date(l.timestamp).toDateString() === d.toDateString()).length; });
+    return {
+      labels,
+      datasets: [
+        { label: 'Info',    data: info,    backgroundColor: 'rgba(37,99,235,0.7)',  borderRadius: 4 },
+        { label: 'Warning', data: warning, backgroundColor: 'rgba(217,119,6,0.7)',  borderRadius: 4 },
+        { label: 'Error',   data: error,   backgroundColor: 'rgba(220,38,38,0.75)', borderRadius: 4 },
+      ],
+    };
+  });
   coAuditTrendOptions = {
     responsive: true, maintainAspectRatio: false,
     plugins: {
@@ -702,6 +818,51 @@ export class DashboardComponent implements OnInit {
     return { Draft: '#6b7280', 'Under Review': '#d97706', Approved: '#2563eb', Submitted: '#059669', Rejected: '#dc2626' }[s] ?? '#6b7280';
   }
 
+  // ── Quality Metrics panel — computed from InspectionService ──────────────────
+  qiMetrics = computed(() => {
+    const ins  = this.inspSvc.inspections();
+    const defs = this.inspSvc.defects();
+    const passed  = ins.filter(i => i.status === 'Passed').length;
+    const failed  = ins.filter(i => i.status === 'Failed').length;
+    const total   = ins.length;
+    const passRate = (passed + failed) > 0 ? Math.round((passed / (passed + failed)) * 100) : 0;
+    return {
+      passRate,
+      passed,
+      failed,
+      total,
+      totalDefects:   defs.length,
+      defectiveUnits: defs.reduce((s, d) => s + (d.defectiveUnits ?? 1), 0),
+      scrapped:       defs.filter(d => d.action === 'Scrap').length,
+      reworked:       defs.filter(d => d.action === 'Rework').length,
+      resolved:       defs.filter(d => d.status === 'Resolved').length,
+    };
+  });
+
+  // ── Warehouse Summary panel — computed from InventoryService ──────────────────
+  warehouseSummary = computed(() => {
+    const s = this.invSvc.stockStats();
+    return {
+      locations: this.invSvc.locations().length,
+      suppliers: this.invSvc.suppliers().length,
+      lowStock:  s.low      ?? 0,
+      overstock: s.overstock ?? 0,
+    };
+  });
+
+  // ── Compliance Health panel — computed from ComplianceService ─────────────────
+  complianceHealth = computed(() => {
+    const reports  = this.compSvc.reports();
+    const logs     = this.compSvc.auditLogs();
+    const cutoff   = new Date(); cutoff.setHours(cutoff.getHours() - 48);
+    return {
+      submitted:   reports.filter(r => r.status === 'Submitted').length,
+      approved:    reports.filter(r => r.status === 'Approved').length,
+      rejected:    reports.filter(r => r.status === 'Rejected').length,
+      auditEvents: logs.filter(l => new Date(l.timestamp) >= cutoff).length,
+    };
+  });
+
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
@@ -712,6 +873,83 @@ export class DashboardComponent implements OnInit {
 
   statusCls(s: string): string {
     return { Planned:'st-planned', 'In Progress':'st-inprogress', 'On Hold':'st-onhold', Completed:'st-completed' }[s] ?? '';
+  }
+
+  // ── Reassign feature ─────────────────────────────────────────────────────────
+  // Items assigned to inactive users — Admin only
+  pendingReassignments = computed(() => {
+    const inactiveNames = new Set(
+      this.usrSvc.users().filter(u => u.status === 'Inactive').map(u => u.name)
+    );
+    const woItems = this.woSvc.workOrders()
+      .filter(w => w.assignedTo && inactiveNames.has(w.assignedTo) && w.status !== 'Completed' && w.status !== 'Cancelled')
+      .map(w => ({ type: 'WorkOrder' as const, id: w.id, label: `${w.woNumber} — ${w.product}`, assignedTo: w.assignedTo, role: 'ShopFloorOperator' }));
+    const insItems = this.inspSvc.inspections()
+      .filter(i => i.inspector && inactiveNames.has(i.inspector) && i.status !== 'Passed' && i.status !== 'Failed')
+      .map(i => ({ type: 'Inspection' as const, id: i.id, label: `${i.insNumber} — ${i.product}`, assignedTo: i.inspector, role: 'QualityInspector' }));
+    return [...woItems, ...insItems];
+  });
+
+  reassignDrawerOpen   = signal(false);
+  reassignItem        = signal<{ type: 'WorkOrder' | 'Inspection'; id: string; label: string; assignedTo: string; role: string } | null>(null);
+
+  reassignForm = this.fb.group({
+    newAssignee:        ['', Validators.required],
+    newAssigneeId:      [null as number | null],
+    reason:             [''],
+  });
+
+  // All users of the relevant role (active + inactive) for the dropdown
+  reassignCandidates = computed(() => {
+    const role = this.reassignItem()?.role ?? '';
+    return this.usrSvc.users().filter(u => u.role === role);
+  });
+
+  openReassign(item: { type: 'WorkOrder' | 'Inspection'; id: string; label: string; assignedTo: string; role: string }): void {
+    this.reassignItem.set(item);
+    this.reassignForm.reset();
+    this.reassignDrawerOpen.set(true);
+  }
+
+  closeReassignDrawer(): void {
+    this.reassignDrawerOpen.set(false);
+    this.reassignItem.set(null);
+  }
+
+  onReassigneeChange(name: string): void {
+    const user = this.usrSvc.users().find(u => u.name === name);
+    this.reassignForm.patchValue({ newAssigneeId: user?.userID ?? null });
+  }
+
+  submitReassign(): void {
+    if (this.reassignForm.invalid) return;
+    const item   = this.reassignItem()!;
+    const v      = this.reassignForm.value;
+    const reason = v.reason || undefined;
+
+    if (item.type === 'WorkOrder') {
+      this.http.put(`${environment.api.workOrders}/${item.id}/reassign`, {
+        assignedTo: v.newAssignee, assignedOperatorID: v.newAssigneeId, reason
+      }).subscribe({
+        next: () => {
+          this.woSvc.loadAll();
+          this.snack.open(`Work order reassigned to ${v.newAssignee}`, 'Dismiss', { duration: 3000 });
+          this.closeReassignDrawer();
+        },
+        error: () => this.snack.open('Failed to reassign', 'Dismiss', { duration: 3000, panelClass: ['snack-error'] })
+      });
+    } else {
+      this.http.put(`${environment.api.inspections}/${item.id}/reassign`, {
+        inspectorName: v.newAssignee, reason
+      }).subscribe({
+        next: () => {
+          this.inspSvc.loadInspections();
+          this.snack.open(`Inspection reassigned to ${v.newAssignee}`, 'Dismiss', { duration: 3000 });
+          this.closeReassignDrawer();
+        },
+        error: () => this.snack.open('Failed to reassign', 'Dismiss', { duration: 3000, panelClass: ['snack-error'] })
+      });
+    }
   }
 
   ngOnInit(): void {
@@ -728,7 +966,7 @@ export class DashboardComponent implements OnInit {
     if (r === 'ProductionPlanner') { this.woSvc.loadAll(); }
     if (r === 'ShopFloorOperator') { this.woSvc.loadAll(); }
     if (r === 'QualityInspector')  { this.inspSvc.loadInspections(); this.inspSvc.loadDefects(); }
-    if (r === 'InventoryManager')  { this.invSvc.loadStock(); this.invSvc.loadPurchaseOrders(); }
+    if (r === 'InventoryManager')  { this.invSvc.loadStock(); this.invSvc.loadPurchaseOrders(); this.invSvc.loadSuppliers(); this.invSvc.loadLocations(); }
     if (r === 'ComplianceOfficer') { this.compSvc.loadReports(); this.compSvc.loadAuditLogs(); }
   }
 }

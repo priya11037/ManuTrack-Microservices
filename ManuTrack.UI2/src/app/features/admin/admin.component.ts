@@ -12,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class AdminComponent {
   tabs = [
     { label: 'User Management', icon: 'manage_accounts', route: 'users' },
-    { label: 'Audit Log Viewer', icon: 'history', route: 'audit-logs' },
+    { label: 'Suppliers',       icon: 'local_shipping',  route: 'suppliers' },
+    { label: 'Audit Log Viewer',icon: 'history',          route: 'audit-logs' },
   ];
 }

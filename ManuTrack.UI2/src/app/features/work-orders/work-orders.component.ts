@@ -1,4 +1,4 @@
-import { Component, signal, computed, effect, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+﻿import { Component, signal, computed, effect, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,11 +10,26 @@ import { WorkOrderService, WorkOrder, CreateWorkOrderRequest } from '../../core/
 import { UserService } from '../../core/services/user.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { InventoryService, StockItem } from '../../core/services/inventory.service';
+import { ProductService } from '../../core/services/product.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+// Task model
+export interface WorkOrderTask {
+  taskID:        number;
+  workOrderID:   number;
+  description:   string;
+  assignedTo:    string;
+  status:        'To Do' | 'In Progress' | 'Done' | 'Cancelled';
+  notes?:        string;
+  completedDate?: string;
+  createdDate:   string;
+}
 
 // Re-export so other components (e.g. schedule) can still import WorkOrder from here
 export type { WorkOrder } from '../../core/services/work-order.service';
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @Component({
   selector: 'app-work-orders',
   standalone: true,
@@ -30,22 +45,24 @@ export type { WorkOrder } from '../../core/services/work-order.service';
 export class WorkOrdersComponent implements OnInit {
   private fb       = inject(FormBuilder);
   private snack    = inject(MatSnackBar);
+  private http     = inject(HttpClient);
   readonly woSvc   = inject(WorkOrderService);
   private usrSvc   = inject(UserService);
   private auth     = inject(AuthService);
   private invSvc   = inject(InventoryService);
+  private prodSvc  = inject(ProductService);
 
-  // ── Low-stock banner (Inventory Manager → Production Planner connection) ─────
-  /** Items that are low or out of stock — Production Planner sees these as a warning */
+  // â”€â”€ Low-stock banner (Inventory Manager â†’ Production Planner connection) â”€â”€â”€â”€â”€
+  /** Items that are low or out of stock â€” Production Planner sees these as a warning */
   lowStockItems = computed<StockItem[]>(() =>
     this.invSvc.stockItems().filter(i => i.currentStock <= i.minStock)
   );
   showStockBanner = signal(true);   // user can dismiss the banner
 
-  // ── Read-only mode for Admin ───────────────────────────────────────────────────
+  // â”€â”€ Read-only mode for Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   isReadOnly = computed(() => this.auth.userRole() === 'Admin');
 
-  // ── UI state ─────────────────────────────────────────────────────────────────
+  // â”€â”€ UI state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   viewMode        = signal<'table' | 'kanban'>('table');
   drawerOpen      = signal(false);
   drawerMode      = signal<'add' | 'edit'>('add');
@@ -53,37 +70,34 @@ export class WorkOrdersComponent implements OnInit {
   deleteConfirmId = signal<string | null>(null);
   expandedWOId    = signal<string | null>(null);
 
-  // ── Filters ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   searchTerm     = signal('');
   statusFilter   = signal('all');
   priorityFilter = signal('all');
 
-  // ── Options ──────────────────────────────────────────────────────────────────
-  products  = ['Shaft Assembly','Gear Box Unit','Hydraulic Pump','Control Valve','Motor Mount','Bracket Assembly','PCB Controller'];
-  skuMap: Record<string,string> = {
-    'Shaft Assembly':'SA-1042','Gear Box Unit':'GB-2088','Hydraulic Pump':'HP-3301',
-    'Control Valve':'CV-4410','Motor Mount':'MM-5501','Bracket Assembly':'BA-6602','PCB Controller':'PC-8801',
-  };
-  // Operators loaded dynamically from UserService — ShopFloorOperator role only
-  operators = computed(() => {
-    const fromService = this.usrSvc.users()
-      .filter(u => u.role === 'ShopFloorOperator' && u.status === 'Active')
-      .map(u => u.name);
-    // Fallback to defaults if backend not yet loaded
-    return fromService.length > 0
-      ? fromService
-      : ['Mike Johnson','Tom Wilson','Carlos Ramos','Amy Zhang','Linda Brown'];
+  // â”€â”€ Options â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Products loaded from ProductService
+  products  = computed(() => {
+    const fromSvc = this.prodSvc.products().map(p => p.name);
+    return fromSvc.length > 0 ? fromSvc : [];
   });
+  skuMap = computed<Record<string,string>>(() =>
+    Object.fromEntries(this.prodSvc.products().map(p => [p.name, p.sku]))
+  );
+  // Operators loaded from UserService â€” ShopFloorOperator role only
+  operators = computed(() =>
+    this.usrSvc.users().filter(u => u.role === 'ShopFloorOperator' && u.status === 'Active').map(u => u.name)
+  );
   lines      = ['Line A','Line B','Line C','Line D'];
   priorities = ['Low','Medium','High','Critical'] as WorkOrder['priority'][];
   statuses   = ['Planned','In Progress','On Hold','Completed'] as WorkOrder['status'][];
 
-  // ── Data from service (single source of truth) ──────────────────────────────
+  // â”€â”€ Data from service (single source of truth) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Expose as local alias so template references remain unchanged
   get workOrders() { return this.woSvc.workOrders; }
   get isLoading()  { return this.woSvc.isLoading; }
 
-  // ── Kanban mutable arrays (synced from service signal) ───────────────────────
+  // â”€â”€ Kanban mutable arrays (synced from service signal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   kanbanPlanned:    WorkOrder[] = [];
   kanbanInProgress: WorkOrder[] = [];
   kanbanOnHold:     WorkOrder[] = [];
@@ -99,7 +113,7 @@ export class WorkOrdersComponent implements OnInit {
     });
   }
 
-  // ── Computed ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   filteredWOs = computed(() => {
     const q  = this.searchTerm().toLowerCase().trim();
     const st = this.statusFilter();
@@ -126,7 +140,7 @@ export class WorkOrdersComponent implements OnInit {
 
   kanbanConnectedIds = ['Planned','In Progress','On Hold','Completed'];
 
-  // ── Form ─────────────────────────────────────────────────────────────────────
+  // â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   woForm = this.fb.group({
     product:    ['', Validators.required],
     sku:        [''],
@@ -135,22 +149,94 @@ export class WorkOrdersComponent implements OnInit {
     status:     ['Planned', Validators.required],
     startDate:  ['', Validators.required],
     dueDate:    ['', Validators.required],
-    assignedTo: ['', Validators.required],
     line:       ['Line A', Validators.required],
     notes:      [''],
   });
 
+  // ── Task management ─────────────────────────────────────────────────────────
+  tasksMap        = signal<Record<string, WorkOrderTask[]>>({});  // keyed by WO id
+  loadingTasksFor = signal<string | null>(null);
+  taskDrawerWO    = signal<WorkOrder | null>(null);   // WO for which task drawer is open
+  taskForm = this.fb.group({
+    description: ['', [Validators.required, Validators.minLength(5)]],
+    assignedTo:  ['', Validators.required],
+    notes:       [''],
+  });
+
+  tasksFor(woId: string): WorkOrderTask[] {
+    return this.tasksMap()[woId] ?? [];
+  }
+
+  loadTasks(wo: WorkOrder): void {
+    if (this.tasksMap()[wo.id]) return; // already loaded
+    this.loadingTasksFor.set(wo.id);
+    this.http.get<any>(`${(environment.api as any).tasksByWO}/${wo.id}`).subscribe({
+      next: res => {
+        const tasks: WorkOrderTask[] = (res?.data ?? res) as WorkOrderTask[];
+        this.tasksMap.update(m => ({ ...m, [wo.id]: tasks }));
+        this.loadingTasksFor.set(null);
+      },
+      error: () => this.loadingTasksFor.set(null)
+    });
+  }
+
+  openTaskDrawer(wo: WorkOrder, ev: Event): void {
+    ev.stopPropagation();
+    this.taskDrawerWO.set(wo);
+    this.taskForm.reset();
+    this.loadTasks(wo);
+  }
+
+  closeTaskDrawer(): void { this.taskDrawerWO.set(null); }
+
+  saveTask(): void {
+    if (this.taskForm.invalid) { this.taskForm.markAllAsTouched(); return; }
+    const wo = this.taskDrawerWO()!;
+    const v  = this.taskForm.value;
+    this.http.post<any>(`${environment.api.tasks}`, {
+      workOrderID:  parseInt(wo.id),
+      description:  v.description,
+      assignedTo:   v.assignedTo,
+      notes:        v.notes || undefined,
+    }).subscribe({
+      next: res => {
+        const task = res?.data ?? res;
+        this.tasksMap.update(m => ({ ...m, [wo.id]: [...(m[wo.id] ?? []), task] }));
+        this.taskForm.reset();
+        this.toast(`Task assigned to ${v.assignedTo}`, 'success');
+      },
+      error: () => this.toast('Failed to add task', 'warn')
+    });
+  }
+
+  deleteTask(wo: WorkOrder, taskID: number, ev: Event): void {
+    ev.stopPropagation();
+    this.http.delete(`${environment.api.tasks}/${taskID}`).subscribe({
+      next: () => {
+        this.tasksMap.update(m => ({ ...m, [wo.id]: (m[wo.id] ?? []).filter(t => t.taskID !== taskID) }));
+        this.toast('Task removed', 'warn');
+      },
+      error: () => this.toast('Failed to remove task', 'warn')
+    });
+  }
+
+  taskStatusColor(s: string): string {
+    return { 'To Do': '#6b7280', 'In Progress': '#2563eb', Done: '#059669', Cancelled: '#dc2626' }[s] ?? '#6b7280';
+  }
+
   ngOnInit(): void {
     this.woSvc.loadAll();
-    // Load stock items so Planner can see low-stock warnings
     this.invSvc.loadStock();
-    // Only Admin can call GET /api/v1/auth/users — Production Planner uses fallback list
+    this.prodSvc.loadProducts();
+    // Admin gets full list; others only need ShopFloorOperators for dropdown
     if (this.auth.userRole() === 'Admin') {
       this.usrSvc.loadAll();
+    } else {
+      this.usrSvc.loadByRole('ShopFloorOperator');
     }
   }
 
-  // ── Kanban DnD ────────────────────────────────────────────────────────────────
+  // â”€â”€ Kanban DnD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   onKanbanDrop(event: CdkDragDrop<WorkOrder[]>): void {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -160,12 +246,12 @@ export class WorkOrdersComponent implements OnInit {
     const wo        = event.container.data[event.currentIndex];
     const newStatus = event.container.id as WorkOrder['status'];
 
-    // Optimistic update — UI feels instant
+    // Optimistic update â€” UI feels instant
     this.woSvc.updateLocalStatus(wo.id, newStatus);
 
     // Persist to backend
     this.woSvc.updateStatus(wo.id, newStatus).subscribe({
-      next: () => this.toast(`${wo.woNumber} → ${newStatus}`, 'info'),
+      next: () => this.toast(`${wo.woNumber} â†’ ${newStatus}`, 'info'),
       error: () => {
         // Rollback on failure
         this.woSvc.updateLocalStatus(wo.id, wo.status);
@@ -174,12 +260,12 @@ export class WorkOrdersComponent implements OnInit {
     });
   }
 
-  // ── Drawer ────────────────────────────────────────────────────────────────────
+  // â”€â”€ Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openAddDrawer(): void {
     this.drawerMode.set('add');
     this.selectedWO.set(null);
     const today = new Date().toISOString().split('T')[0];
-    this.woForm.reset({ priority:'Medium', status:'Planned', startDate: today, line:'Line A', quantity:1 });
+    this.woForm.reset({ priority:'Medium', status:'Planned', startDate: today, dueDate: today, line:'Line A', quantity:1 });
     this.drawerOpen.set(true);
   }
 
@@ -194,7 +280,7 @@ export class WorkOrdersComponent implements OnInit {
   closeDrawer(): void { this.drawerOpen.set(false); this.selectedWO.set(null); }
 
   onProductChange(name: string): void {
-    this.woForm.get('sku')?.setValue(this.skuMap[name] ?? '');
+    this.woForm.get('sku')?.setValue(this.skuMap()[name] ?? '');
   }
 
   saveWO(): void {
@@ -202,15 +288,15 @@ export class WorkOrdersComponent implements OnInit {
     const v = this.woForm.value;
 
     if (this.drawerMode() === 'add') {
+      const product = this.prodSvc.products().find(p => p.name === v.product);
       const req: CreateWorkOrderRequest = {
-        productID:      1, // TODO: resolve from product catalog
+        productID:      product?.productID ?? 0,
         productName:    v.product!,
         quantity:       v.quantity!,
         priority:       v.priority as WorkOrder['priority'],
         startDate:      v.startDate!,
         endDate:        v.dueDate!,
-        assignedTo:     v.assignedTo!,
-        productionLine: v.line!,  // maps to backend field name
+        productionLine: v.line!,
         notes:          v.notes || '',
       };
       this.woSvc.create(req).subscribe({
@@ -222,7 +308,6 @@ export class WorkOrdersComponent implements OnInit {
         quantity:       v.quantity!,
         startDate:      v.startDate!,
         endDate:        v.dueDate!,
-        assignedTo:     v.assignedTo!,
         productionLine: v.line!,
         priority:       v.priority as WorkOrder['priority'],
         notes:          v.notes || '',
@@ -232,8 +317,15 @@ export class WorkOrdersComponent implements OnInit {
     }
   }
 
-  // ── Actions ───────────────────────────────────────────────────────────────────
-  toggleExpand(id: string, ev: Event): void { ev.stopPropagation(); this.expandedWOId.update(c => c === id ? null : id); }
+  // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  toggleExpand(id: string, ev: Event): void {
+    ev.stopPropagation();
+    this.expandedWOId.update(c => c === id ? null : id);
+    if (this.expandedWOId() === id) {
+      const wo = this.woSvc.workOrders().find(w => w.id === id);
+      if (wo) this.loadTasks(wo);
+    }
+  }
   confirmDelete(id: string, ev?: Event): void { ev?.stopPropagation(); this.deleteConfirmId.set(id); }
   cancelDelete():                         void { this.deleteConfirmId.set(null); }
 
@@ -246,7 +338,7 @@ export class WorkOrdersComponent implements OnInit {
     });
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   getProgress(wo: WorkOrder): number { return wo.quantity > 0 ? Math.round((wo.produced / wo.quantity) * 100) : 0; }
   isOverdue(wo: WorkOrder):  boolean { return wo.status !== 'Completed' && wo.dueDate < new Date().toISOString().split('T')[0]; }
   getInitials(name: string): string  { return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2); }
@@ -270,6 +362,7 @@ export class WorkOrdersComponent implements OnInit {
     return p[Math.floor(Math.random() * p.length)];
   }
   private toast(msg: string, type: 'success'|'warn'|'info'): void {
-    this.snack.open(msg, '✕', { duration: 3000, panelClass: [`snack-${type}`] });
+    this.snack.open(msg, 'âœ•', { duration: 3000, panelClass: [`snack-${type}`] });
   }
 }
+

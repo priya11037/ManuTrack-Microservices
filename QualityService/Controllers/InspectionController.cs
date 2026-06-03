@@ -32,4 +32,9 @@ public class InspectionController(IInspectionService service) : ControllerBase
     [Authorize(Roles = "Admin,QualityInspector")]
     public async Task<ActionResult<ApiResponse<InspectionViewModel>>> UpdateResult(int id, [FromBody] UpdateInspectionStatusRequest request)
         => Ok(await service.UpdateResultAsync(id, request));
+
+    [HttpPut("{id:int}/reassign")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ApiResponse<InspectionViewModel>>> Reassign(int id, [FromBody] ReassignInspectionRequest request)
+        => Ok(await service.ReassignAsync(id, request));
 }

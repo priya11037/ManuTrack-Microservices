@@ -179,10 +179,43 @@ public class AuditMiddleware(RequestDelegate next, IConfiguration config)
         var method = context.Request.Method.ToUpper();
 
         if (status == 401)
-            return $"Unauthorized access attempt on {path}";
+            return $"{userName} attempted to access a restricted resource — authentication required";
         if (status == 403)
-            return $"{userName} was denied access to {path}";
+            return $"{userName} does not have permission to access {entityType}";
 
-        return $"{userName} performed '{action}' on {entityType} [{path}] — HTTP {method} {status}";
+        // Login / register
+        if (action == "Login")
+            return $"{userName} logged in successfully";
+        if (action == "Register User")
+            return $"{userName} registered a new user account";
+
+        // CRUD actions with entity-specific descriptions
+        var entityLabel = entityType switch
+        {
+            "WorkOrders"    => "work order",
+            "Tasks"         => "work order task",
+            "Products"      => "product",
+            "BOM"           => "BOM item",
+            "Inventory"     => "inventory item",
+            "PurchaseOrders"=> "purchase order",
+            "Quality"       => path.Contains("defect") ? "defect" : "inspection",
+            "Compliance"    => "compliance report",
+            "Notifications" => "notification",
+            "Analytics"     => "analytics record",
+            "Users"         => "user",
+            _               => entityType.ToLower(),
+        };
+
+        return action switch
+        {
+            "Create"        => $"{userName} created a new {entityLabel}",
+            "Update"        => $"{userName} updated a {entityLabel}",
+            "Status Change" => $"{userName} changed the status of a {entityLabel}",
+            "Activate"      => $"{userName} activated a {entityLabel}",
+            "Deactivate"    => $"{userName} deactivated a {entityLabel}",
+            "Approve"       => $"{userName} approved a {entityLabel}",
+            "Delete"        => $"{userName} deleted a {entityLabel}",
+            _               => $"{userName} performed {action} on {entityLabel}",
+        };
     }
 }

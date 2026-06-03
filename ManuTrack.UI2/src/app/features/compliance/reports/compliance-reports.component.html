@@ -1,6 +1,6 @@
-<div class="cr-page">
+﻿<div class="cr-page">
 
-  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="cr-header">
     <div>
       <h2 class="cr-title">Compliance Reports</h2>
@@ -11,7 +11,7 @@
     </button>
   </div>
 
-  <!-- ── Stats ───────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="stats-row">
     <div class="stat-chip">
       <mat-icon>policy</mat-icon>
@@ -39,11 +39,11 @@
     }
   </div>
 
-  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="filters-bar">
     <div class="search-box">
       <mat-icon class="si">search</mat-icon>
-      <input class="search-input" type="text" placeholder="Search by title, CR#, preparer…"
+      <input class="search-input" type="text" placeholder="Search by title, CR#, preparerâ€¦"
              [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
       @if (searchTerm()) {
         <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
@@ -66,7 +66,7 @@
     </div>
   </div>
 
-  <!-- ── Report Cards ─────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Report Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="report-list">
     @if (filtered().length === 0) {
       <div class="empty-state">
@@ -142,7 +142,7 @@
 
         </div>
 
-        <!-- Actions column — fixed width, consistent layout across all cards -->
+        <!-- Actions column â€” fixed width, consistent layout across all cards -->
         <div class="rc-actions">
           <!-- Advance button: full width, shown only when applicable -->
           @if (nextStatusLabel(r.status)) {
@@ -196,9 +196,9 @@
               <div class="rcd-item"><span class="rcd-lbl">Report #</span><span class="rcd-val">{{ r.reportNumber }}</span></div>
               <div class="rcd-item"><span class="rcd-lbl">Period</span><span class="rcd-val">{{ r.period }}</span></div>
               <div class="rcd-item"><span class="rcd-lbl">Prepared By</span><span class="rcd-val">{{ r.preparedBy }}</span></div>
-              <div class="rcd-item"><span class="rcd-lbl">Reviewed By</span><span class="rcd-val">{{ r.reviewedBy || '—' }}</span></div>
+              <div class="rcd-item"><span class="rcd-lbl">Reviewed By</span><span class="rcd-val">{{ r.reviewedBy || 'â€”' }}</span></div>
               <div class="rcd-item"><span class="rcd-lbl">Deadline</span><span class="rcd-val" [class.rcd-overdue]="isOverdue(r)">{{ r.submissionDeadline }}</span></div>
-              <div class="rcd-item"><span class="rcd-lbl">Submitted</span><span class="rcd-val">{{ r.submittedDate || '—' }}</span></div>
+              <div class="rcd-item"><span class="rcd-lbl">Submitted</span><span class="rcd-val">{{ r.submittedDate || 'â€”' }}</span></div>
             </div>
           </div>
         }
@@ -210,7 +210,7 @@
 </div>
 
 
-<!-- ══ Drawer ══════════════════════════════════════════════════════════════ -->
+<!-- â•â• Drawer â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 @if (drawerOpen()) {
   <div class="drawer-overlay" (click)="closeDrawer()"></div>
   <div class="drawer">
@@ -246,7 +246,7 @@
           <div class="ff-select-wrap" [class.ff-invalid]="reportForm.get('type')?.invalid && reportForm.get('type')?.touched">
             <mat-icon>category</mat-icon>
             <select formControlName="type">
-              <option value="" disabled>Select type…</option>
+              <option value="" disabled>Select typeâ€¦</option>
               @for (t of types; track t) { <option [value]="t">{{ t }}</option> }
             </select>
             <mat-icon class="sel-arrow">expand_more</mat-icon>
@@ -290,8 +290,8 @@
           <div class="ff-select-wrap" [class.ff-invalid]="reportForm.get('preparedBy')?.invalid && reportForm.get('preparedBy')?.touched">
             <mat-icon>person</mat-icon>
             <select formControlName="preparedBy">
-              <option value="" disabled>Select…</option>
-              @for (p of preparers; track p) { <option [value]="p">{{ p }}</option> }
+              <option value="" disabled>Selectâ€¦</option>
+              @for (p of preparers(); track p) { <option [value]="p">{{ p }}</option> }
             </select>
             <mat-icon class="sel-arrow">expand_more</mat-icon>
           </div>
@@ -301,8 +301,8 @@
           <div class="ff-select-wrap">
             <mat-icon>rate_review</mat-icon>
             <select formControlName="reviewedBy">
-              <option value="">— Not assigned —</option>
-              @for (r of reviewers; track r) { <option [value]="r">{{ r }}</option> }
+              <option value="">â€” Not assigned â€”</option>
+              @for (r of reviewers(); track r) { <option [value]="r">{{ r }}</option> }
             </select>
             <mat-icon class="sel-arrow">expand_more</mat-icon>
           </div>
@@ -312,7 +312,7 @@
       <div class="ff">
         <label class="ff-label">Notes</label>
         <div class="ff-textarea-wrap">
-          <textarea formControlName="notes" rows="4" placeholder="Findings summary, key observations, action items…"></textarea>
+          <textarea formControlName="notes" rows="4" placeholder="Findings summary, key observations, action itemsâ€¦"></textarea>
         </div>
       </div>
 
@@ -327,3 +327,4 @@
     </form>
   </div>
 }
+

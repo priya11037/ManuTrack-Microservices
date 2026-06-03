@@ -8,9 +8,8 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
-    public DbSet<Supplier> Suppliers => Set<Supplier>();                    // Fix 1: register Suppliers
-    public DbSet<InventoryLocation> InventoryLocations => Set<InventoryLocation>(); // Fix 3: register Locations
-    public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>(); // Fix 2: register PO line items
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<InventoryLocation> InventoryLocations => Set<InventoryLocation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -71,10 +70,6 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
             e.HasIndex(p => p.Status);
             e.HasIndex(p => p.Priority);
 
-            e.HasMany(p => p.Items)
-             .WithOne(i => i.PurchaseOrder)
-             .HasForeignKey(i => i.POID)
-             .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── Supplier ───────────────────────────────────────────────────────────
@@ -100,18 +95,5 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
             e.HasIndex(l => l.Name);
         });
 
-        // ── PurchaseOrderItem ──────────────────────────────────────────────────
-        modelBuilder.Entity<PurchaseOrderItem>(e =>
-        {
-            e.HasKey(i => i.POItemID);
-            e.Property(i => i.POItemID).ValueGeneratedOnAdd();
-            e.Property(i => i.ProductName).IsRequired().HasMaxLength(200);
-            e.Property(i => i.Quantity).HasColumnType("decimal(18,4)");
-            e.Property(i => i.UnitPrice).HasColumnType("decimal(18,4)");
-            e.Property(i => i.TotalPrice).HasColumnType("decimal(18,4)");
-            e.Property(i => i.ReceivedQty).HasColumnType("decimal(18,4)");
-            e.HasIndex(i => i.POID);
-            e.HasIndex(i => i.InventoryID);
-        });
     }
 }

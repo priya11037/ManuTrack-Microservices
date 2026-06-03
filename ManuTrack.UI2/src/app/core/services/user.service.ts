@@ -62,6 +62,7 @@ export class UserService {
   });
 
   // ── API ───────────────────────────────────────────────────────────────────
+  // Admin-only: full user list
   loadAll(): void {
     this.isLoading.set(true);
     this.error.set(null);
@@ -70,6 +71,23 @@ export class UserService {
       .subscribe({
         next:  dtos => this._users.set(dtos.map(d => this.fromDto(d))),
         error: err  => this.error.set(err.message),
+      });
+  }
+
+  // All authenticated users: get names for a specific role (for dropdowns)
+  loadByRole(role: string): void {
+    this.http.get<any[]>(`${this.url}/users/by-role?role=${role}`)
+      .subscribe({
+        next: dtos => {
+          // Merge into _users without duplicates
+          const incoming = dtos.map(d => this.fromDto(d));
+          this._users.update(existing => {
+            const existingIds = new Set(existing.map(u => u.id));
+            const newOnes = incoming.filter(u => !existingIds.has(u.id));
+            return [...existing, ...newOnes];
+          });
+        },
+        error: () => {} // silent fail — dropdowns will just be empty
       });
   }
 

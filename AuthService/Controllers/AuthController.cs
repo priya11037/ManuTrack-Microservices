@@ -36,13 +36,26 @@ public class AuthController : ControllerBase
             ApiResponse<object>.Ok(result, "User registered successfully."));
     }
 
-    // GET api/v1/auth/users
+    // GET api/v1/auth/users  — Admin only (full user list with sensitive fields)
     [HttpGet("users")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllUsers()
     {
         var result = await _authService.GetAllAsync();
         return Ok(ApiResponse<object>.Ok(result));
+    }
+
+    // GET api/v1/auth/users/by-role?role=ShopFloorOperator — any authenticated user
+    // Used by forms to populate dropdowns (operators, inspectors, etc.)
+    [HttpGet("users/by-role")]
+    [Authorize]
+    public async Task<IActionResult> GetUsersByRole([FromQuery] string role)
+    {
+        var all = await _authService.GetAllAsync();
+        var filtered = all
+            .Where(u => u.Role.Equals(role, StringComparison.OrdinalIgnoreCase) && u.IsActive)
+            .Select(u => new { u.UserID, u.Name, u.Role, u.Email });
+        return Ok(ApiResponse<object>.Ok(filtered));
     }
 
     // GET api/v1/auth/users/{id}

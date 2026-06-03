@@ -1,6 +1,6 @@
-<div class="wo-page">
+﻿<div class="wo-page">
 
-  <!-- ── Low-Stock Alert Banner (Inventory → Production Planner connection) ── -->
+  <!-- â”€â”€ Low-Stock Alert Banner (Inventory â†’ Production Planner connection) â”€â”€ -->
   @if (lowStockItems().length > 0 && showStockBanner() && !isReadOnly()) {
     <div class="stock-alert-banner">
       <mat-icon class="sab-icon">warning</mat-icon>
@@ -22,12 +22,12 @@
     </div>
   }
 
-  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Page Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="wo-header">
     <div>
       <h2 class="wo-title">Work Orders</h2>
       <p class="wo-sub">
-        {{ isReadOnly() ? 'System-wide work order overview — read only' : 'Plan, track and manage production work orders' }}
+        {{ isReadOnly() ? 'System-wide work order overview â€” read only' : 'Plan, track and manage production work orders' }}
       </p>
     </div>
     <div class="header-actions">
@@ -55,7 +55,7 @@
     </div>
   </div>
 
-  <!-- ── KPI Stats ─────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ KPI Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="stats-row">
     <div class="stat-chip">
       <mat-icon>assignment</mat-icon>
@@ -85,11 +85,11 @@
     }
   </div>
 
-  <!-- ── Filters ───────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="filters-bar">
     <div class="search-box">
       <mat-icon class="si">search</mat-icon>
-      <input class="search-input" type="text" placeholder="Search by WO#, product, assignee…"
+      <input class="search-input" type="text" placeholder="Search by WO#, product, assigneeâ€¦"
              [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
       @if (searchTerm()) {
         <button class="clear-x" (click)="searchTerm.set('')"><mat-icon>close</mat-icon></button>
@@ -114,9 +114,9 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  TABLE VIEW                                                           -->
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (viewMode() === 'table') {
     <div class="table-card">
       <table class="wo-table">
@@ -199,7 +199,7 @@
                   <span class="av-name">{{ wo.assignedTo.split(' ')[0] }}</span>
                 </div>
               </td>
-              <!-- Actions — hidden for Admin (read-only) -->
+              <!-- Actions â€” hidden for Admin (read-only) -->
               <td>
                 @if (!isReadOnly()) {
                   @if (deleteConfirmId() === wo.id) {
@@ -243,7 +243,47 @@
                     </div>
                     <div class="dp-item dp-full">
                       <span class="dp-lbl">Notes</span>
-                      <span class="dp-val">{{ wo.notes || '—' }}</span>
+                      <span class="dp-val">{{ wo.notes || 'â€”' }}</span>
+                    </div>
+                  </div>
+                  <!-- Tasks Section -->
+                  <div class="tasks-section">
+                    <div class="tasks-header">
+                      <span class="tasks-title">
+                        <mat-icon>assignment</mat-icon>
+                        Tasks
+                        <span class="tasks-count">{{ tasksFor(wo.id).length }}</span>
+                      </span>
+                      @if (!isReadOnly()) {
+                        <button class="add-task-btn" (click)="openTaskDrawer(wo, $event)">
+                          <mat-icon>add</mat-icon> Add Task
+                        </button>
+                      }
+                    </div>
+                    @if (loadingTasksFor() === wo.id) {
+                      <div class="tasks-loading">Loading tasks...</div>
+                    }
+                    @if (tasksFor(wo.id).length === 0 && loadingTasksFor() !== wo.id) {
+                      <div class="tasks-empty">No tasks yet. Click <strong>Add Task</strong> to assign work to an operator.</div>
+                    }
+                    <div class="tasks-list">
+                      @for (task of tasksFor(wo.id); track task.taskID) {
+                        <div class="task-row">
+                          <div class="task-status-dot" [style.background]="taskStatusColor(task.status)"></div>
+                          <div class="task-info">
+                            <span class="task-desc">{{ task.description }}</span>
+                            <span class="task-meta">
+                              <mat-icon>engineering</mat-icon> {{ task.assignedTo }}
+                              <span class="task-status-chip" [style.color]="taskStatusColor(task.status)">{{ task.status }}</span>
+                            </span>
+                          </div>
+                          @if (!isReadOnly()) {
+                            <button class="task-del-btn" (click)="deleteTask(wo, task.taskID, $event)" matTooltip="Remove task">
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
                 </td>
@@ -259,9 +299,9 @@
     </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!--  KANBAN VIEW  (CDK Drag & Drop)                                       -->
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   @if (viewMode() === 'kanban') {
     <div class="kanban-hint">
       <mat-icon>drag_indicator</mat-icon>
@@ -362,9 +402,9 @@
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <!--  Slide-out Drawer                                                        -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 @if (drawerOpen()) {
   <div class="drawer-overlay" (click)="closeDrawer()"></div>
 
@@ -392,8 +432,8 @@
         <div class="ff-select-wrap" [class.ff-invalid]="woForm.get('product')?.invalid && woForm.get('product')?.touched">
           <mat-icon>category</mat-icon>
           <select formControlName="product" (change)="onProductChange($any($event.target).value)">
-            <option value="" disabled>Select product…</option>
-            @for (p of products; track p) { <option [value]="p">{{ p }}</option> }
+            <option value="" disabled>Select productâ€¦</option>
+            @for (p of products(); track p) { <option [value]="p">{{ p }}</option> }
           </select>
           <mat-icon class="sel-arrow">expand_more</mat-icon>
         </div>
@@ -469,22 +509,6 @@
         </div>
       </div>
 
-      <!-- Assigned To -->
-      <div class="ff">
-        <label class="ff-label">Assigned Operator <span class="req">*</span></label>
-        <div class="ff-select-wrap" [class.ff-invalid]="woForm.get('assignedTo')?.invalid && woForm.get('assignedTo')?.touched">
-          <mat-icon>engineering</mat-icon>
-          <select formControlName="assignedTo">
-            <option value="" disabled>Select operator…</option>
-            @for (op of operators(); track op) { <option [value]="op">{{ op }}</option> }
-          </select>
-          <mat-icon class="sel-arrow">expand_more</mat-icon>
-        </div>
-        @if (woForm.get('assignedTo')?.invalid && woForm.get('assignedTo')?.touched) {
-          <span class="ff-err">Operator is required</span>
-        }
-      </div>
-
       <!-- Production Line -->
       <div class="ff">
         <label class="ff-label">Production Line <span class="req">*</span></label>
@@ -502,7 +526,7 @@
       <div class="ff">
         <label class="ff-label">Notes / Instructions</label>
         <div class="ff-textarea-wrap">
-          <textarea formControlName="notes" rows="3" placeholder="Special instructions, materials needed…"></textarea>
+          <textarea formControlName="notes" rows="3" placeholder="Special instructions, materials neededâ€¦"></textarea>
         </div>
       </div>
 
@@ -512,6 +536,81 @@
         <button type="submit" class="btn-save">
           <mat-icon>{{ drawerMode() === 'add' ? 'add_circle' : 'save' }}</mat-icon>
           {{ drawerMode() === 'add' ? 'Create Work Order' : 'Save Changes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}
+
+<!-- ── Task Drawer ─────────────────────────────────────────────────────────── -->
+@if (taskDrawerWO()) {
+  <div class="drawer-overlay" (click)="closeTaskDrawer()"></div>
+  <div class="drawer">
+    <div class="drawer-header">
+      <div>
+        <h3 class="drawer-title">Add Task</h3>
+        <p class="drawer-sub">{{ taskDrawerWO()?.woNumber }} — {{ taskDrawerWO()?.product }}</p>
+      </div>
+      <button class="drawer-close" (click)="closeTaskDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <!-- Existing tasks summary -->
+    @if (tasksFor(taskDrawerWO()!.id).length > 0) {
+      <div class="existing-tasks-summary">
+        <span class="ets-label">Existing tasks ({{ tasksFor(taskDrawerWO()!.id).length }})</span>
+        @for (t of tasksFor(taskDrawerWO()!.id); track t.taskID) {
+          <div class="ets-row">
+            <span class="ets-dot" [style.background]="taskStatusColor(t.status)"></span>
+            <span class="ets-desc">{{ t.description }}</span>
+            <span class="ets-who">→ {{ t.assignedTo }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="drawer-form">
+
+      <div class="ff">
+        <label class="ff-label">Task Description <span class="req">*</span></label>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="description" rows="3"
+            placeholder="e.g. Machine setup and calibration for Line A"></textarea>
+        </div>
+        @if (taskForm.get('description')?.invalid && taskForm.get('description')?.touched) {
+          <span class="ff-err">Description must be at least 5 characters</span>
+        }
+      </div>
+
+      <div class="ff">
+        <label class="ff-label">Assign To Operator <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="taskForm.get('assignedTo')?.invalid && taskForm.get('assignedTo')?.touched">
+          <mat-icon>engineering</mat-icon>
+          <select formControlName="assignedTo">
+            <option value="" disabled>Select operator…</option>
+            @for (op of operators(); track op) {
+              <option [value]="op">{{ op }}</option>
+            }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (taskForm.get('assignedTo')?.invalid && taskForm.get('assignedTo')?.touched) {
+          <span class="ff-err">Operator is required</span>
+        }
+      </div>
+
+      <div class="ff">
+        <label class="ff-label">Notes (optional)</label>
+        <div class="ff-textarea-wrap">
+          <textarea formControlName="notes" rows="2"
+            placeholder="Any additional instructions…"></textarea>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-cancel" (click)="closeTaskDrawer()">Cancel</button>
+        <button type="submit" class="btn-save" [disabled]="taskForm.invalid">
+          <mat-icon>add</mat-icon> Add Task
         </button>
       </div>
 

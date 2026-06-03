@@ -43,9 +43,10 @@ export class StockDashboardComponent implements OnInit {
   stockFilter     = signal('all'); // all | low | ok | overstock
 
   categories = ['Raw Material', 'Component', 'Consumable', 'Finished Good', 'Packaging'];
-  suppliers  = ['SteelCo Ltd', 'PrecisionParts Inc', 'GlobalSupply Co', 'FastenerWorld', 'ChemSupply Ltd', 'PackagePro'];
-  locations  = ['Warehouse A', 'Warehouse B', 'Cold Store', 'Hazmat Store', 'Line A Store', 'Line B Store'];
-  units      = ['pcs', 'kg', 'meters', 'liters', 'boxes', 'rolls'];
+  units      = ['pcs', 'kg', 'm', 'L', 'boxes', 'rolls'];
+  // Loaded from API — fall back to empty so UI shows "Loading..." until ready
+  suppliers  = computed(() => this.invSvc.suppliers().length > 0 ? this.invSvc.suppliers() : []);
+  locations  = computed(() => this.invSvc.locations().length > 0 ? this.invSvc.locations() : []);
 
   // ── Stock Data ────────────────────────────────────────────────────────────
   get items() { return this.invSvc.stockItems; }
@@ -155,5 +156,9 @@ export class StockDashboardComponent implements OnInit {
     this.snack.open(msg, '✕', { duration: 3000, panelClass: [`snack-${type}`] });
   }
 
-  ngOnInit(): void { this.invSvc.loadStock(); }
+  ngOnInit(): void {
+    this.invSvc.loadStock();
+    this.invSvc.loadSuppliers();
+    this.invSvc.loadLocations();
+  }
 }

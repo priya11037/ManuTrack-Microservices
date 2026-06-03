@@ -1,10 +1,13 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+﻿import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { InspectionService, CreateDefectRequest } from '../../../core/services/inspection.service';
+import { WorkOrderService } from '../../../core/services/work-order.service';
+import { UserService } from '../../../core/services/user.service';
+import { ProductService } from '../../../core/services/product.service';
 
 export interface Defect {
   id: string;
@@ -31,11 +34,14 @@ export interface Defect {
   styleUrl: './defect-log.component.scss',
 })
 export class DefectLogComponent implements OnInit {
-  private snack = inject(MatSnackBar);
-  private fb    = inject(FormBuilder);
+  private snack    = inject(MatSnackBar);
+  private fb       = inject(FormBuilder);
   readonly inspSvc = inject(InspectionService);
+  private woSvc    = inject(WorkOrderService);
+  private usrSvc   = inject(UserService);
+  private prodSvc  = inject(ProductService);
 
-  // ── UI State ──────────────────────────────────────────────────────────────
+  // â”€â”€ UI State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   drawerOpen      = signal(false);
   drawerMode      = signal<'add' | 'edit'>('add');
   selectedDefect  = signal<Defect | null>(null);
@@ -44,21 +50,22 @@ export class DefectLogComponent implements OnInit {
   severityFilter  = signal('all');
   statusFilter    = signal('all');
 
-  // ── Options ───────────────────────────────────────────────────────────────
-  severities   = ['Minor', 'Major', 'Critical'] as Defect['severity'][];
-  actions      = ['Rework', 'Scrap', 'Accept', 'Hold'] as Defect['action'][];
-  statuses     = ['Open', 'In Progress', 'Resolved'] as Defect['status'][];
-  defectTypes  = ['Dimensional Error', 'Surface Defect', 'Material Defect', 'Assembly Error', 'Machining Error', 'Welding Defect', 'Coating Issue', 'Seal/Gasket Failure'];
-  rootCauses   = ['Human Error', 'Machine Malfunction', 'Material Issue', 'Process Deviation', 'Tool Wear', 'Design Issue', 'Environmental Factor'];
-  inspectors   = ['Emily Clark', 'Amy Zhang', 'Carlos Ramos', 'Linda Brown'];
-  insRefs      = ['INS-1001', 'INS-1002', 'INS-1003', 'INS-1004', 'INS-1005', 'INS-1006', 'INS-1007', 'INS-1008'];
-  woRefs       = ['WO-0001', 'WO-0002', 'WO-0003', 'WO-0004', 'WO-0005', 'WO-0006', 'WO-0007', 'WO-0008'];
-  products     = ['Shaft Assembly', 'Gear Box Unit', 'Hydraulic Pump', 'Control Valve', 'Motor Mount', 'Bracket Assembly'];
+  // â”€â”€ Options â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  severities  = ['Minor', 'Major', 'Critical'] as Defect['severity'][];
+  actions     = ['Rework', 'Scrap', 'Accept', 'Hold'] as Defect['action'][];
+  statuses    = ['Open', 'In Progress', 'Resolved'] as Defect['status'][];
+  defectTypes = ['Dimensional Error', 'Surface Defect', 'Material Defect', 'Assembly Error', 'Machining Error', 'Welding Defect', 'Coating Issue', 'Seal/Gasket Failure'];
+  rootCauses  = ['Human Error', 'Machine Malfunction', 'Material Issue', 'Process Deviation', 'Tool Wear', 'Design Issue', 'Environmental Factor'];
+  // Loaded from real APIs
+  inspectors  = computed(() => this.usrSvc.users().filter(u => u.role === 'QualityInspector' && u.status === 'Active').map(u => u.name));
+  insRefs     = computed(() => this.inspSvc.inspections().map(i => i.insNumber));
+  woRefs      = computed(() => this.woSvc.workOrders().map(w => w.woNumber));
+  products    = computed(() => this.prodSvc.products().map(p => p.name));
 
-  // ── Data ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   get defects() { return this.inspSvc.defects; }
 
-  // ── Filtered list ────────────────────────────────────────────────────────
+  // â”€â”€ Filtered list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   filtered = computed(() => {
     const q  = this.searchTerm().toLowerCase().trim();
     const sv = this.severityFilter();
@@ -77,7 +84,7 @@ export class DefectLogComponent implements OnInit {
 
   get stats() { return this.inspSvc.defectStats; }
 
-  // ── Form ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   defectForm = this.fb.group({
     insRef:         ['', Validators.required],
     woRef:          ['', Validators.required],
@@ -92,7 +99,7 @@ export class DefectLogComponent implements OnInit {
     notes:          [''],
   });
 
-  // ── Drawer ───────────────────────────────────────────────────────────────
+  // â”€â”€ Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openAddDrawer(): void {
     this.drawerMode.set('add');
     this.selectedDefect.set(null);
@@ -139,7 +146,7 @@ export class DefectLogComponent implements OnInit {
     }
   }
 
-  // ── Delete ───────────────────────────────────────────────────────────────
+  // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   confirmDelete(id: string): void { this.deleteConfirmId.set(id); }
   cancelDelete():             void { this.deleteConfirmId.set(null); }
   deleteDefect(id: string):   void {
@@ -148,7 +155,7 @@ export class DefectLogComponent implements OnInit {
     this.toast('Defect record removed', 'warn');
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   severityMeta(s: Defect['severity']) {
     return {
       Minor:    { color: '#6b7280', bg: 'rgba(107,114,128,0.10)', cls: 'sv-minor'    },
@@ -172,8 +179,15 @@ export class DefectLogComponent implements OnInit {
   }
 
   private toast(msg: string, type: 'success' | 'warn' | 'info'): void {
-    this.snack.open(msg, '✕', { duration: 3000, panelClass: [`snack-${type}`] });
+    this.snack.open(msg, 'âœ•', { duration: 3000, panelClass: [`snack-${type}`] });
   }
 
-  ngOnInit(): void { this.inspSvc.loadDefects(); }
+  ngOnInit(): void {
+    this.inspSvc.loadDefects();
+    this.inspSvc.loadInspections();
+    this.woSvc.loadAll();
+    this.usrSvc.loadByRole('QualityInspector');
+    this.prodSvc.loadProducts();
+  }
 }
+
