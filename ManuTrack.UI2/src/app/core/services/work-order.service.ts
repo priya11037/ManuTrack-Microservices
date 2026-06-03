@@ -189,7 +189,13 @@ export class WorkOrderService {
       quantity:    dto.quantity ?? 0,
       produced:    dto.producedQty ?? dto.ProducedQty ?? 0,
       priority:    (dto.priority ?? dto.Priority ?? 'Medium') as WorkOrder['priority'],
-      status:      ((dto.status ?? dto.Status ?? 'Planned') === 'Pending' ? 'Planned' : (dto.status ?? dto.Status ?? 'Planned')) as WorkOrder['status'],
+      status:      (() => {
+        const s = dto.status ?? dto.Status ?? 'Pending';
+        if (s === 'Pending')    return 'Planned';
+        if (s === 'InProgress') return 'In Progress';
+        if (s === 'OnHold')     return 'On Hold';
+        return s; // Completed, Cancelled pass through
+      })() as WorkOrder['status'],
       startDate:   dto.startDate?.split('T')[0] ?? dto.StartDate?.split('T')[0] ?? '',
       dueDate:     dto.endDate?.split('T')[0] ?? dto.EndDate?.split('T')[0] ?? '',
       assignedTo:  dto.assignedTo ?? dto.AssignedTo ?? '',
