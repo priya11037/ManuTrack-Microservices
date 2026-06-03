@@ -71,7 +71,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/quality/quality.component').then((m) => m.QualityComponent),
         canActivate: [roleGuard],
-        data: { roles: ['QualityInspector'] },
+        data: { roles: ['QualityInspector', 'ProductionPlanner', 'Admin'] },
         children: [
           {
             path: 'inspections',
