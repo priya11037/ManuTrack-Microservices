@@ -601,6 +601,12 @@
   &:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 }
 
+// ── Tasks count badge in table column ────────────────────────────────────────
+.tasks-count-badge {
+  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
+  background: #eff6ff; color: #2563eb; font-size: 0.75rem; font-weight: 600;
+}
+
 // ── Tasks Section (expanded row) ─────────────────────────────────────────────
 .tasks-section {
   border-top: 1px solid #e5e7eb; margin-top: 1rem; padding-top: 1rem;

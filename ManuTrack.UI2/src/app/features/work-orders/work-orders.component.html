@@ -130,7 +130,7 @@
             <th>Status</th>
             <th>Line</th>
             <th>Due Date</th>
-            <th>Assigned To</th>
+            <th>Tasks</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -192,12 +192,11 @@
               <td><span class="line-tag">{{ wo.line }}</span></td>
               <!-- Due Date -->
               <td class="td-date" [class.date-overdue]="isOverdue(wo)">{{ wo.dueDate }}</td>
-              <!-- Assigned To -->
+              <!-- Tasks -->
               <td>
-                <div class="assignee-cell">
-                  <div class="av-circle" [style.background]="wo.avatarColor">{{ getInitials(wo.assignedTo) }}</div>
-                  <span class="av-name">{{ wo.assignedTo.split(' ')[0] }}</span>
-                </div>
+                <span class="tasks-count-badge">
+                  {{ tasksFor(wo.id).length > 0 ? tasksFor(wo.id).length + ' task' + (tasksFor(wo.id).length > 1 ? 's' : '') : '—' }}
+                </span>
               </td>
               <!-- Actions â€” hidden for Admin (read-only) -->
               <td>
@@ -243,7 +242,7 @@
                     </div>
                     <div class="dp-item dp-full">
                       <span class="dp-lbl">Notes</span>
-                      <span class="dp-val">{{ wo.notes || 'â€”' }}</span>
+                      <span class=”dp-val”>{{ wo.notes || '—' }}</span>
                     </div>
                   </div>
                   <!-- Tasks Section -->
