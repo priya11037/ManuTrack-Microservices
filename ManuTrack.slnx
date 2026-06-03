@@ -1,5 +1,7 @@
 <Solution>
-  <Folder Name="/Frontend/" />
+  <Folder Name="/Frontend/">
+    <Project Path="ManuTrack.UI2/ManuTrack.UI2.esproj" />
+  </Folder>
   <Folder Name="/Gateway/">
     <Project Path="ApiGateway/ApiGateway.csproj" />
   </Folder>
