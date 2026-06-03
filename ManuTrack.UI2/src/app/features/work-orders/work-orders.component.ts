@@ -206,6 +206,7 @@ export class WorkOrdersComponent implements OnInit {
         const task = res?.data ?? res;
         this.tasksMap.update(m => ({ ...m, [wo.id]: [...(m[wo.id] ?? []), task] }));
         this.taskForm.reset();
+        this.woSvc.loadAll();
         this.toast(`Task assigned to ${v.assignedTo}`, 'success');
       },
       error: () => this.toast('Failed to add task', 'warn')
