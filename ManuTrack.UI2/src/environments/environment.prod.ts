@@ -10,6 +10,7 @@ export const environment = {
     bom:            'https://api.manutrack.com/api/v1/bom',
     workOrders:     'https://api.manutrack.com/api/v1/workorders',
     tasks:          'https://api.manutrack.com/api/v1/tasks',
+    tasksByWO:      'https://api.manutrack.com/api/v1/tasks/workorder',
     inventory:      'https://api.manutrack.com/api/v1/inventory',
     suppliers:      'https://api.manutrack.com/api/v1/suppliers',
     locations:      'https://api.manutrack.com/api/v1/locations',

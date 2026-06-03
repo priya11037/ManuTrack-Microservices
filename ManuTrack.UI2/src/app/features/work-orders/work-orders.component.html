@@ -246,6 +246,46 @@
                       <span class="dp-val">{{ wo.notes || 'â€”' }}</span>
                     </div>
                   </div>
+                  <!-- Tasks Section -->
+                  <div class="tasks-section">
+                    <div class="tasks-header">
+                      <span class="tasks-title">
+                        <mat-icon>assignment</mat-icon>
+                        Tasks
+                        <span class="tasks-count">{{ tasksFor(wo.id).length }}</span>
+                      </span>
+                      @if (!isReadOnly()) {
+                        <button class="add-task-btn" (click)="openTaskDrawer(wo, $event)">
+                          <mat-icon>add</mat-icon> Add Task
+                        </button>
+                      }
+                    </div>
+                    @if (loadingTasksFor() === wo.id) {
+                      <div class="tasks-loading">Loading tasks...</div>
+                    }
+                    @if (tasksFor(wo.id).length === 0 && loadingTasksFor() !== wo.id) {
+                      <div class="tasks-empty">No tasks yet. Click <strong>Add Task</strong> to assign work to an operator.</div>
+                    }
+                    <div class="tasks-list">
+                      @for (task of tasksFor(wo.id); track task.taskID) {
+                        <div class="task-row">
+                          <div class="task-status-dot" [style.background]="taskStatusColor(task.status)"></div>
+                          <div class="task-info">
+                            <span class="task-desc">{{ task.description }}</span>
+                            <span class="task-meta">
+                              <mat-icon>engineering</mat-icon> {{ task.assignedTo }}
+                              <span class="task-status-chip" [style.color]="taskStatusColor(task.status)">{{ task.status }}</span>
+                            </span>
+                          </div>
+                          @if (!isReadOnly()) {
+                            <button class="task-del-btn" (click)="deleteTask(wo, task.taskID, $event)" matTooltip="Remove task">
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
                 </td>
               </tr>
             }
@@ -469,22 +509,6 @@
         </div>
       </div>
 
-      <!-- Assigned To -->
-      <div class="ff">
-        <label class="ff-label">Assigned Operator <span class="req">*</span></label>
-        <div class="ff-select-wrap" [class.ff-invalid]="woForm.get('assignedTo')?.invalid && woForm.get('assignedTo')?.touched">
-          <mat-icon>engineering</mat-icon>
-          <select formControlName="assignedTo">
-            <option value="" disabled>Select operatorâ€¦</option>
-            @for (op of operators(); track op) { <option [value]="op">{{ op }}</option> }
-          </select>
-          <mat-icon class="sel-arrow">expand_more</mat-icon>
-        </div>
-        @if (woForm.get('assignedTo')?.invalid && woForm.get('assignedTo')?.touched) {
-          <span class="ff-err">Operator is required</span>
-        }
-      </div>
-
       <!-- Production Line -->
       <div class="ff">
         <label class="ff-label">Production Line <span class="req">*</span></label>
@@ -519,3 +543,73 @@
   </div>
 }
 
+<!-- ── Task Drawer ─────────────────────────────────────────────────────────── -->
+@if (taskDrawerWO()) {
+  <div class="drawer-overlay" (click)="closeTaskDrawer()"></div>
+  <div class="drawer">
+    <div class="drawer-header">
+      <div>
+        <h3 class="drawer-title">Add Task</h3>
+        <p class="drawer-sub">{{ taskDrawerWO()?.woNumber }} — {{ taskDrawerWO()?.product }}</p>
+      </div>
+      <button class="drawer-close" (click)="closeTaskDrawer()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <!-- Existing tasks summary -->
+    @if (tasksFor(taskDrawerWO()!.id).length > 0) {
+      <div class="existing-tasks-summary">
+        <span class="ets-label">Existing tasks ({{ tasksFor(taskDrawerWO()!.id).length }})</span>
+        @for (t of tasksFor(taskDrawerWO()!.id); track t.taskID) {
+          <div class="ets-row">
+            <span class="ets-dot" [style.background]="taskStatusColor(t.status)"></span>
+            <span class="ets-desc">{{ t.description }}</span>
+            <span class="ets-who">→ {{ t.assignedTo }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="drawer-form">
+
+      <div class="ff">
+        <label class="ff-label">Task Description <span class="req">*</span></label>
+        <textarea formControlName="description" rows="3"
+          class="ff-textarea" placeholder="e.g. Machine setup and calibration for Line A"></textarea>
+        @if (taskForm.get('description')?.invalid && taskForm.get('description')?.touched) {
+          <span class="ff-err">Description must be at least 5 characters</span>
+        }
+      </div>
+
+      <div class="ff">
+        <label class="ff-label">Assign To Operator <span class="req">*</span></label>
+        <div class="ff-select-wrap" [class.ff-invalid]="taskForm.get('assignedTo')?.invalid && taskForm.get('assignedTo')?.touched">
+          <mat-icon>engineering</mat-icon>
+          <select formControlName="assignedTo">
+            <option value="" disabled>Select operator…</option>
+            @for (op of operators(); track op) {
+              <option [value]="op">{{ op }}</option>
+            }
+          </select>
+          <mat-icon class="sel-arrow">expand_more</mat-icon>
+        </div>
+        @if (taskForm.get('assignedTo')?.invalid && taskForm.get('assignedTo')?.touched) {
+          <span class="ff-err">Operator is required</span>
+        }
+      </div>
+
+      <div class="ff">
+        <label class="ff-label">Notes (optional)</label>
+        <textarea formControlName="notes" rows="2"
+          class="ff-textarea" placeholder="Any additional instructions…"></textarea>
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="btn-cancel" (click)="closeTaskDrawer()">Cancel</button>
+        <button type="submit" class="btn-primary" [disabled]="taskForm.invalid">
+          <mat-icon>add</mat-icon> Add Task
+        </button>
+      </div>
+
+    </form>
+  </div>
+}

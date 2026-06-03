@@ -11,6 +11,7 @@ export const environment = {
     bom:            'http://localhost:5000/api/v1/bom',
     workOrders:     'http://localhost:5000/api/v1/workorders',
     tasks:          'http://localhost:5000/api/v1/tasks',
+    tasksByWO:      'http://localhost:5000/api/v1/tasks/workorder',
     inventory:      'http://localhost:5000/api/v1/inventory',
     suppliers:      'http://localhost:5000/api/v1/suppliers',
     locations:      'http://localhost:5000/api/v1/locations',
