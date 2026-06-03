@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.0">
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.4902498">
   <PropertyGroup>
     <StartupCommand>ng serve</StartupCommand>
-    <JavaScriptTestRoot>src/</JavaScriptTestRoot>
     <JavaScriptTestFramework>Jasmine</JavaScriptTestFramework>
     <ShouldRunBuildScript>false</ShouldRunBuildScript>
+    <BuildOutputFolder>$(MSBuildProjectDirectory)\dist\ManuTrack.UI2\browser\</BuildOutputFolder>
   </PropertyGroup>
 </Project>
