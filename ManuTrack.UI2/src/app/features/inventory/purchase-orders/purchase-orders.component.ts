@@ -35,6 +35,11 @@ export class PurchaseOrdersComponent implements OnInit {
   suppliers  = computed(() => this.invSvc.suppliers());
   items      = computed(() => this.invSvc.stockItems().map(i => i.name).filter(Boolean));
 
+  onItemChange(name: string): void {
+    const item = this.invSvc.stockItems().find(i => i.name === name);
+    if (item?.sku) this.poForm.get('sku')?.setValue(item.sku);
+  }
+
   // ── Data ─────────────────────────────────────────────────────────────────
   get orders() { return this.invSvc.purchaseOrders; }
 

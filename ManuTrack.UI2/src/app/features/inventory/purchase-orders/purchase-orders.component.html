@@ -266,7 +266,7 @@
           <label class="ff-label">Item <span class="req">*</span></label>
           <div class="ff-select-wrap" [class.ff-invalid]="poForm.get('item')?.invalid && poForm.get('item')?.touched">
             <mat-icon>inventory_2</mat-icon>
-            <select formControlName="item">
+            <select formControlName="item" (change)="onItemChange($any($event.target).value)">
               <option value="" disabled>Select itemâ€¦</option>
               @for (i of items(); track i) { <option [value]="i">{{ i }}</option> }
             </select>
@@ -351,5 +351,6 @@
     </form>
   </div>
 }
+
 
 
