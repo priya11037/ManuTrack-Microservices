@@ -8,8 +8,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
 import { WorkOrderService, WorkOrder } from '../../core/services/work-order.service';
+import { environment } from '../../../environments/environment';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 export interface TaskStep {
@@ -66,6 +68,7 @@ export class TaskConsoleComponent implements OnInit {
   private auth   = inject(AuthService);
   private fb     = inject(FormBuilder);
   private woSvc  = inject(WorkOrderService);
+  private http   = inject(HttpClient);
   private cdr    = inject(ChangeDetectorRef);
 
   operatorName = computed(() => this.auth.currentUser()?.name ?? 'Operator');
@@ -105,40 +108,67 @@ export class TaskConsoleComponent implements OnInit {
       this.cdr.markForCheck();
     });
 
-    // ── Effect 2: sync WorkOrderService → local tasks whenever WOs update ─────
-    // Must be in constructor (injection context). ngOnInit is NOT valid. ✓
-    // Uses untracked() when reading tasks() to avoid circular dependency.
-    effect(() => {
-      const wos = this.woSvc.workOrders();
-
-      // Read existing tasks WITHOUT tracking (no circular dependency)
-      const existing = untracked(() => this.tasks());
-
-      const active = wos.filter(
-        wo => wo.status !== 'Cancelled'
-      );
-
-      const merged = active.map(wo => {
-        const prev = existing.find(t => t.id === wo.id);
-        return {
-          ...this.woToTask(wo),
-          // Preserve locally-toggled steps across API refreshes
-          steps:      prev?.steps      ?? this.generateSteps(wo.product),
-          flagged:    prev?.flagged    ?? false,
-          flagReason: prev?.flagReason ?? '',
-        };
-      });
-
-      this.tasks.set(merged);
-    });
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Fetch WOs assigned to this operator from the backend.
-    // Effect 2 (in constructor) will react when workOrders signal updates.
-    const user = this.auth.currentUser();
-    this.woSvc.loadAll(undefined, undefined, user?.name ?? undefined);
+    // Load all WOs for metadata (product, priority, dueDate, line), then load
+    // this operator's tasks from the tasks API.
+    this.woSvc.loadAll();
+    this.loadOperatorTasks();
+  }
+
+  loadOperatorTasks(): void {
+    const name = this.auth.currentUser()?.name;
+    if (!name) return;
+    this.http.get<any>(`${environment.api.tasks}/assignee?assignedTo=${encodeURIComponent(name)}`)
+      .subscribe({
+        next: res => {
+          const apiTasks: any[] = res?.data ?? res ?? [];
+          const wos = this.woSvc.workOrders();
+          const existing = this.tasks();
+          const mapped = apiTasks
+            .filter(t => t.status !== 'Cancelled')
+            .map(t => {
+              const prev = existing.find(c => c.id === t.taskID?.toString());
+              return {
+                ...this.woTaskToCard(t, wos),
+                steps:      prev?.steps      ?? this.generateSteps(this.woForTask(t, wos)?.product ?? ''),
+                flagged:    prev?.flagged    ?? false,
+                flagReason: prev?.flagReason ?? '',
+              };
+            });
+          this.tasks.set(mapped);
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  private woForTask(t: any, wos: WorkOrder[]): WorkOrder | undefined {
+    return wos.find(w => w.id === t.workOrderID?.toString());
+  }
+
+  private woTaskToCard(t: any, wos: WorkOrder[]): Task {
+    const wo = this.woForTask(t, wos);
+    const status: Task['status'] =
+      t.status === 'Completed' ? 'Done' :
+      t.status === 'InProgress' ? 'In Progress' : 'To Do';
+    return {
+      id:         t.taskID?.toString() ?? '',
+      woNumber:   wo?.woNumber ?? `WO-${t.workOrderID}`,
+      product:    (wo?.product ?? 'Unknown') + (t.description ? ` — ${t.description}` : ''),
+      sku:        wo?.sku       ?? '',
+      quantity:   wo?.quantity  ?? 0,
+      produced:   0,
+      priority:   (wo?.priority ?? 'Medium') as Task['priority'],
+      status,
+      dueDate:    wo?.dueDate   ?? '',
+      line:       wo?.line      ?? '',
+      notes:      t.notes       ?? '',
+      steps:      [],
+      flagged:    false,
+      flagReason: '',
+    };
   }
 
   // ── Column config ─────────────────────────────────────────────────────────
@@ -220,11 +250,13 @@ export class TaskConsoleComponent implements OnInit {
       list.map(t => t.id === task.id ? { ...t, status: newStatus } : t)
     );
 
-    // Persist to backend
-    this.woSvc.updateStatus(task.id, woStatus).subscribe({
-      next:  () => this.toast(`${task.woNumber} moved to "${newStatus}"`, 'success'),
+    // Map Task status → WorkOrderTask status enum
+    const taskStatusEnum = newStatus === 'Done' ? 'Completed' : newStatus === 'In Progress' ? 'InProgress' : 'Pending';
+
+    // Persist to backend — update the WorkOrderTask status
+    this.http.put<any>(`${environment.api.tasks}/${task.id}/status`, { status: taskStatusEnum }).subscribe({
+      next:  () => this.toast(`Task moved to "${newStatus}"`, 'success'),
       error: (err) => {
-        // Roll back on failure
         this.tasks.update(list =>
           list.map(t => t.id === task.id ? { ...t, status: prevStatus } : t)
         );
