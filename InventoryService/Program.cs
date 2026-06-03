@@ -119,6 +119,18 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
     db.Database.Migrate();
+
+    if (!db.InventoryLocations.Any())
+    {
+        db.InventoryLocations.AddRange(
+            new InventoryService.Models.InventoryLocation { Name = "Warehouse A",    Description = "Main raw materials storage" },
+            new InventoryService.Models.InventoryLocation { Name = "Warehouse B",    Description = "Finished goods storage" },
+            new InventoryService.Models.InventoryLocation { Name = "Shop Floor",     Description = "Production line area" },
+            new InventoryService.Models.InventoryLocation { Name = "Receiving Bay",  Description = "Incoming goods inspection" },
+            new InventoryService.Models.InventoryLocation { Name = "Cold Storage",   Description = "Temperature-controlled storage" }
+        );
+        db.SaveChanges();
+    }
 }
 
 app.Run();
