@@ -228,7 +228,7 @@
       </div>
 
       @if (drawerMode() === 'edit') {
-        <div class="ff-row-3">
+        <div class="ff-row">
           <div class="ff">
             <label class="ff-label">Current Stock</label>
             <div class="ff-input-wrap"><mat-icon>numbers</mat-icon><input type="number" formControlName="currentStock" min="0" /></div>
@@ -237,12 +237,12 @@
             <label class="ff-label">Min Stock</label>
             <div class="ff-input-wrap"><mat-icon>arrow_downward</mat-icon><input type="number" formControlName="minStock" min="0" /></div>
           </div>
-          <div class="ff">
-            <label class="ff-label">Max Stock</label>
-            <div class="ff-input-wrap"><mat-icon>arrow_upward</mat-icon><input type="number" formControlName="maxStock" min="1" /></div>
-          </div>
         </div>
       }
+      <div class="ff">
+        <label class="ff-label">Max Stock <span class="req">*</span></label>
+        <div class="ff-input-wrap"><mat-icon>arrow_upward</mat-icon><input type="number" formControlName="maxStock" min="1" /></div>
+      </div>
 
       <div class="ff-row">
         <div class="ff">
