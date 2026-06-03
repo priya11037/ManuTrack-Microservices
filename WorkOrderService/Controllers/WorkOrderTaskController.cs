@@ -19,10 +19,10 @@ public class WorkOrderTaskController(IWorkOrderTaskService service) : Controller
     }
 
     [HttpGet("assignee")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<IEnumerable<WorkOrderTaskViewModel>>>> GetOpenByAssignee([FromQuery] string assignedTo)
+    public async Task<ActionResult<ApiResponse<IEnumerable<WorkOrderTaskViewModel>>>> GetOpenByAssignee(
+        [FromQuery] string assignedTo, [FromQuery] bool openOnly = false)
     {
-        var result = await service.GetOpenByAssigneeAsync(assignedTo);
+        var result = await service.GetOpenByAssigneeAsync(assignedTo, openOnly);
         return Ok(result);
     }
 

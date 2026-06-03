@@ -76,9 +76,9 @@ public class WorkOrderTaskServiceImpl(
         return ApiResponse<IEnumerable<WorkOrderTaskViewModel>>.Ok(tasks.Select(Map));
     }
 
-    public async Task<ApiResponse<IEnumerable<WorkOrderTaskViewModel>>> GetOpenByAssigneeAsync(string assignedTo)
+    public async Task<ApiResponse<IEnumerable<WorkOrderTaskViewModel>>> GetOpenByAssigneeAsync(string assignedTo, bool openOnly = false)
     {
-        var tasks = await taskRepo.GetOpenByAssigneeAsync(assignedTo);
+        var tasks = await taskRepo.GetOpenByAssigneeAsync(assignedTo, openOnly);
         return ApiResponse<IEnumerable<WorkOrderTaskViewModel>>.Ok(tasks.Select(Map));
     }
 
