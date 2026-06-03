@@ -145,7 +145,8 @@
   display: flex; align-items: center; gap: 0.5rem; border: 1px solid #e5e7eb;
   border-radius: 8px; padding: 0 0.75rem; background: white;
   mat-icon { font-size: 18px; width: 18px; height: 18px; color: #9ca3af; flex-shrink: 0; }
-  input, select { flex: 1; border: none; outline: none; background: transparent; font-size: 0.83rem; color: #374151; padding: 0.6rem 0; }
+  input { flex: 1; border: none; outline: none; background: transparent; font-size: 0.83rem; color: #374151; padding: 0.6rem 0; }
+  select { flex: 1; border: none; outline: none; background: transparent; font-size: 0.83rem; color: #374151; padding: 0.6rem 0; appearance: none; -webkit-appearance: none; }
   &.ff-invalid { border-color: #fca5a5; }
   &:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
   .sel-arrow { margin-left: auto; font-size: 18px; width: 18px; height: 18px; pointer-events: none; }
